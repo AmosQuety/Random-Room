@@ -1,0 +1,102 @@
+using RandomRoom.Api;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using RandomRoom.Api.Auth;
+using RandomRoom.Api.Data;
+using RandomRoom.Api.Endpoints;
+using RandomRoom.Api.Hubs;
+using RandomRoom.Api.Services;
+
+DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOptions<RoomOptions>()
+    .BindConfiguration(RoomOptions.SectionName)
+    .Validate(RoomOptions.IsValid, "Room settings need a valid host, a PIN (4+ chars) for every player, and a 32+ char JwtSigningKey.")
+    .ValidateOnStart();
+
+builder.Services.AddDbContext<RoomDbContext>(o =>
+    o.UseNpgsql(DatabaseConnection.Resolve(builder.Configuration.GetConnectionString("Default"))));
+
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<PresenceTracker>();
+builder.Services.AddSingleton<IRandomChoiceSource, CryptoRandomChoiceSource>();
+builder.Services.AddSingleton<IRoomNotifier, SignalRRoomNotifier>();
+builder.Services.AddSingleton<PlayerTokenService>();
+builder.Services.AddScoped<RoomService>();
+
+builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.AddSignalR().AddJsonProtocol(o => o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ProblemExceptionHandler>();
+
+// Brute-forcing a short PIN is the main attack on identity, so joining is throttled per client address.
+builder.Services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.AddPolicy(RoomEndpoints.JoinRateLimitPolicy, http =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
+});
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<Microsoft.Extensions.Options.IOptions<RoomOptions>>((jwt, room) =>
+    {
+        jwt.MapInboundClaims = false;
+        jwt.TokenValidationParameters = new()
+        {
+            IssuerSigningKey = PlayerTokenService.SigningKey(room.Value),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1),
+        };
+        // Browsers cannot set headers on WebSocket upgrades, so SignalR sends the token in the query string.
+        jwt.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                if (ctx.Request.Path.StartsWithSegments("/hubs")) ctx.Token = ctx.Request.Query["access_token"];
+                return Task.CompletedTask;
+            },
+        };
+    });
+builder.Services.AddAuthorization();
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    await scope.ServiceProvider.GetRequiredService<RoomDbContext>().Database.MigrateAsync();
+    await scope.ServiceProvider.GetRequiredService<RoomService>().EnsureFirstRoundAsync();
+}
+
+app.UseExceptionHandler();
+app.Use(async (ctx, next) =>
+{
+    ctx.Response.Headers.XContentTypeOptions = "nosniff";
+    ctx.Response.Headers["Referrer-Policy"] = "no-referrer";
+    ctx.Response.Headers.ContentSecurityPolicy =
+        "default-src 'self'; connect-src 'self' ws: wss:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'";
+    await next();
+});
+app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapRoomEndpoints();
+app.MapHub<RoomHub>("/hubs/room");
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
+app.MapFallbackToFile("/room/{**slug}", "index.html");
+
+app.Run();
+
+public partial class Program;

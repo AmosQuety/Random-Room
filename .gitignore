@@ -1,0 +1,10 @@
+bin/
+obj/
+node_modules/
+*.db
+*.db-shm
+*.db-wal
+backend/RandomRoom.Api/wwwroot/
+appsettings.Production.json
+.env
+!.env.example

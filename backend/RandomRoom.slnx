@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="RandomRoom.Api/RandomRoom.Api.csproj" />
+  <Project Path="RandomRoom.Tests/RandomRoom.Tests.csproj" />
+</Solution>

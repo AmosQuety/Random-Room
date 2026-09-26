@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/.env
+backend/RandomRoom.Api/wwwroot/
+backend/RandomRoom.Tests/
+*.db
+.git
