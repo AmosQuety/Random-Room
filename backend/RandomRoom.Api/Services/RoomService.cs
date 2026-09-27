@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using RandomRoom.Api.Data;
 using RandomRoom.Api.Domain;
 
@@ -7,110 +6,111 @@ namespace RandomRoom.Api.Services;
 
 /// <summary>
 /// The authoritative room: every rule is enforced here, so the UI never decides who may do what.
-/// Mutating methods return the new snapshot so callers can broadcast it.
+/// Every method is scoped to a single room by its id. Mutating methods return the new snapshot
+/// so callers can broadcast it.
 /// </summary>
 public sealed class RoomService(
     RoomDbContext db,
     IRandomChoiceSource randomSource,
     PresenceTracker presence,
-    IOptions<RoomOptions> options,
     TimeProvider clock)
 {
     private const int ActivityLimit = 50;
 
-    private string HostPlayer => options.Value.HostPlayer;
-
-    public async Task EnsureFirstRoundAsync(CancellationToken ct = default)
+    public async Task<RoomSnapshot> GetSnapshotAsync(Guid roomId, CancellationToken ct = default)
     {
-        if (await db.Rounds.AnyAsync(ct)) return;
-        db.Rounds.Add(NewRound(number: 1, RoundStatus.Waiting));
-        await db.SaveChangesAsync(ct);
-    }
-
-    public async Task<RoomSnapshot> GetSnapshotAsync(CancellationToken ct = default)
-    {
-        var round = await CurrentRoundAsync(ct);
+        var room = await RequireRoomAsync(roomId, ct);
+        var choices = await db.RoomChoices.AsNoTracking()
+            .Where(c => c.RoomId == roomId).OrderBy(c => c.Position).ToListAsync(ct);
+        var players = await db.RoomPlayers.AsNoTracking()
+            .Where(p => p.RoomId == roomId).ToListAsync(ct);
+        var round = await CurrentRoundAsync(roomId, ct);
         var roundEvents = await db.RandomEvents.AsNoTracking().Where(e => e.RoundId == round.Id).ToListAsync(ct);
-        var activity = await LoadActivityAsync(ct);
+        var activity = await LoadActivityAsync(roomId, ct);
 
         return new RoomSnapshot(
-            RoomDefinition.Slug,
-            RoomDefinition.Name,
-            HostPlayer,
-            RoomDefinition.Choices,
+            room.Id,
+            room.Slug,
+            room.Title,
+            room.HostPlayer,
+            choices.Select(c => c.Label).ToList(),
             new RoundView(round.Id, round.Number, round.Status, round.StartedAt, round.EndedAt),
-            RoomDefinition.Players.Select(p => ToPlayerView(p, roundEvents)).ToList(),
-            RoomDefinition.Choices.Select(c => new TallyView(c.Name, roundEvents.Count(e => e.Result == c.Name))).ToList(),
+            players.Select(p => ToPlayerView(roomId, p, roundEvents)).ToList(),
+            choices.Select(c => new TallyView(c.Label, roundEvents.Count(e => e.Result == c.Label))).ToList(),
             activity);
     }
 
-    public async Task<RoomSnapshot> TriggerRandomAsync(string player, CancellationToken ct = default)
+    public async Task<RoomSnapshot> TriggerRandomAsync(Guid roomId, string player, CancellationToken ct = default)
     {
-        if (!RoomDefinition.IsPlayer(player))
-            throw new RoomRuleException(RuleViolation.Forbidden, "Only the fixed players can trigger a decision.");
+        var isPlayer = await db.RoomPlayers.AnyAsync(p => p.RoomId == roomId && p.Name == player, ct);
+        if (!isPlayer)
+            throw new RoomRuleException(RuleViolation.Forbidden, "Only players in this room can trigger a decision.");
 
-        var round = await CurrentRoundAsync(ct);
+        var round = await CurrentRoundAsync(roomId, ct);
         if (round.Status != RoundStatus.Active)
             throw new RoomRuleException(RuleViolation.Conflict, "The round is not active.");
 
-        await RecordEventAsync(round, player, ct);
-        await CompleteRoundIfEveryoneWentAsync(round, ct);
-        return await GetSnapshotAsync(ct);
+        await RecordEventAsync(roomId, round, player, ct);
+        await CompleteRoundIfEveryoneWentAsync(roomId, round, ct);
+        return await GetSnapshotAsync(roomId, ct);
     }
 
-    public async Task<RoomSnapshot> StartRoundAsync(string actor, CancellationToken ct = default)
+    public async Task<RoomSnapshot> StartRoundAsync(Guid roomId, string actor, CancellationToken ct = default)
     {
-        var round = await CurrentRoundForHostAsync(actor, ct);
+        var round = await CurrentRoundForHostAsync(roomId, actor, ct);
         if (round.Status != RoundStatus.Waiting)
             throw new RoomRuleException(RuleViolation.Conflict, "Only a waiting round can be started.");
 
         Activate(round);
         await db.SaveChangesAsync(ct);
-        return await GetSnapshotAsync(ct);
+        return await GetSnapshotAsync(roomId, ct);
     }
 
-    public async Task<RoomSnapshot> EndRoundAsync(string actor, CancellationToken ct = default)
+    public async Task<RoomSnapshot> EndRoundAsync(Guid roomId, string actor, CancellationToken ct = default)
     {
-        var round = await CurrentRoundForHostAsync(actor, ct);
+        var round = await CurrentRoundForHostAsync(roomId, actor, ct);
         if (round.Status != RoundStatus.Active)
             throw new RoomRuleException(RuleViolation.Conflict, "Only an active round can be ended.");
 
         Complete(round);
         await db.SaveChangesAsync(ct);
-        return await GetSnapshotAsync(ct);
+        return await GetSnapshotAsync(roomId, ct);
     }
 
-    public async Task<RoomSnapshot> StartNewRoundAsync(string actor, CancellationToken ct = default)
+    public async Task<RoomSnapshot> StartNewRoundAsync(Guid roomId, string actor, CancellationToken ct = default)
     {
-        var round = await CurrentRoundForHostAsync(actor, ct);
+        var round = await CurrentRoundForHostAsync(roomId, actor, ct);
         if (round.Status != RoundStatus.Completed)
             throw new RoomRuleException(RuleViolation.Conflict, "End the current round before starting a new one.");
 
-        var next = NewRound(round.Number + 1, RoundStatus.Waiting);
+        var next = NewRound(roomId, round.Number + 1, RoundStatus.Waiting);
         Activate(next);
         db.Rounds.Add(next);
         await SaveOrTranslateRaceAsync(ct);
-        return await GetSnapshotAsync(ct);
+        return await GetSnapshotAsync(roomId, ct);
     }
 
-    private async Task RecordEventAsync(Round round, string player, CancellationToken ct)
+    private async Task RecordEventAsync(Guid roomId, Round round, string player, CancellationToken ct)
     {
-        var choice = RoomDefinition.Choices[randomSource.PickIndex(RoomDefinition.Choices.Count)];
+        var choices = await db.RoomChoices.AsNoTracking()
+            .Where(c => c.RoomId == roomId).OrderBy(c => c.Position).ToListAsync(ct);
+        var choice = choices[randomSource.PickIndex(choices.Count)];
         db.RandomEvents.Add(new RandomEvent
         {
             Id = Guid.NewGuid(),
             RoundId = round.Id,
             TriggeredBy = player,
-            Result = choice.Name,
+            Result = choice.Label,
             Timestamp = clock.GetUtcNow(),
         });
         await SaveOrTranslateRaceAsync(ct, "You have already triggered the randomizer this round.");
     }
 
-    private async Task CompleteRoundIfEveryoneWentAsync(Round round, CancellationToken ct)
+    private async Task CompleteRoundIfEveryoneWentAsync(Guid roomId, Round round, CancellationToken ct)
     {
+        var playerCount = await db.RoomPlayers.CountAsync(p => p.RoomId == roomId, ct);
         var count = await db.RandomEvents.CountAsync(e => e.RoundId == round.Id, ct);
-        if (count < RoomDefinition.Players.Count || round.Status == RoundStatus.Completed) return;
+        if (count < playerCount || round.Status == RoundStatus.Completed) return;
 
         Complete(round);
         await db.SaveChangesAsync(ct);
@@ -129,9 +129,10 @@ public sealed class RoomService(
         }
     }
 
-    private Round NewRound(int number, RoundStatus status) => new()
+    private Round NewRound(Guid roomId, int number, RoundStatus status) => new()
     {
         Id = Guid.NewGuid(),
+        RoomId = roomId,
         Number = number,
         Status = status,
         CreatedAt = clock.GetUtcNow(),
@@ -149,26 +150,32 @@ public sealed class RoomService(
         round.EndedAt = clock.GetUtcNow();
     }
 
-    private async Task<Round> CurrentRoundAsync(CancellationToken ct) =>
-        await db.Rounds.OrderByDescending(r => r.Number).FirstAsync(ct);
+    private async Task<Room> RequireRoomAsync(Guid roomId, CancellationToken ct) =>
+        await db.Rooms.AsNoTracking().FirstOrDefaultAsync(r => r.Id == roomId, ct)
+        ?? throw new RoomRuleException(RuleViolation.NotFound, "Room not found.");
 
-    private async Task<Round> CurrentRoundForHostAsync(string actor, CancellationToken ct)
+    private async Task<Round> CurrentRoundAsync(Guid roomId, CancellationToken ct) =>
+        await db.Rounds.Where(r => r.RoomId == roomId).OrderByDescending(r => r.Number).FirstAsync(ct);
+
+    private async Task<Round> CurrentRoundForHostAsync(Guid roomId, string actor, CancellationToken ct)
     {
-        if (actor != HostPlayer)
+        var room = await RequireRoomAsync(roomId, ct);
+        if (actor != room.HostPlayer)
             throw new RoomRuleException(RuleViolation.Forbidden, "Only the host can control rounds.");
-        return await CurrentRoundAsync(ct);
+        return await CurrentRoundAsync(roomId, ct);
     }
 
-    private PlayerView ToPlayerView(string player, List<RandomEvent> roundEvents)
+    private PlayerView ToPlayerView(Guid roomId, RoomPlayer player, List<RandomEvent> roundEvents)
     {
-        var result = roundEvents.FirstOrDefault(e => e.TriggeredBy == player)?.Result;
-        return new PlayerView(player, presence.IsOnline(player), result is not null, result);
+        var result = roundEvents.FirstOrDefault(e => e.TriggeredBy == player.Name)?.Result;
+        return new PlayerView(player.Name, presence.IsOnline(roomId, player.Name), result is not null, result);
     }
 
-    private async Task<List<ActivityView>> LoadActivityAsync(CancellationToken ct) =>
+    private async Task<List<ActivityView>> LoadActivityAsync(Guid roomId, CancellationToken ct) =>
         await db.RandomEvents.AsNoTracking()
+            .Where(e => e.Round!.RoomId == roomId)
             .OrderByDescending(e => e.Timestamp)
             .Take(ActivityLimit)
-            .Select(e => new ActivityView(e.Id, RoomDefinition.Slug, e.RoundId, e.Round!.Number, e.TriggeredBy, e.Result, e.Timestamp))
+            .Select(e => new ActivityView(e.Id, e.RoundId, e.Round!.Number, e.TriggeredBy, e.Result, e.Timestamp))
             .ToListAsync(ct);
 }

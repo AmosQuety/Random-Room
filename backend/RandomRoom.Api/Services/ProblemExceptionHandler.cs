@@ -9,17 +9,22 @@ public sealed class ProblemExceptionHandler(ILogger<ProblemExceptionHandler> log
     public async ValueTask<bool> TryHandleAsync(HttpContext http, Exception exception, CancellationToken ct)
     {
         var problem = exception is RoomRuleException rule
-            ? new ProblemDetails
-            {
-                Status = rule.Violation == RuleViolation.Forbidden ? StatusCodes.Status403Forbidden : StatusCodes.Status409Conflict,
-                Title = rule.Message,
-            }
+            ? new ProblemDetails { Status = StatusFor(rule.Violation), Title = rule.Message }
             : Unexpected(exception);
 
         http.Response.StatusCode = problem.Status!.Value;
         await http.Response.WriteAsJsonAsync(problem, ct);
         return true;
     }
+
+    private static int StatusFor(RuleViolation violation) => violation switch
+    {
+        RuleViolation.Forbidden => StatusCodes.Status403Forbidden,
+        RuleViolation.Conflict => StatusCodes.Status409Conflict,
+        RuleViolation.InvalidInput => StatusCodes.Status400BadRequest,
+        RuleViolation.NotFound => StatusCodes.Status404NotFound,
+        _ => StatusCodes.Status500InternalServerError,
+    };
 
     private ProblemDetails Unexpected(Exception exception)
     {

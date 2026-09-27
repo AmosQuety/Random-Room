@@ -48,13 +48,13 @@ export function RoomScreen({ session, onLeave }: Props) {
           </span>
           <span role="status">{connection === "live" ? "🟢 Live" : "🟠 Reconnecting..."}</span>
         </div>
-        <h1 className="font-display text-4xl font-black leading-none sm:text-6xl">{snapshot.roomName}</h1>
+        <h1 className="font-display text-4xl font-black leading-none sm:text-6xl">{snapshot.roomTitle}</h1>
         <p className="text-lg text-muted">
           The system picks between{" "}
-          {snapshot.choices.map((c, i) => (
-            <span key={c.name}>
-              {i > 0 && " and "}
-              <strong className="text-ink">{c.name}</strong> ({c.age})
+          {snapshot.choices.map((choice, i) => (
+            <span key={choice}>
+              {i > 0 && (i === snapshot.choices.length - 1 ? " and " : ", ")}
+              <strong className="text-ink">{choice}</strong>
             </span>
           ))}
           . Nobody chooses for themselves.

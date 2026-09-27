@@ -1,16 +1,22 @@
 using RandomRoom.Api.Auth;
-using RandomRoom.Api.Domain;
 using RandomRoom.Api.Services;
 
 namespace RandomRoom.Api.Endpoints;
 
-public sealed record JoinRequest(string? Player, string? Pin);
+public sealed record JoinRequest(string? RoomSlug, string? Player, string? Pin);
 
-public sealed record JoinResponse(string Token, string Player, bool IsHost);
+public sealed record JoinResponse(string Token, string Player, string RoomSlug, bool IsHost);
+
+public sealed record CreateRoomHttpRequest(string Title, List<string> Choices, List<string> Players, string HostPlayer);
+
+public sealed record ClaimInviteRequest(string Pin);
+
+public sealed record ClaimInviteResponse(string Player);
 
 public static class RoomEndpoints
 {
     public const string JoinRateLimitPolicy = "join";
+    public const string RoomAdminRateLimitPolicy = "room-admin";
 
     public static void MapRoomEndpoints(this IEndpointRouteBuilder app)
     {
@@ -18,33 +24,56 @@ public static class RoomEndpoints
 
         api.MapPost("/join", Join).RequireRateLimiting(JoinRateLimitPolicy);
 
+        var rooms = api.MapGroup("/rooms");
+        rooms.MapPost("/", CreateRoom).RequireRateLimiting(RoomAdminRateLimitPolicy);
+        rooms.MapGet("/{slug}", GetPreview);
+        rooms.MapPost("/{slug}/claim/{token}", ClaimInvite).RequireRateLimiting(RoomAdminRateLimitPolicy);
+
         var room = api.MapGroup("/room").RequireAuthorization();
-        room.MapGet("/", (RoomService rooms, CancellationToken ct) => rooms.GetSnapshotAsync(ct));
+        room.MapGet("/", (RoomService rooms, HttpContext http, CancellationToken ct) =>
+            rooms.GetSnapshotAsync(http.User.GetRoomId(), ct));
         room.MapPost("/trigger", (HttpContext http, RoomService rooms, IRoomNotifier notifier, CancellationToken ct) =>
-            Act(http, notifier, (player) => rooms.TriggerRandomAsync(player, ct), ct));
+            Act(http, notifier, (roomId, player) => rooms.TriggerRandomAsync(roomId, player, ct), ct));
         room.MapPost("/round/start", (HttpContext http, RoomService rooms, IRoomNotifier notifier, CancellationToken ct) =>
-            Act(http, notifier, (player) => rooms.StartRoundAsync(player, ct), ct));
+            Act(http, notifier, (roomId, player) => rooms.StartRoundAsync(roomId, player, ct), ct));
         room.MapPost("/round/end", (HttpContext http, RoomService rooms, IRoomNotifier notifier, CancellationToken ct) =>
-            Act(http, notifier, (player) => rooms.EndRoundAsync(player, ct), ct));
+            Act(http, notifier, (roomId, player) => rooms.EndRoundAsync(roomId, player, ct), ct));
         room.MapPost("/round/new", (HttpContext http, RoomService rooms, IRoomNotifier notifier, CancellationToken ct) =>
-            Act(http, notifier, (player) => rooms.StartNewRoundAsync(player, ct), ct));
+            Act(http, notifier, (roomId, player) => rooms.StartNewRoundAsync(roomId, player, ct), ct));
     }
 
-    private static IResult Join(JoinRequest request, PlayerTokenService tokens, Microsoft.Extensions.Options.IOptions<RoomOptions> options)
+    private static async Task<IResult> Join(JoinRequest request, PlayerTokenService tokens, CancellationToken ct)
     {
-        var token = tokens.TryIssueToken(request.Player ?? "", request.Pin ?? "");
-        if (token is null)
+        var issued = await tokens.TryIssueTokenAsync(request.RoomSlug ?? "", request.Player ?? "", request.Pin ?? "", ct);
+        if (issued is null)
         {
-            // One generic answer for unknown player and wrong PIN.
-            return Results.Problem("Name or PIN is incorrect.", statusCode: StatusCodes.Status401Unauthorized);
+            // One generic answer for unknown room, unknown player, and wrong PIN.
+            return Results.Problem("Room, name, or PIN is incorrect.", statusCode: StatusCodes.Status401Unauthorized);
         }
-        return Results.Ok(new JoinResponse(token, request.Player!, request.Player == options.Value.HostPlayer));
+        return Results.Ok(new JoinResponse(issued.Token, request.Player!, issued.RoomSlug, issued.IsHost));
+    }
+
+    private static async Task<IResult> CreateRoom(CreateRoomHttpRequest request, RoomAdminService admin, CancellationToken ct)
+    {
+        var result = await admin.CreateRoomAsync(
+            new CreateRoomRequest(request.Title, request.Choices, request.Players, request.HostPlayer), ct);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> GetPreview(string slug, RoomAdminService admin, CancellationToken ct) =>
+        Results.Ok(await admin.GetPreviewAsync(slug, ct));
+
+    private static async Task<IResult> ClaimInvite(
+        string slug, string token, ClaimInviteRequest request, RoomAdminService admin, CancellationToken ct)
+    {
+        var player = await admin.ClaimInviteAsync(slug, token, request.Pin, ct);
+        return Results.Ok(new ClaimInviteResponse(player));
     }
 
     private static async Task<IResult> Act(
-        HttpContext http, IRoomNotifier notifier, Func<string, Task<RoomSnapshot>> action, CancellationToken ct)
+        HttpContext http, IRoomNotifier notifier, Func<Guid, string, Task<RoomSnapshot>> action, CancellationToken ct)
     {
-        var snapshot = await action(http.User.GetPlayerName());
+        var snapshot = await action(http.User.GetRoomId(), http.User.GetPlayerName());
         await notifier.PublishAsync(snapshot, ct);
         return Results.Ok(snapshot);
     }

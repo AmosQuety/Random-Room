@@ -1,10 +1,5 @@
 export type RoundStatus = "Waiting" | "Active" | "Completed";
 
-export interface Choice {
-  name: string;
-  age: number;
-}
-
 export interface PlayerView {
   name: string;
   online: boolean;
@@ -14,7 +9,6 @@ export interface PlayerView {
 
 export interface ActivityView {
   eventId: string;
-  roomId: string;
   roundId: string;
   roundNumber: number;
   triggeredBy: string;
@@ -24,9 +18,10 @@ export interface ActivityView {
 
 export interface RoomSnapshot {
   roomId: string;
-  roomName: string;
+  roomSlug: string;
+  roomTitle: string;
   hostPlayer: string;
-  choices: Choice[];
+  choices: string[];
   round: { id: string; number: number; status: RoundStatus; startedAt: string | null; endedAt: string | null };
   players: PlayerView[];
   tally: { choice: string; count: number }[];
@@ -36,5 +31,27 @@ export interface RoomSnapshot {
 export interface Session {
   token: string;
   player: string;
+  roomSlug: string;
   isHost: boolean;
+}
+
+export interface RoomPreviewPlayer {
+  name: string;
+  claimed: boolean;
+}
+
+export interface RoomPreview {
+  title: string;
+  choices: string[];
+  players: RoomPreviewPlayer[];
+}
+
+export interface PlayerInvite {
+  player: string;
+  inviteToken: string;
+}
+
+export interface CreateRoomResult {
+  slug: string;
+  invites: PlayerInvite[];
 }

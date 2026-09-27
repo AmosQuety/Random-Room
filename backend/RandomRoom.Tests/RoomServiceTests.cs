@@ -78,7 +78,7 @@ public class RoomServiceTests
         using var h = new RoomTestHarness(0, 1, 1, 1);
         await StartedRoom(h);
 
-        foreach (var player in RoomDefinition.Players) await h.Room.TriggerRandomAsync(player);
+        foreach (var player in RoomTestHarness.Players) await h.Room.TriggerRandomAsync(player);
         var snapshot = await h.Room.GetSnapshotAsync();
 
         Assert.Equal(RoundStatus.Completed, snapshot.Round.Status);
@@ -152,7 +152,7 @@ public class RoomServiceTests
     public async Task Snapshot_reflects_presence()
     {
         using var h = new RoomTestHarness();
-        h.Presence.Connected("conn-1", "Lydia");
+        h.Presence.Connected("conn-1", h.RoomId, "Lydia");
 
         var snapshot = await h.Room.GetSnapshotAsync();
 
@@ -164,8 +164,8 @@ public class RoomServiceTests
     public async Task Player_stays_online_until_their_last_connection_closes()
     {
         using var h = new RoomTestHarness();
-        h.Presence.Connected("phone", "Lydia");
-        h.Presence.Connected("laptop", "Lydia");
+        h.Presence.Connected("phone", h.RoomId, "Lydia");
+        h.Presence.Connected("laptop", h.RoomId, "Lydia");
 
         h.Presence.Disconnected("phone");
 

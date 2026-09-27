@@ -12,6 +12,8 @@ public sealed class SignalRRoomNotifier(IHubContext<RoomHub> hub) : IRoomNotifie
 {
     public const string SnapshotEvent = "roomChanged";
 
+    public static string GroupName(Guid roomId) => $"room:{roomId}";
+
     public Task PublishAsync(RoomSnapshot snapshot, CancellationToken ct = default) =>
-        hub.Clients.All.SendAsync(SnapshotEvent, snapshot, ct);
+        hub.Clients.Group(GroupName(snapshot.RoomId)).SendAsync(SnapshotEvent, snapshot, ct);
 }

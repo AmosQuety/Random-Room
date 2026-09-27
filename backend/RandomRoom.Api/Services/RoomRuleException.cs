@@ -4,6 +4,8 @@ public enum RuleViolation
 {
     Forbidden,
     Conflict,
+    InvalidInput,
+    NotFound,
 }
 
 /// <summary>A request that is well-formed but not allowed by the room rules.</summary>

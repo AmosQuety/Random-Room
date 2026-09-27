@@ -10,6 +10,7 @@ public enum RoundStatus
 public sealed class Round
 {
     public Guid Id { get; set; }
+    public Guid RoomId { get; set; }
     public int Number { get; set; }
     public RoundStatus Status { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

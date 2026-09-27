@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Npgsql;
 using RandomRoom.Api.Data;
 using RandomRoom.Api.Services;
@@ -46,22 +45,41 @@ public sealed class TestDatabase : IDisposable
     }
 }
 
+/// <summary>Binds RoomService calls to one fixed test room, so gameplay-rule tests don't repeat the room id.</summary>
+public sealed class RoomFacade(RoomService service, Guid roomId)
+{
+    public Task<RoomSnapshot> GetSnapshotAsync() => service.GetSnapshotAsync(roomId);
+    public Task<RoomSnapshot> TriggerRandomAsync(string player) => service.TriggerRandomAsync(roomId, player);
+    public Task<RoomSnapshot> StartRoundAsync(string actor) => service.StartRoundAsync(roomId, actor);
+    public Task<RoomSnapshot> EndRoundAsync(string actor) => service.EndRoundAsync(roomId, actor);
+    public Task<RoomSnapshot> StartNewRoundAsync(string actor) => service.StartNewRoundAsync(roomId, actor);
+}
+
 public sealed class RoomTestHarness : IDisposable
 {
+    public static readonly string[] Players = ["Amos", "Lydia", "James", "Jacob"];
+    public static readonly string[] Choices = ["Sarah", "Judith"];
+    public const string HostPlayer = "Amos";
+
     private readonly TestDatabase database = new();
 
     public RoomDbContext Db { get; }
     public PresenceTracker Presence { get; } = new();
-    public RoomService Room { get; }
+    public Guid RoomId { get; }
+    public RoomFacade Room { get; }
 
     public RoomTestHarness(params int[] randomIndexes)
     {
         Db = new RoomDbContext(new DbContextOptionsBuilder<RoomDbContext>().UseNpgsql(database.ConnectionString).Options);
         Db.Database.Migrate();
 
-        var options = Options.Create(new RoomOptions { HostPlayer = "Amos" });
-        Room = new RoomService(Db, new FakeRandomSource(randomIndexes), Presence, options, TimeProvider.System);
-        Room.EnsureFirstRoundAsync().GetAwaiter().GetResult();
+        var admin = new RoomAdminService(Db, TimeProvider.System);
+        var created = admin.CreateRoomAsync(new CreateRoomRequest("Test room", Choices, Players, HostPlayer))
+            .GetAwaiter().GetResult();
+        RoomId = Db.Rooms.Single(r => r.Slug == created.Slug).Id;
+
+        var service = new RoomService(Db, new FakeRandomSource(randomIndexes), Presence, TimeProvider.System);
+        Room = new RoomFacade(service, RoomId);
     }
 
     public void Dispose()

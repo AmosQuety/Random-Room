@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOptions<RoomOptions>()
     .BindConfiguration(RoomOptions.SectionName)
-    .Validate(RoomOptions.IsValid, "Room settings need a valid host, a PIN (4+ chars) for every player, and a 32+ char JwtSigningKey.")
+    .Validate(RoomOptions.IsValid, "Room settings need a 32+ char JwtSigningKey.")
     .ValidateOnStart();
 
 builder.Services.AddDbContext<RoomDbContext>(o =>
@@ -25,8 +25,9 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<PresenceTracker>();
 builder.Services.AddSingleton<IRandomChoiceSource, CryptoRandomChoiceSource>();
 builder.Services.AddSingleton<IRoomNotifier, SignalRRoomNotifier>();
-builder.Services.AddSingleton<PlayerTokenService>();
+builder.Services.AddScoped<PlayerTokenService>();
 builder.Services.AddScoped<RoomService>();
+builder.Services.AddScoped<RoomAdminService>();
 
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddSignalR().AddJsonProtocol(o => o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
@@ -41,7 +42,13 @@ builder.Services.AddRateLimiter(o =>
     o.AddPolicy(RoomEndpoints.JoinRateLimitPolicy, http =>
         RateLimitPartition.GetFixedWindowLimiter(
             http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1) }));
+    // Looser than join: creating rooms and claiming invites aren't credential-guessing targets,
+    // but several players behind one home/office IP can legitimately set up a room in quick succession.
+    o.AddPolicy(RoomEndpoints.RoomAdminRateLimitPolicy, http =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 40, Window = TimeSpan.FromMinutes(1) }));
 });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
@@ -74,7 +81,6 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     await scope.ServiceProvider.GetRequiredService<RoomDbContext>().Database.MigrateAsync();
-    await scope.ServiceProvider.GetRequiredService<RoomService>().EnsureFirstRoundAsync();
 }
 
 app.UseExceptionHandler();

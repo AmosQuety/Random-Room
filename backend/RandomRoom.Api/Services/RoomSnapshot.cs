@@ -4,10 +4,11 @@ namespace RandomRoom.Api.Services;
 
 /// <summary>Everything a client needs to render the room. The same view is sent to every participant.</summary>
 public sealed record RoomSnapshot(
-    string RoomId,
-    string RoomName,
+    Guid RoomId,
+    string RoomSlug,
+    string RoomTitle,
     string HostPlayer,
-    IReadOnlyList<Choice> Choices,
+    IReadOnlyList<string> Choices,
     RoundView Round,
     IReadOnlyList<PlayerView> Players,
     IReadOnlyList<TallyView> Tally,
@@ -21,7 +22,6 @@ public sealed record TallyView(string Choice, int Count);
 
 public sealed record ActivityView(
     Guid EventId,
-    string RoomId,
     Guid RoundId,
     int RoundNumber,
     string TriggeredBy,
