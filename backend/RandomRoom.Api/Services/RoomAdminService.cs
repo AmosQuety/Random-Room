@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using RandomRoom.Api.Auth;
 using RandomRoom.Api.Data;
 using RandomRoom.Api.Domain;
+using RandomRoom.Api.Games;
+using RandomRoom.Api.Games.RandomPicker;
 
 namespace RandomRoom.Api.Services;
 
@@ -20,7 +22,7 @@ public sealed record RoomPreview(string Title, IReadOnlyList<string> Choices, IR
 /// Room lifecycle outside of gameplay: creating a room and letting invited players claim their
 /// own slot. A player's PIN is set by that player alone during claim - the host never sees it.
 /// </summary>
-public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock)
+public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnumerable<IGameEngine> engines)
 {
     private const int MinChoices = 2;
     private const int MinPlayers = 2;
@@ -45,6 +47,7 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock)
             Id = Guid.NewGuid(),
             Slug = await GenerateUniqueSlugAsync(ct),
             Title = title,
+            GameType = RandomPickerEngine.Key, // only game type today; room creation will offer a choice once a second one exists
             HostPlayer = request.HostPlayer,
             CreatedAt = clock.GetUtcNow(),
         };
@@ -71,14 +74,19 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock)
         }).ToList();
         db.RoomPlayers.AddRange(invites.Select(i => i.Player));
 
-        db.Rounds.Add(new Round
+        var firstSession = new GameSession
         {
             Id = Guid.NewGuid(),
             RoomId = room.Id,
             Number = 1,
-            Status = RoundStatus.Waiting,
+            Status = SessionStatus.Waiting,
             CreatedAt = clock.GetUtcNow(),
-        });
+        };
+        db.GameSessions.Add(firstSession);
+
+        var engine = engines.FirstOrDefault(e => e.GameType == room.GameType)
+            ?? throw new InvalidOperationException($"No IGameEngine registered for game type '{room.GameType}'.");
+        await engine.OnSessionCreatedAsync(room.Id, firstSession.Id, ct);
 
         await db.SaveChangesAsync(ct);
 

@@ -18,12 +18,36 @@ namespace RandomRoom.Api.Data.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Slug = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
                     Title = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
+                    GameType = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     HostPlayer = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Rooms", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GameSessions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    RoomId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Number = table.Column<int>(type: "integer", nullable: false),
+                    Status = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    StartedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    EndedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GameSessions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GameSessions_Rooms_RoomId",
+                        column: x => x.RoomId,
+                        principalTable: "Rooms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -70,58 +94,41 @@ namespace RandomRoom.Api.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Rounds",
+                name: "RandomPickerEvents",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    RoomId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Number = table.Column<int>(type: "integer", nullable: false),
-                    Status = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    StartedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    EndedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Rounds", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Rounds_Rooms_RoomId",
-                        column: x => x.RoomId,
-                        principalTable: "Rooms",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "RandomEvents",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    RoundId = table.Column<Guid>(type: "uuid", nullable: false),
+                    SessionId = table.Column<Guid>(type: "uuid", nullable: false),
                     TriggeredBy = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     Result = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
                     Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RandomEvents", x => x.Id);
+                    table.PrimaryKey("PK_RandomPickerEvents", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_RandomEvents_Rounds_RoundId",
-                        column: x => x.RoundId,
-                        principalTable: "Rounds",
+                        name: "FK_RandomPickerEvents_GameSessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "GameSessions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_RandomEvents_RoundId_TriggeredBy",
-                table: "RandomEvents",
-                columns: new[] { "RoundId", "TriggeredBy" },
+                name: "IX_GameSessions_RoomId_Number",
+                table: "GameSessions",
+                columns: new[] { "RoomId", "Number" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_RandomEvents_Timestamp",
-                table: "RandomEvents",
+                name: "IX_RandomPickerEvents_SessionId_TriggeredBy",
+                table: "RandomPickerEvents",
+                columns: new[] { "SessionId", "TriggeredBy" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RandomPickerEvents_Timestamp",
+                table: "RandomPickerEvents",
                 column: "Timestamp");
 
             migrationBuilder.CreateIndex(
@@ -147,19 +154,13 @@ namespace RandomRoom.Api.Data.Migrations
                 table: "Rooms",
                 column: "Slug",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Rounds_RoomId_Number",
-                table: "Rounds",
-                columns: new[] { "RoomId", "Number" },
-                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "RandomEvents");
+                name: "RandomPickerEvents");
 
             migrationBuilder.DropTable(
                 name: "RoomChoices");
@@ -168,7 +169,7 @@ namespace RandomRoom.Api.Data.Migrations
                 name: "RoomPlayers");
 
             migrationBuilder.DropTable(
-                name: "Rounds");
+                name: "GameSessions");
 
             migrationBuilder.DropTable(
                 name: "Rooms");

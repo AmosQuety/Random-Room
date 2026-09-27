@@ -50,7 +50,7 @@ export function JoinScreen({ slug, onJoined }: Props) {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-8 px-4 py-10">
       <header>
-        <p className="font-mono text-xs uppercase tracking-widest text-muted">Choice Maker</p>
+        <p className="font-mono text-xs uppercase tracking-widest text-muted">The Playground</p>
         <h1 className="mt-2 font-display text-5xl font-black leading-none">{preview.title}</h1>
         <p className="mt-4 text-lg text-muted">Nobody votes here. The server rolls, everyone sees it.</p>
       </header>

@@ -1,7 +1,9 @@
-import type { RoomSnapshot } from "../lib/types";
+interface Props {
+  roundNumber: number;
+  tally: { choice: string; count: number }[];
+}
 
-export function FinalResult({ snapshot }: { snapshot: RoomSnapshot }) {
-  const { tally, round } = snapshot;
+export function FinalResult({ roundNumber, tally }: Props) {
   const total = tally.reduce((sum, t) => sum + t.count, 0);
   const top = Math.max(...tally.map((t) => t.count));
   const leaders = tally.filter((t) => t.count === top);
@@ -10,7 +12,7 @@ export function FinalResult({ snapshot }: { snapshot: RoomSnapshot }) {
   return (
     <section aria-labelledby="final-heading" className="animate-stamp rounded-xl border-4 border-ink bg-ink p-6 text-center text-paper shadow-ticket">
       <p id="final-heading" className="font-mono text-xs uppercase tracking-[0.3em] text-mustard">
-        Final result · round {round.number}
+        Final result · round {roundNumber}
       </p>
       <p className="mt-2 font-display text-4xl font-black sm:text-5xl">🎉 {headline} 🎉</p>
       <dl className="mt-6 flex justify-center gap-10">

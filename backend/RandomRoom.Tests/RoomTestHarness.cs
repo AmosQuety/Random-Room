@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using RandomRoom.Api.Data;
+using RandomRoom.Api.Games;
+using RandomRoom.Api.Games.RandomPicker;
 using RandomRoom.Api.Services;
 
 namespace RandomRoom.Tests;
@@ -45,14 +47,14 @@ public sealed class TestDatabase : IDisposable
     }
 }
 
-/// <summary>Binds RoomService calls to one fixed test room, so gameplay-rule tests don't repeat the room id.</summary>
-public sealed class RoomFacade(RoomService service, Guid roomId)
+/// <summary>Binds GameSessionService calls to one fixed test room, so gameplay-rule tests don't repeat the room id.</summary>
+public sealed class RoomFacade(GameSessionService service, Guid roomId)
 {
     public Task<RoomSnapshot> GetSnapshotAsync() => service.GetSnapshotAsync(roomId);
-    public Task<RoomSnapshot> TriggerRandomAsync(string player) => service.TriggerRandomAsync(roomId, player);
-    public Task<RoomSnapshot> StartRoundAsync(string actor) => service.StartRoundAsync(roomId, actor);
-    public Task<RoomSnapshot> EndRoundAsync(string actor) => service.EndRoundAsync(roomId, actor);
-    public Task<RoomSnapshot> StartNewRoundAsync(string actor) => service.StartNewRoundAsync(roomId, actor);
+    public Task<RoomSnapshot> TriggerRandomAsync(string player) => service.PerformActionAsync(roomId, player, "trigger", null);
+    public Task<RoomSnapshot> StartRoundAsync(string actor) => service.StartSessionAsync(roomId, actor);
+    public Task<RoomSnapshot> EndRoundAsync(string actor) => service.EndSessionAsync(roomId, actor);
+    public Task<RoomSnapshot> StartNewRoundAsync(string actor) => service.StartNewSessionAsync(roomId, actor);
 }
 
 public sealed class RoomTestHarness : IDisposable
@@ -73,12 +75,14 @@ public sealed class RoomTestHarness : IDisposable
         Db = new RoomDbContext(new DbContextOptionsBuilder<RoomDbContext>().UseNpgsql(database.ConnectionString).Options);
         Db.Database.Migrate();
 
-        var admin = new RoomAdminService(Db, TimeProvider.System);
+        IGameEngine[] engines = [new RandomPickerEngine(Db, new FakeRandomSource(randomIndexes), TimeProvider.System)];
+
+        var admin = new RoomAdminService(Db, TimeProvider.System, engines);
         var created = admin.CreateRoomAsync(new CreateRoomRequest("Test room", Choices, Players, HostPlayer))
             .GetAwaiter().GetResult();
         RoomId = Db.Rooms.Single(r => r.Slug == created.Slug).Id;
 
-        var service = new RoomService(Db, new FakeRandomSource(randomIndexes), Presence, TimeProvider.System);
+        var service = new GameSessionService(Db, Presence, TimeProvider.System, engines);
         Room = new RoomFacade(service, RoomId);
     }
 

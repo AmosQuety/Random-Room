@@ -37,23 +37,27 @@ export function RoomScreen({ session, onLeave }: Props) {
 
   if (!snapshot) return <p className="p-6 font-mono text-muted">Loading the room...</p>;
 
-  const { round, players } = snapshot;
+  const { session: gameSession, gamePayload } = snapshot;
+  const players = snapshot.players.map((p) => ({
+    ...p,
+    ...(gamePayload.players[p.name] ?? { hasTriggered: false, result: null }),
+  }));
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
       <header className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-xs uppercase tracking-widest text-muted">
           <span>
-            Round {round.number} · {STATUS_COPY[round.status]}
+            Round {gameSession.number} · {STATUS_COPY[gameSession.status]}
           </span>
           <span role="status">{connection === "live" ? "🟢 Live" : "🟠 Reconnecting..."}</span>
         </div>
         <h1 className="font-display text-4xl font-black leading-none sm:text-6xl">{snapshot.roomTitle}</h1>
         <p className="text-lg text-muted">
           The system picks between{" "}
-          {snapshot.choices.map((choice, i) => (
+          {gamePayload.choices.map((choice, i) => (
             <span key={choice}>
-              {i > 0 && (i === snapshot.choices.length - 1 ? " and " : ", ")}
+              {i > 0 && (i === gamePayload.choices.length - 1 ? " and " : ", ")}
               <strong className="text-ink">{choice}</strong>
             </span>
           ))}
@@ -74,7 +78,7 @@ export function RoomScreen({ session, onLeave }: Props) {
         </p>
       )}
 
-      {round.status === "Completed" && <FinalResult snapshot={snapshot} />}
+      {gameSession.status === "Completed" && <FinalResult roundNumber={gameSession.number} tally={gamePayload.tally} />}
 
       <section aria-labelledby="participants-heading">
         <h2 id="participants-heading" className="mb-3 font-mono text-sm uppercase tracking-widest">
@@ -86,7 +90,7 @@ export function RoomScreen({ session, onLeave }: Props) {
               key={p.name}
               player={p}
               isMe={p.name === session.player}
-              canTrigger={round.status === "Active" && !p.hasTriggered}
+              canTrigger={gameSession.status === "Active" && !p.hasTriggered}
               rolling={busy}
               onTrigger={() => run(triggerRandom)}
             />
@@ -96,7 +100,7 @@ export function RoomScreen({ session, onLeave }: Props) {
 
       {session.isHost && (
         <HostControls
-          status={round.status}
+          status={gameSession.status}
           busy={busy}
           onStart={() => run(startRound)}
           onEnd={() => run(endRound)}
@@ -104,7 +108,7 @@ export function RoomScreen({ session, onLeave }: Props) {
         />
       )}
 
-      <ActivityTimeline activity={snapshot.activity} />
+      <ActivityTimeline activity={gamePayload.activity} />
     </main>
   );
 }

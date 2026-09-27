@@ -1,19 +1,40 @@
-export type RoundStatus = "Waiting" | "Active" | "Completed";
+export type SessionStatus = "Waiting" | "Active" | "Completed";
 
+/** Room-level presence only; what a player has done *in* the game lives in the game's own payload. */
 export interface PlayerView {
   name: string;
   online: boolean;
+}
+
+export interface SessionView {
+  id: string;
+  number: number;
+  status: SessionStatus;
+  startedAt: string | null;
+  endedAt: string | null;
+}
+
+// --- Random Picker game payload (Room.gameType === "random-picker") ---
+
+export interface RandomPickerPlayerState {
   hasTriggered: boolean;
   result: string | null;
 }
 
 export interface ActivityView {
   eventId: string;
-  roundId: string;
-  roundNumber: number;
+  sessionId: string;
+  sessionNumber: number;
   triggeredBy: string;
   result: string;
   timestamp: string;
+}
+
+export interface RandomPickerPayload {
+  choices: string[];
+  players: Record<string, RandomPickerPlayerState>;
+  tally: { choice: string; count: number }[];
+  activity: ActivityView[];
 }
 
 export interface RoomSnapshot {
@@ -21,11 +42,11 @@ export interface RoomSnapshot {
   roomSlug: string;
   roomTitle: string;
   hostPlayer: string;
-  choices: string[];
-  round: { id: string; number: number; status: RoundStatus; startedAt: string | null; endedAt: string | null };
+  gameType: string;
+  session: SessionView;
   players: PlayerView[];
-  tally: { choice: string; count: number }[];
-  activity: ActivityView[];
+  // Only game type today is random-picker; once a second one exists this becomes a union keyed on gameType.
+  gamePayload: RandomPickerPayload;
 }
 
 export interface Session {

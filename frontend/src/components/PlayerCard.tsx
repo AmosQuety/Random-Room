@@ -1,8 +1,15 @@
-import type { PlayerView } from "../lib/types";
 import { Avatar } from "./Avatar";
 
+/** A room player merged with their Random Picker state for this session. */
+export interface RandomPickerPlayer {
+  name: string;
+  online: boolean;
+  hasTriggered: boolean;
+  result: string | null;
+}
+
 interface Props {
-  player: PlayerView;
+  player: RandomPickerPlayer;
   isMe: boolean;
   canTrigger: boolean;
   rolling: boolean;
@@ -30,7 +37,7 @@ export function PlayerCard({ player, isMe, canTrigger, rolling, onTrigger }: Pro
   );
 }
 
-function CardBody({ player, canTrigger, rolling, isMe, onTrigger }: Omit<Props, "player"> & { player: PlayerView }) {
+function CardBody({ player, canTrigger, rolling, isMe, onTrigger }: Props) {
   if (player.result) {
     return (
       <div key={player.result} className="animate-stamp rounded-lg border-2 border-ink bg-paper px-3 py-4 text-center">

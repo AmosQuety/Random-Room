@@ -1,7 +1,7 @@
-import type { RoundStatus } from "../lib/types";
+import type { SessionStatus } from "../lib/types";
 
 interface Props {
-  status: RoundStatus;
+  status: SessionStatus;
   busy: boolean;
   onStart: () => void;
   onEnd: () => void;

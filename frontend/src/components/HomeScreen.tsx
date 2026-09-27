@@ -37,9 +37,9 @@ export function HomeScreen() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-2xl flex-col justify-center gap-8 px-4 py-10">
       <header>
-        <p className="font-mono text-xs uppercase tracking-widest text-muted">Choice Maker</p>
-        <h1 className="mt-2 font-display text-5xl font-black leading-none">Let the system decide</h1>
-        <p className="mt-4 text-lg text-muted">Nobody votes. Set up who's choosing between what, and the server rolls.</p>
+        <p className="font-mono text-xs uppercase tracking-widest text-muted">The Playground</p>
+        <h1 className="mt-2 font-display text-5xl font-black leading-none">Games for your group</h1>
+        <p className="mt-4 text-lg text-muted">Icebreakers and game nights, run fair and server-side. Set up a room and share the code.</p>
       </header>
 
       <CreateRoomScreen />

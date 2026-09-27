@@ -7,7 +7,7 @@ namespace RandomRoom.Api.Hubs;
 
 /// <summary>Server-to-client push only, scoped per room. Clients perform actions through the REST endpoints.</summary>
 [Authorize]
-public sealed class RoomHub(PresenceTracker presence, RoomService room, IRoomNotifier notifier) : Hub
+public sealed class RoomHub(PresenceTracker presence, GameSessionService room, IRoomNotifier notifier) : Hub
 {
     public override async Task OnConnectedAsync()
     {

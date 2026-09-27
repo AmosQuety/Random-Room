@@ -1,9 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { PlayerView } from "../lib/types";
-import { PlayerCard } from "./PlayerCard";
+import { PlayerCard, type RandomPickerPlayer } from "./PlayerCard";
 
-const waiting: PlayerView = { name: "Amos", online: true, hasTriggered: false, result: null };
+const waiting: RandomPickerPlayer = { name: "Amos", online: true, hasTriggered: false, result: null };
 
 function renderCard(overrides: Partial<Parameters<typeof PlayerCard>[0]> = {}) {
   const onTrigger = vi.fn();

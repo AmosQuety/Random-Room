@@ -45,7 +45,10 @@ export const getRoom = (token: string) => request<RoomSnapshot>("/api/room", { m
 
 const post = (path: string, token: string) => request<RoomSnapshot>(path, { method: "POST" }, token);
 
-export const triggerRandom = (token: string) => post("/api/room/trigger", token);
-export const startRound = (token: string) => post("/api/room/round/start", token);
-export const endRound = (token: string) => post("/api/room/round/end", token);
-export const startNewRound = (token: string) => post("/api/room/round/new", token);
+const performAction = (action: string, token: string) =>
+  request<RoomSnapshot>("/api/room/action", { method: "POST", body: JSON.stringify({ action }) }, token);
+
+export const triggerRandom = (token: string) => performAction("trigger", token);
+export const startRound = (token: string) => post("/api/room/session/start", token);
+export const endRound = (token: string) => post("/api/room/session/end", token);
+export const startNewRound = (token: string) => post("/api/room/session/new", token);

@@ -14,7 +14,7 @@ export function ActivityTimeline({ activity }: { activity: ActivityView[] }) {
           {activity.map((a) => (
             <li key={a.eventId} className="rounded-lg border-2 border-ink bg-card px-3 py-2">
               <p className="font-mono text-xs text-muted">
-                {formatTime(a.timestamp)} · round {a.roundNumber}
+                {formatTime(a.timestamp)} · round {a.sessionNumber}
               </p>
               <p>
                 🎲 <strong>{a.triggeredBy}</strong> triggered random selection

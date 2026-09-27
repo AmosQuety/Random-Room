@@ -145,7 +145,7 @@ public sealed class ApiTests : IClassFixture<ApiTests.Factory>
     {
         var (_, _, lydia) = await CreateClaimAndJoinAsync();
 
-        var response = await lydia.PostAsync("/api/room/round/start", null);
+        var response = await lydia.PostAsync("/api/room/session/start", null);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -156,9 +156,9 @@ public sealed class ApiTests : IClassFixture<ApiTests.Factory>
         var (_, amosA, _) = await CreateClaimAndJoinAsync();
         var (_, amosB, _) = await CreateClaimAndJoinAsync();
 
-        await amosA.PostAsync("/api/room/round/start", null);
+        await amosA.PostAsync("/api/room/session/start", null);
 
         var snapshotB = await amosB.GetFromJsonAsync<RoomSnapshot>("/api/room", JsonOptions);
-        Assert.Equal("Waiting", snapshotB!.Round.Status.ToString());
+        Assert.Equal("Waiting", snapshotB!.Session.Status.ToString());
     }
 }

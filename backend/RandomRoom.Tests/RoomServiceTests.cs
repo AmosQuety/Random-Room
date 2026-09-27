@@ -1,4 +1,5 @@
 using RandomRoom.Api.Domain;
+using RandomRoom.Api.Games.RandomPicker;
 using RandomRoom.Api.Services;
 
 namespace RandomRoom.Tests;
@@ -10,6 +11,8 @@ public class RoomServiceTests
         return await h.Room.StartRoundAsync("Amos");
     }
 
+    private static RandomPickerPayload Payload(RoomSnapshot snapshot) => (RandomPickerPayload)snapshot.GamePayload;
+
     [Fact]
     public async Task New_room_is_waiting_and_nobody_has_triggered()
     {
@@ -17,9 +20,9 @@ public class RoomServiceTests
 
         var snapshot = await h.Room.GetSnapshotAsync();
 
-        Assert.Equal(RoundStatus.Waiting, snapshot.Round.Status);
-        Assert.All(snapshot.Players, p => Assert.False(p.HasTriggered));
-        Assert.Empty(snapshot.Activity);
+        Assert.Equal(SessionStatus.Waiting, snapshot.Session.Status);
+        Assert.Empty(Payload(snapshot).Players);
+        Assert.Empty(Payload(snapshot).Activity);
     }
 
     [Fact]
@@ -30,8 +33,8 @@ public class RoomServiceTests
 
         var snapshot = await h.Room.TriggerRandomAsync("Lydia");
 
-        Assert.Equal("Judith", snapshot.Players.Single(p => p.Name == "Lydia").Result);
-        var entry = Assert.Single(snapshot.Activity);
+        Assert.Equal("Judith", Payload(snapshot).Players["Lydia"].Result);
+        var entry = Assert.Single(Payload(snapshot).Activity);
         Assert.Equal(("Lydia", "Judith"), (entry.TriggeredBy, entry.Result));
     }
 
@@ -55,7 +58,7 @@ public class RoomServiceTests
         var ex = await Assert.ThrowsAsync<RoomRuleException>(() => h.Room.TriggerRandomAsync("James"));
 
         Assert.Equal(RuleViolation.Conflict, ex.Violation);
-        Assert.Single((await h.Room.GetSnapshotAsync()).Activity);
+        Assert.Single(Payload(await h.Room.GetSnapshotAsync()).Activity);
     }
 
     [Theory]
@@ -81,9 +84,9 @@ public class RoomServiceTests
         foreach (var player in RoomTestHarness.Players) await h.Room.TriggerRandomAsync(player);
         var snapshot = await h.Room.GetSnapshotAsync();
 
-        Assert.Equal(RoundStatus.Completed, snapshot.Round.Status);
-        Assert.Equal(1, snapshot.Tally.Single(t => t.Choice == "Sarah").Count);
-        Assert.Equal(3, snapshot.Tally.Single(t => t.Choice == "Judith").Count);
+        Assert.Equal(SessionStatus.Completed, snapshot.Session.Status);
+        Assert.Equal(1, Payload(snapshot).Tally.Single(t => t.Choice == "Sarah").Count);
+        Assert.Equal(3, Payload(snapshot).Tally.Single(t => t.Choice == "Judith").Count);
     }
 
     [Theory]
@@ -112,9 +115,9 @@ public class RoomServiceTests
         await Assert.ThrowsAsync<RoomRuleException>(() => h.Room.TriggerRandomAsync("Lydia"));
         var snapshot = await h.Room.GetSnapshotAsync();
 
-        Assert.Equal(RoundStatus.Completed, snapshot.Round.Status);
-        Assert.Equal("Judith", snapshot.Players.Single(p => p.Name == "Jacob").Result);
-        Assert.Null(snapshot.Players.Single(p => p.Name == "Lydia").Result);
+        Assert.Equal(SessionStatus.Completed, snapshot.Session.Status);
+        Assert.Equal("Judith", Payload(snapshot).Players["Jacob"].Result);
+        Assert.False(Payload(snapshot).Players.ContainsKey("Lydia"));
     }
 
     [Fact]
@@ -129,10 +132,10 @@ public class RoomServiceTests
         var snapshot = await h.Room.StartNewRoundAsync("Amos");
         snapshot = await h.Room.TriggerRandomAsync("Amos");
 
-        Assert.Equal(2, snapshot.Round.Number);
-        Assert.Equal(RoundStatus.Active, snapshot.Round.Status);
-        Assert.Equal(2, snapshot.Activity.Count);
-        Assert.Equal(new[] { 2, 1 }, snapshot.Activity.Select(a => a.RoundNumber));
+        Assert.Equal(2, snapshot.Session.Number);
+        Assert.Equal(SessionStatus.Active, snapshot.Session.Status);
+        Assert.Equal(2, Payload(snapshot).Activity.Count);
+        Assert.Equal(new[] { 2, 1 }, Payload(snapshot).Activity.Select(a => a.SessionNumber));
     }
 
     [Fact]
@@ -142,7 +145,7 @@ public class RoomServiceTests
         await StartedRoom(h);
         await h.Room.TriggerRandomAsync("Amos");
 
-        var recorded = h.Db.RandomEvents.Single();
+        var recorded = h.Db.RandomPickerEvents.Single();
         recorded.Result = "Judith";
 
         Assert.Throws<InvalidOperationException>(() => h.Db.SaveChanges());

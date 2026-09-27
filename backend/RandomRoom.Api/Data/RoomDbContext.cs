@@ -8,8 +8,8 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
     public DbSet<Room> Rooms => Set<Room>();
     public DbSet<RoomChoice> RoomChoices => Set<RoomChoice>();
     public DbSet<RoomPlayer> RoomPlayers => Set<RoomPlayer>();
-    public DbSet<Round> Rounds => Set<Round>();
-    public DbSet<RandomEvent> RandomEvents => Set<RandomEvent>();
+    public DbSet<GameSession> GameSessions => Set<GameSession>();
+    public DbSet<RandomPickerEvent> RandomPickerEvents => Set<RandomPickerEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -18,6 +18,7 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
             room.HasIndex(r => r.Slug).IsUnique();
             room.Property(r => r.Slug).HasMaxLength(16);
             room.Property(r => r.Title).HasMaxLength(80);
+            room.Property(r => r.GameType).HasMaxLength(32);
             room.Property(r => r.HostPlayer).HasMaxLength(32);
         });
 
@@ -38,43 +39,43 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
             player.HasOne(p => p.Room).WithMany().HasForeignKey(p => p.RoomId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Round>(round =>
+        modelBuilder.Entity<GameSession>(session =>
         {
-            round.HasIndex(r => new { r.RoomId, r.Number }).IsUnique();
-            round.Property(r => r.Status).HasConversion<string>().HasMaxLength(16);
-            round.HasOne<Room>().WithMany().HasForeignKey(r => r.RoomId).OnDelete(DeleteBehavior.Cascade);
+            session.HasIndex(s => new { s.RoomId, s.Number }).IsUnique();
+            session.Property(s => s.Status).HasConversion<string>().HasMaxLength(16);
+            session.HasOne<Room>().WithMany().HasForeignKey(s => s.RoomId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<RandomEvent>(evt =>
+        modelBuilder.Entity<RandomPickerEvent>(evt =>
         {
-            // Database-level guarantee of one trigger per player per round, even under races.
-            evt.HasIndex(e => new { e.RoundId, e.TriggeredBy }).IsUnique();
+            // Database-level guarantee of one trigger per player per session, even under races.
+            evt.HasIndex(e => new { e.SessionId, e.TriggeredBy }).IsUnique();
             evt.HasIndex(e => e.Timestamp);
             evt.Property(e => e.TriggeredBy).HasMaxLength(32);
             evt.Property(e => e.Result).HasMaxLength(80);
-            evt.HasOne(e => e.Round).WithMany().HasForeignKey(e => e.RoundId).OnDelete(DeleteBehavior.Restrict);
+            evt.HasOne(e => e.Session).WithMany().HasForeignKey(e => e.SessionId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
-        RejectRandomEventMutations();
+        RejectRandomPickerEventMutations();
         return base.SaveChanges(acceptAllChangesOnSuccess);
     }
 
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
-        RejectRandomEventMutations();
+        RejectRandomPickerEventMutations();
         return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
     }
 
-    private void RejectRandomEventMutations()
+    private void RejectRandomPickerEventMutations()
     {
-        var mutated = ChangeTracker.Entries<RandomEvent>()
+        var mutated = ChangeTracker.Entries<RandomPickerEvent>()
             .Any(e => e.State is EntityState.Modified or EntityState.Deleted);
         if (mutated)
         {
-            throw new InvalidOperationException("Random events are immutable once recorded.");
+            throw new InvalidOperationException("Random picker events are immutable once recorded.");
         }
     }
 }
