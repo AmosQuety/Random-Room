@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { ApiError, endRound, startNewRound, startRound, triggerRandom } from "../lib/api";
+import { GAMES } from "../games/registry";
+import { ApiError, endSession, performAction, startNewSession, startSession } from "../lib/api";
 import type { RoomSnapshot, Session } from "../lib/types";
 import { useRoom } from "../lib/useRoom";
-import { ActivityTimeline } from "./ActivityTimeline";
-import { FinalResult } from "./FinalResult";
 import { HostControls } from "./HostControls";
-import { PlayerCard } from "./PlayerCard";
 
 const STATUS_COPY = {
   Waiting: "Waiting for the host to start",
@@ -37,32 +35,21 @@ export function RoomScreen({ session, onLeave }: Props) {
 
   if (!snapshot) return <p className="p-6 font-mono text-muted">Loading the room...</p>;
 
-  const { session: gameSession, gamePayload } = snapshot;
-  const players = snapshot.players.map((p) => ({
-    ...p,
-    ...(gamePayload.players[p.name] ?? { hasTriggered: false, result: null }),
-  }));
+  const game = GAMES[snapshot.gameType];
+  if (!game) return <p className="p-6 font-mono text-tomato">Unknown game type "{snapshot.gameType}".</p>;
+
+  const { GameScreen } = game;
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
       <header className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-xs uppercase tracking-widest text-muted">
           <span>
-            Round {gameSession.number} · {STATUS_COPY[gameSession.status]}
+            Round {snapshot.session.number} · {STATUS_COPY[snapshot.session.status]}
           </span>
           <span role="status">{connection === "live" ? "🟢 Live" : "🟠 Reconnecting..."}</span>
         </div>
         <h1 className="font-display text-4xl font-black leading-none sm:text-6xl">{snapshot.roomTitle}</h1>
-        <p className="text-lg text-muted">
-          The system picks between{" "}
-          {gamePayload.choices.map((choice, i) => (
-            <span key={choice}>
-              {i > 0 && (i === gamePayload.choices.length - 1 ? " and " : ", ")}
-              <strong className="text-ink">{choice}</strong>
-            </span>
-          ))}
-          . Nobody chooses for themselves.
-        </p>
         <p className="text-sm text-muted">
           You are <strong className="text-ink">{session.player}</strong>
           {session.isHost && " (host)"} ·{" "}
@@ -78,37 +65,25 @@ export function RoomScreen({ session, onLeave }: Props) {
         </p>
       )}
 
-      {gameSession.status === "Completed" && <FinalResult roundNumber={gameSession.number} tally={gamePayload.tally} />}
-
-      <section aria-labelledby="participants-heading">
-        <h2 id="participants-heading" className="mb-3 font-mono text-sm uppercase tracking-widest">
-          Participants
-        </h2>
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {players.map((p) => (
-            <PlayerCard
-              key={p.name}
-              player={p}
-              isMe={p.name === session.player}
-              canTrigger={gameSession.status === "Active" && !p.hasTriggered}
-              rolling={busy}
-              onTrigger={() => run(triggerRandom)}
-            />
-          ))}
-        </ul>
-      </section>
+      <GameScreen
+        me={session.player}
+        isHost={session.isHost}
+        players={snapshot.players}
+        session={snapshot.session}
+        payload={snapshot.gamePayload}
+        busy={busy}
+        onAction={(action, payload) => run((token) => performAction(token, action, payload))}
+      />
 
       {session.isHost && (
         <HostControls
-          status={gameSession.status}
+          status={snapshot.session.status}
           busy={busy}
-          onStart={() => run(startRound)}
-          onEnd={() => run(endRound)}
-          onNewRound={() => run(startNewRound)}
+          onStart={() => run(startSession)}
+          onEnd={() => run(endSession)}
+          onNewRound={() => run(startNewSession)}
         />
       )}
-
-      <ActivityTimeline activity={gamePayload.activity} />
     </main>
   );
 }

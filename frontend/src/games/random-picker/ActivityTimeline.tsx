@@ -1,5 +1,5 @@
-import type { ActivityView } from "../lib/types";
-import { formatTime } from "../lib/format";
+import { formatTime } from "../../lib/format";
+import type { ActivityView } from "./types";
 
 export function ActivityTimeline({ activity }: { activity: ActivityView[] }) {
   return (

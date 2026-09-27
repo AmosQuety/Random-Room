@@ -1,56 +1,9 @@
 import { useState, type FormEvent } from "react";
+import { GAME_LIST, GAMES } from "../games/registry";
 import { ApiError, createRoom } from "../lib/api";
 import { navigate } from "../lib/router";
 import type { CreateRoomResult } from "../lib/types";
-
-const inputClass = "min-h-12 w-full rounded-lg border-2 border-ink bg-card px-3 text-lg";
-const removeButtonClass = "grid size-10 shrink-0 place-items-center rounded-lg border-2 border-ink font-black text-muted";
-const addButtonClass =
-  "min-h-12 rounded-lg border-2 border-dashed border-ink px-4 font-mono text-sm uppercase tracking-widest text-muted transition hover:bg-card";
-
-function ListEditor({
-  legend,
-  hint,
-  items,
-  onChange,
-  placeholder,
-}: {
-  legend: string;
-  hint: string;
-  items: string[];
-  onChange: (items: string[]) => void;
-  placeholder: (index: number) => string;
-}) {
-  return (
-    <fieldset className="flex flex-col gap-3">
-      <legend className="font-mono text-sm uppercase tracking-widest">{legend}</legend>
-      <p className="-mt-1 text-sm text-muted">{hint}</p>
-      {items.map((value, i) => (
-        <div key={i} className="flex gap-2">
-          <input
-            value={value}
-            placeholder={placeholder(i)}
-            onChange={(e) => onChange(items.map((v, j) => (j === i ? e.target.value : v)))}
-            className={inputClass}
-          />
-          {items.length > 2 && (
-            <button
-              type="button"
-              aria-label={`Remove ${legend.toLowerCase()} ${i + 1}`}
-              onClick={() => onChange(items.filter((_, j) => j !== i))}
-              className={removeButtonClass}
-            >
-              ×
-            </button>
-          )}
-        </div>
-      ))}
-      <button type="button" onClick={() => onChange([...items, ""])} className={addButtonClass}>
-        + Add another
-      </button>
-    </fieldset>
-  );
-}
+import { fieldInputClass, ListEditor } from "./ListEditor";
 
 function RoomCreatedCard({ result }: { result: CreateRoomResult }) {
   const [copied, setCopied] = useState<string | null>(null);
@@ -106,27 +59,57 @@ function RoomCreatedCard({ result }: { result: CreateRoomResult }) {
   );
 }
 
+function GamePicker({ gameKey, onChange }: { gameKey: string; onChange: (key: string) => void }) {
+  return (
+    <fieldset>
+      <legend className="mb-3 font-mono text-sm uppercase tracking-widest">What are you playing?</legend>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {GAME_LIST.map((game) => (
+          <button
+            key={game.key}
+            type="button"
+            aria-pressed={gameKey === game.key}
+            onClick={() => onChange(game.key)}
+            className={`flex flex-col gap-1 rounded-lg border-2 border-ink px-4 py-3 text-left shadow-ticket-sm transition active:translate-x-0.5 active:translate-y-0.5 active:shadow-none ${gameKey === game.key ? "bg-ink text-paper" : "bg-card"}`}
+          >
+            <span className="font-display text-lg font-bold">{game.name}</span>
+            <span className={`text-sm ${gameKey === game.key ? "text-paper/80" : "text-muted"}`}>{game.description}</span>
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 export function CreateRoomScreen() {
   const [title, setTitle] = useState("");
-  const [choices, setChoices] = useState(["", ""]);
+  const [gameKey, setGameKey] = useState(GAME_LIST[0].key);
+  // Registry-driven setup state is necessarily loosely typed here; each module's own toApiSetup/isSetupValid recovers the real type.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [setup, setSetup] = useState<any>(GAME_LIST[0].defaultSetup);
   const [players, setPlayers] = useState(["", ""]);
   const [host, setHost] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<CreateRoomResult | null>(null);
 
+  const game = GAMES[gameKey];
   const cleanPlayers = players.map((p) => p.trim()).filter(Boolean);
+
+  function selectGame(key: string) {
+    setGameKey(key);
+    setSetup(GAMES[key].defaultSetup);
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    const cleanChoices = choices.map((c) => c.trim()).filter(Boolean);
     const hostPlayer = host || cleanPlayers[0];
-    if (cleanChoices.length < 2 || cleanPlayers.length < 2 || !hostPlayer) return;
+    if (!game.isSetupValid(setup) || cleanPlayers.length < 2 || !hostPlayer) return;
 
     setPending(true);
     setError(null);
     try {
-      setResult(await createRoom(title.trim(), cleanChoices, cleanPlayers, hostPlayer));
+      setResult(await createRoom(title.trim(), game.key, game.toApiSetup(setup), cleanPlayers, hostPlayer));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not reach the server. Check your connection and try again.");
     } finally {
@@ -147,17 +130,13 @@ export function CreateRoomScreen() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Which game tonight?"
-          className={inputClass}
+          className={fieldInputClass}
         />
       </div>
 
-      <ListEditor
-        legend="Choices"
-        hint="What the system will pick between."
-        items={choices}
-        onChange={setChoices}
-        placeholder={(i) => `Choice ${i + 1}`}
-      />
+      <GamePicker gameKey={gameKey} onChange={selectGame} />
+
+      <game.SetupForm value={setup} onChange={setSetup} />
 
       <ListEditor
         legend="Players"
@@ -172,7 +151,7 @@ export function CreateRoomScreen() {
           Who's hosting?
         </label>
         <p className="-mt-1 mb-2 text-sm text-muted">The host starts and ends rounds. Defaults to the first player.</p>
-        <select id="host" value={host} onChange={(e) => setHost(e.target.value)} className={inputClass}>
+        <select id="host" value={host} onChange={(e) => setHost(e.target.value)} className={fieldInputClass}>
           <option value="">{cleanPlayers[0] || "First player"}</option>
           {cleanPlayers.map((p) => (
             <option key={p} value={p}>

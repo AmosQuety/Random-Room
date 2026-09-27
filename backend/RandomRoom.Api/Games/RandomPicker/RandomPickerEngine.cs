@@ -17,6 +17,29 @@ public sealed class RandomPickerEngine(RoomDbContext db, IRandomChoiceSource ran
 
     public string GameType => Key;
 
+    public async Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
+    {
+        if (!setup.TryGetProperty("choices", out var choicesElement) || choicesElement.ValueKind != JsonValueKind.Array)
+            throw new RoomRuleException(RuleViolation.InvalidInput, "Random Picker needs a 'choices' list.");
+
+        var choices = choicesElement.EnumerateArray()
+            .Select(e => e.GetString()?.Trim() ?? "")
+            .Where(c => c.Length > 0)
+            .Distinct()
+            .ToList();
+        if (choices.Count < 2)
+            throw new RoomRuleException(RuleViolation.InvalidInput, "Random Picker needs at least 2 choices.");
+
+        db.RoomChoices.AddRange(choices.Select((label, i) => new RoomChoice
+        {
+            Id = Guid.NewGuid(),
+            RoomId = roomId,
+            Label = label,
+            Position = i,
+        }));
+        await Task.CompletedTask;
+    }
+
     // Nothing to set up per session: choices are room-level and already exist by the time a session starts.
     public Task OnSessionCreatedAsync(Guid roomId, Guid sessionId, CancellationToken ct) => Task.CompletedTask;
 
@@ -76,5 +99,12 @@ public sealed class RandomPickerEngine(RoomDbContext db, IRandomChoiceSource ran
             .ToListAsync(ct);
 
         return new RandomPickerPayload(choices, players, tally, activity);
+    }
+
+    public async Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct)
+    {
+        var choices = await db.RoomChoices.AsNoTracking()
+            .Where(c => c.RoomId == roomId).OrderBy(c => c.Position).Select(c => c.Label).ToListAsync(ct);
+        return new RandomPickerPreview(choices);
     }
 }

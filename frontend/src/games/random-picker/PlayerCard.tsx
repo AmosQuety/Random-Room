@@ -1,4 +1,4 @@
-import { Avatar } from "./Avatar";
+import { Avatar } from "../../components/Avatar";
 
 /** A room player merged with their Random Picker state for this session. */
 export interface RandomPickerPlayer {

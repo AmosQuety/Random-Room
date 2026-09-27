@@ -14,29 +14,6 @@ export interface SessionView {
   endedAt: string | null;
 }
 
-// --- Random Picker game payload (Room.gameType === "random-picker") ---
-
-export interface RandomPickerPlayerState {
-  hasTriggered: boolean;
-  result: string | null;
-}
-
-export interface ActivityView {
-  eventId: string;
-  sessionId: string;
-  sessionNumber: number;
-  triggeredBy: string;
-  result: string;
-  timestamp: string;
-}
-
-export interface RandomPickerPayload {
-  choices: string[];
-  players: Record<string, RandomPickerPlayerState>;
-  tally: { choice: string; count: number }[];
-  activity: ActivityView[];
-}
-
 export interface RoomSnapshot {
   roomId: string;
   roomSlug: string;
@@ -45,8 +22,8 @@ export interface RoomSnapshot {
   gameType: string;
   session: SessionView;
   players: PlayerView[];
-  // Only game type today is random-picker; once a second one exists this becomes a union keyed on gameType.
-  gamePayload: RandomPickerPayload;
+  // Opaque here on purpose - each game module (see src/games) knows its own payload shape.
+  gamePayload: unknown;
 }
 
 export interface Session {
@@ -63,7 +40,8 @@ export interface RoomPreviewPlayer {
 
 export interface RoomPreview {
   title: string;
-  choices: string[];
+  gameType: string;
+  gamePreview: unknown;
   players: RoomPreviewPlayer[];
 }
 

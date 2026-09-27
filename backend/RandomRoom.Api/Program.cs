@@ -8,6 +8,7 @@ using RandomRoom.Api.Data;
 using RandomRoom.Api.Endpoints;
 using RandomRoom.Api.Games;
 using RandomRoom.Api.Games.RandomPicker;
+using RandomRoom.Api.Games.Trivia;
 using RandomRoom.Api.Hubs;
 using RandomRoom.Api.Services;
 
@@ -31,6 +32,7 @@ builder.Services.AddScoped<PlayerTokenService>();
 builder.Services.AddScoped<GameSessionService>();
 builder.Services.AddScoped<RoomAdminService>();
 builder.Services.AddScoped<IGameEngine, RandomPickerEngine>();
+builder.Services.AddScoped<IGameEngine, TriviaEngine>();
 
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddSignalR().AddJsonProtocol(o => o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));

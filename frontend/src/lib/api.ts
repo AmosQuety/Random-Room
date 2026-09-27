@@ -24,10 +24,10 @@ async function request<T>(path: string, init: RequestInit, token?: string): Prom
   return response.json() as Promise<T>;
 }
 
-export const createRoom = (title: string, choices: string[], players: string[], hostPlayer: string) =>
+export const createRoom = (title: string, gameType: string, setup: unknown, players: string[], hostPlayer: string) =>
   request<CreateRoomResult>("/api/rooms", {
     method: "POST",
-    body: JSON.stringify({ title, choices, players, hostPlayer }),
+    body: JSON.stringify({ title, gameType, setup, players, hostPlayer }),
   });
 
 export const getRoomPreview = (slug: string) => request<RoomPreview>(`/api/rooms/${slug}`, { method: "GET" });
@@ -45,10 +45,9 @@ export const getRoom = (token: string) => request<RoomSnapshot>("/api/room", { m
 
 const post = (path: string, token: string) => request<RoomSnapshot>(path, { method: "POST" }, token);
 
-const performAction = (action: string, token: string) =>
-  request<RoomSnapshot>("/api/room/action", { method: "POST", body: JSON.stringify({ action }) }, token);
+export const performAction = (token: string, action: string, payload?: unknown) =>
+  request<RoomSnapshot>("/api/room/action", { method: "POST", body: JSON.stringify({ action, payload }) }, token);
 
-export const triggerRandom = (token: string) => performAction("trigger", token);
-export const startRound = (token: string) => post("/api/room/session/start", token);
-export const endRound = (token: string) => post("/api/room/session/end", token);
-export const startNewRound = (token: string) => post("/api/room/session/new", token);
+export const startSession = (token: string) => post("/api/room/session/start", token);
+export const endSession = (token: string) => post("/api/room/session/end", token);
+export const startNewSession = (token: string) => post("/api/room/session/new", token);

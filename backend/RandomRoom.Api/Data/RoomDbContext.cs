@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using RandomRoom.Api.Domain;
 
 namespace RandomRoom.Api.Data;
@@ -10,6 +12,9 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
     public DbSet<RoomPlayer> RoomPlayers => Set<RoomPlayer>();
     public DbSet<GameSession> GameSessions => Set<GameSession>();
     public DbSet<RandomPickerEvent> RandomPickerEvents => Set<RandomPickerEvent>();
+    public DbSet<TriviaQuestion> TriviaQuestions => Set<TriviaQuestion>();
+    public DbSet<TriviaSessionState> TriviaSessionStates => Set<TriviaSessionState>();
+    public DbSet<TriviaAnswer> TriviaAnswers => Set<TriviaAnswer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,27 +60,56 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
             evt.Property(e => e.Result).HasMaxLength(80);
             evt.HasOne(e => e.Session).WithMany().HasForeignKey(e => e.SessionId).OnDelete(DeleteBehavior.Restrict);
         });
+
+        modelBuilder.Entity<TriviaQuestion>(q =>
+        {
+            q.Property(x => x.Text).HasMaxLength(300);
+            q.Property(x => x.Options)
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new())
+                .Metadata.SetValueComparer(new ValueComparer<List<string>>(
+                    (a, b) => a!.SequenceEqual(b!),
+                    v => v.Aggregate(0, (h, s) => HashCode.Combine(h, s)),
+                    v => v.ToList()));
+            q.HasOne<Room>().WithMany().HasForeignKey(x => x.RoomId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<TriviaSessionState>(s =>
+        {
+            s.HasIndex(x => x.SessionId).IsUnique();
+            s.HasOne<GameSession>().WithMany().HasForeignKey(x => x.SessionId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<TriviaAnswer>(a =>
+        {
+            // Database-level guarantee of one answer per player per question per session, even under races.
+            a.HasIndex(x => new { x.SessionId, x.QuestionId, x.TriggeredBy }).IsUnique();
+            a.Property(x => x.TriggeredBy).HasMaxLength(32);
+            a.HasOne<GameSession>().WithMany().HasForeignKey(x => x.SessionId).OnDelete(DeleteBehavior.Restrict);
+            a.HasOne<TriviaQuestion>().WithMany().HasForeignKey(x => x.QuestionId).OnDelete(DeleteBehavior.Restrict);
+        });
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
-        RejectRandomPickerEventMutations();
+        RejectImmutableMutations();
         return base.SaveChanges(acceptAllChangesOnSuccess);
     }
 
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
-        RejectRandomPickerEventMutations();
+        RejectImmutableMutations();
         return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
     }
 
-    private void RejectRandomPickerEventMutations()
+    private void RejectImmutableMutations()
     {
-        var mutated = ChangeTracker.Entries<RandomPickerEvent>()
-            .Any(e => e.State is EntityState.Modified or EntityState.Deleted);
+        var mutated = ChangeTracker.Entries<RandomPickerEvent>().Any(e => e.State is EntityState.Modified or EntityState.Deleted)
+            || ChangeTracker.Entries<TriviaAnswer>().Any(e => e.State is EntityState.Modified or EntityState.Deleted);
         if (mutated)
         {
-            throw new InvalidOperationException("Random picker events are immutable once recorded.");
+            throw new InvalidOperationException("Recorded game events are immutable once recorded.");
         }
     }
 }

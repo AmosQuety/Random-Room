@@ -45,7 +45,7 @@ public sealed class ApiTests : IClassFixture<ApiTests.Factory>
     private async Task<CreateRoomResult> CreateRoomAsync(string title = "Test room")
     {
         var response = await client.PostAsJsonAsync("/api/rooms",
-            new CreateRoomHttpRequest(title, ["A", "B"], ["Amos", "Lydia"], "Amos"));
+            new CreateRoomHttpRequest(title, "random-picker", TestSetup.Of(new { choices = new[] { "A", "B" } }), ["Amos", "Lydia"], "Amos"));
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<CreateRoomResult>())!;
     }

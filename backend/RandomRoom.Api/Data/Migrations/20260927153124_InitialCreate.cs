@@ -94,6 +94,28 @@ namespace RandomRoom.Api.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "TriviaQuestions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    RoomId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Position = table.Column<int>(type: "integer", nullable: false),
+                    Text = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
+                    Options = table.Column<string>(type: "text", nullable: false),
+                    CorrectIndex = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TriviaQuestions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TriviaQuestions_Rooms_RoomId",
+                        column: x => x.RoomId,
+                        principalTable: "Rooms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RandomPickerEvents",
                 columns: table => new
                 {
@@ -110,6 +132,53 @@ namespace RandomRoom.Api.Data.Migrations
                         name: "FK_RandomPickerEvents_GameSessions_SessionId",
                         column: x => x.SessionId,
                         principalTable: "GameSessions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TriviaSessionStates",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    SessionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CurrentQuestionIndex = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TriviaSessionStates", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TriviaSessionStates_GameSessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "GameSessions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TriviaAnswers",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    SessionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    QuestionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TriggeredBy = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    OptionIndex = table.Column<int>(type: "integer", nullable: false),
+                    Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TriviaAnswers", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TriviaAnswers_GameSessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "GameSessions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_TriviaAnswers_TriviaQuestions_QuestionId",
+                        column: x => x.QuestionId,
+                        principalTable: "TriviaQuestions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -154,6 +223,28 @@ namespace RandomRoom.Api.Data.Migrations
                 table: "Rooms",
                 column: "Slug",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TriviaAnswers_QuestionId",
+                table: "TriviaAnswers",
+                column: "QuestionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TriviaAnswers_SessionId_QuestionId_TriggeredBy",
+                table: "TriviaAnswers",
+                columns: new[] { "SessionId", "QuestionId", "TriggeredBy" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TriviaQuestions_RoomId",
+                table: "TriviaQuestions",
+                column: "RoomId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TriviaSessionStates_SessionId",
+                table: "TriviaSessionStates",
+                column: "SessionId",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -167,6 +258,15 @@ namespace RandomRoom.Api.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "RoomPlayers");
+
+            migrationBuilder.DropTable(
+                name: "TriviaAnswers");
+
+            migrationBuilder.DropTable(
+                name: "TriviaSessionStates");
+
+            migrationBuilder.DropTable(
+                name: "TriviaQuestions");
 
             migrationBuilder.DropTable(
                 name: "GameSessions");

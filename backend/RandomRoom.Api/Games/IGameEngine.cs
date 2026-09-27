@@ -12,6 +12,13 @@ public interface IGameEngine
     /// <summary>Matches Room.GameType. Used to pick this engine out of the registered set.</summary>
     string GameType { get; }
 
+    /// <summary>
+    /// Validates and persists this game's room-level setup (e.g. Random Picker's choices,
+    /// Trivia's question bank). Called once, at room creation. Throws RoomRuleException.InvalidInput
+    /// for a malformed or insufficient setup.
+    /// </summary>
+    Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct);
+
     /// <summary>Called right after a new session row is created, to set up any game-specific state for it.</summary>
     Task OnSessionCreatedAsync(Guid roomId, Guid sessionId, CancellationToken ct);
 
@@ -26,4 +33,7 @@ public interface IGameEngine
 
     /// <summary>The game-specific slice of the room snapshot - whatever shape this game needs to render.</summary>
     Task<object> GetPayloadAsync(Guid roomId, Guid sessionId, CancellationToken ct);
+
+    /// <summary>A teaser shown on the public join screen, before anyone has authenticated - never answers/results.</summary>
+    Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct);
 }

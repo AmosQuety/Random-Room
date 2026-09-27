@@ -8,7 +8,7 @@ public sealed record JoinRequest(string? RoomSlug, string? Player, string? Pin);
 
 public sealed record JoinResponse(string Token, string Player, string RoomSlug, bool IsHost);
 
-public sealed record CreateRoomHttpRequest(string Title, List<string> Choices, List<string> Players, string HostPlayer);
+public sealed record CreateRoomHttpRequest(string Title, string GameType, JsonElement Setup, List<string> Players, string HostPlayer);
 
 public sealed record ClaimInviteRequest(string Pin);
 
@@ -59,7 +59,7 @@ public static class RoomEndpoints
     private static async Task<IResult> CreateRoom(CreateRoomHttpRequest request, RoomAdminService admin, CancellationToken ct)
     {
         var result = await admin.CreateRoomAsync(
-            new CreateRoomRequest(request.Title, request.Choices, request.Players, request.HostPlayer), ct);
+            new CreateRoomRequest(request.Title, request.GameType, request.Setup, request.Players, request.HostPlayer), ct);
         return Results.Ok(result);
     }
 

@@ -1,8 +1,10 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using RandomRoom.Api.Data;
 using RandomRoom.Api.Games;
 using RandomRoom.Api.Games.RandomPicker;
+using RandomRoom.Api.Games.Trivia;
 using RandomRoom.Api.Services;
 
 namespace RandomRoom.Tests;
@@ -57,6 +59,12 @@ public sealed class RoomFacade(GameSessionService service, Guid roomId)
     public Task<RoomSnapshot> StartNewRoundAsync(string actor) => service.StartNewSessionAsync(roomId, actor);
 }
 
+/// <summary>Serializes a plain object into the JsonElement CreateRoomRequest.Setup expects.</summary>
+public static class TestSetup
+{
+    public static JsonElement Of(object setup) => JsonSerializer.SerializeToElement(setup);
+}
+
 public sealed class RoomTestHarness : IDisposable
 {
     public static readonly string[] Players = ["Amos", "Lydia", "James", "Jacob"];
@@ -75,10 +83,15 @@ public sealed class RoomTestHarness : IDisposable
         Db = new RoomDbContext(new DbContextOptionsBuilder<RoomDbContext>().UseNpgsql(database.ConnectionString).Options);
         Db.Database.Migrate();
 
-        IGameEngine[] engines = [new RandomPickerEngine(Db, new FakeRandomSource(randomIndexes), TimeProvider.System)];
+        IGameEngine[] engines =
+        [
+            new RandomPickerEngine(Db, new FakeRandomSource(randomIndexes), TimeProvider.System),
+            new TriviaEngine(Db, TimeProvider.System),
+        ];
 
         var admin = new RoomAdminService(Db, TimeProvider.System, engines);
-        var created = admin.CreateRoomAsync(new CreateRoomRequest("Test room", Choices, Players, HostPlayer))
+        var created = admin.CreateRoomAsync(new CreateRoomRequest(
+            "Test room", RandomPickerEngine.Key, TestSetup.Of(new { choices = Choices }), Players, HostPlayer))
             .GetAwaiter().GetResult();
         RoomId = Db.Rooms.Single(r => r.Slug == created.Slug).Id;
 

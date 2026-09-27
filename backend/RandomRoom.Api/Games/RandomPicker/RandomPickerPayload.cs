@@ -6,6 +6,8 @@ public sealed record TallyView(string Choice, int Count);
 
 public sealed record ActivityView(Guid EventId, Guid SessionId, int SessionNumber, string TriggeredBy, string Result, DateTimeOffset Timestamp);
 
+public sealed record RandomPickerPreview(IReadOnlyList<string> Choices);
+
 public sealed record RandomPickerPayload(
     IReadOnlyList<string> Choices,
     IReadOnlyDictionary<string, RandomPickerPlayerState> Players,
