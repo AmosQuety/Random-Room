@@ -48,7 +48,7 @@ authored as `AmosQuety`.
 | Song/Movie intro guessing (Name That) | done | host clues plus optional https link (new tab, no iframe); host-set accepted answers marked server-side; first correct by receipt order gets a bonus |
 | Spin the Wheel | done | server picks the segment (scripted random in tests); client only animates, no motion under reduced-motion; host awards a point per spin; built-in bank of 30 tops the wheel up to 8 |
 | Buzzer | done | first buzz decided by one atomic UPDATE (`TryClaimInPhaseAsync`), outside the session lock; host judges so needs 3 players; wrong answer locks the player out; 30 built-in prompts. Race tested with 3 concurrent contexts and 3 concurrent HTTP requests |
-| Bingo | blocked | " |
+| Bingo | done | 5x5 cards, distinct per player, dealt server-side and sent only to their owner; server draws the call order; marks must be called items; claims are checked against real lines; concurrent claims give one winner. 40 built-in words |
 | Mad Libs | blocked | " |
 | One-word story | blocked | " |
 | Fortunately/Unfortunately | blocked | " |
