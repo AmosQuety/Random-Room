@@ -52,7 +52,7 @@ authored as `AmosQuety`.
 | Mad Libs (Fill-in Stories) | done | round engine + `ViewPromptFor` hook (additive); blanks shared out by player order, story text only sent at reveal; words rendered as plain text; 30 built-in stories |
 | One-word story | done | shared turn-based `StoryChainEngine` (rules injected); one word per turn validated server-side; 30 built-in openers; contributions scored 1 each |
 | Fortunately/Unfortunately | done | same engine; server adds the alternating lead-in and strips a typed one; each entry records its own lead-in so skips do not shift it; 30 built-in openers |
-| Codenames-style | blocked | " |
+| Codenames-style (Word Spies) | done | teams dealt at random, one spymaster each; key only in spymaster payloads (everyone once over); assassin and all rules server-side; leak tests over every role and the public view; 132 built-in words |
 | Taboo-style | blocked | " |
 | Pictionary-style | blocked | " |
 | Full-diff review | done for Phase 1 | |

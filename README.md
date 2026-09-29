@@ -75,6 +75,7 @@ Notes:
 | Fill-in Stories | Story | Everyone fills a few blanks of a story they cannot see, then it is read out. 30 built-in stories or your own. 2+ players |
 | One-Word Story | Story | Build a story one word per turn from a random opener. 2+ players |
 | Fortunately / Unfortunately | Story | A story that swings between good luck and bad, one sentence per turn. The game supplies the lead-in. 2+ players |
+| Word Spies | Word | Two teams, one grid of words. Only each spymaster sees the key and gives one-word clues; avoid the assassin. 4+ players |
 
 ## Adding a game
 

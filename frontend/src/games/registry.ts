@@ -14,6 +14,7 @@ import { thisOrThatModule } from "./this-or-that";
 import { triviaModule } from "./trivia";
 import { twoTruthsModule } from "./two-truths";
 import type { AnyGameModule } from "./types";
+import { wordSpiesModule } from "./word-spies";
 import { wouldYouRatherModule } from "./would-you-rather";
 
 export const GAMES: Record<string, AnyGameModule> = {
@@ -33,6 +34,7 @@ export const GAMES: Record<string, AnyGameModule> = {
   [madLibsModule.key]: madLibsModule,
   [oneWordStoryModule.key]: oneWordStoryModule,
   [fortunatelyModule.key]: fortunatelyModule,
+  [wordSpiesModule.key]: wordSpiesModule,
 };
 
 export const GAME_LIST: AnyGameModule[] = Object.values(GAMES);
