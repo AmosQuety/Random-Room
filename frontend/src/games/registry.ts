@@ -4,6 +4,7 @@ import { randomPickerModule } from "./random-picker";
 import { surveyShowdownModule } from "./survey-showdown";
 import { thisOrThatModule } from "./this-or-that";
 import { triviaModule } from "./trivia";
+import { twoTruthsModule } from "./two-truths";
 import type { AnyGameModule } from "./types";
 import { wouldYouRatherModule } from "./would-you-rather";
 
@@ -15,6 +16,7 @@ export const GAMES: Record<string, AnyGameModule> = {
   [mostLikelyToModule.key]: mostLikelyToModule,
   [neverHaveIEverModule.key]: neverHaveIEverModule,
   [surveyShowdownModule.key]: surveyShowdownModule,
+  [twoTruthsModule.key]: twoTruthsModule,
 };
 
 export const GAME_LIST: AnyGameModule[] = Object.values(GAMES);

@@ -151,6 +151,17 @@ public sealed class GameStore(RoomDbContext db, TimeProvider clock)
     // ---- transactions ----
 
     /// <summary>
+    /// Runs one action on one session: in a transaction, under the session's row lock, with its state loaded.
+    /// Games that keep their own state use this so answers and phase moves are applied one at a time.
+    /// </summary>
+    public Task InSessionAsync<TData>(Guid sessionId, Func<SessionState<TData>, Task> work, CancellationToken ct) =>
+        InTransactionAsync(async () =>
+        {
+            await LockSessionAsync(sessionId, ct);
+            await work(await LoadStateAsync<TData>(sessionId, ct));
+        }, ct);
+
+    /// <summary>
     /// Takes a row lock on the session's state until the surrounding transaction ends, so actions on one session
     /// (an answer racing the reveal, two hosts pressing next) are applied one at a time. Call inside InTransactionAsync.
     /// </summary>

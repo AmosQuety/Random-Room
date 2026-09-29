@@ -4,7 +4,8 @@ import { Scoreboard } from "../../components/Scoreboard";
 import { Button, Eyebrow } from "../../components/ui";
 import type { GameScreenProps } from "../types";
 import { Countdown } from "./Countdown";
-import type { RoundPayload, RoundScore } from "./types";
+import { GameOver, HostBar, ProgressChips } from "./parts";
+import type { RoundPayload } from "./types";
 import { useCountdown } from "./useCountdown";
 
 export interface InputContext<TPrompt> {
@@ -25,35 +26,6 @@ interface Props<TPrompt, TResult, TAnswer> extends GameScreenProps<RoundPayload<
   /** Shown once a player has answered, in place of the input. */
   renderMyAnswer: (answer: TAnswer, prompt: TPrompt) => ReactNode;
   renderResult: (result: TResult, prompt: TPrompt, me: string) => ReactNode;
-}
-
-function winnersOf(scoreboard: RoundScore[]): string[] {
-  const top = Math.max(0, ...scoreboard.map((s) => s.score));
-  return top === 0 ? [] : scoreboard.filter((s) => s.score === top).map((s) => s.player);
-}
-
-function AnswerProgress({ answered }: { answered: Record<string, boolean> }) {
-  const names = Object.keys(answered);
-  const count = names.filter((n) => answered[n]).length;
-  return (
-    <div>
-      <p aria-live="polite" className="text-sm text-muted">
-        {count} of {names.length} answered
-      </p>
-      <ul aria-label="Answer progress" className="mt-2 flex flex-wrap gap-2">
-        {names.map((name) => (
-          <li
-            key={name}
-            className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border-2 border-ink px-3 text-sm font-semibold ${answered[name] ? "bg-leaf-soft" : "bg-paper"}`}
-          >
-            {answered[name] ? <CheckIcon className="size-3.5" /> : <span aria-hidden="true" className="size-2 rounded-full bg-muted" />}
-            {name}
-            <span className="sr-only">{answered[name] ? " has answered" : " has not answered yet"}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
 }
 
 /**
@@ -82,7 +54,6 @@ export function RoundGameScreen<TPrompt, TResult, TAnswer>({
   const secondsLeft = useCountdown(payload.timer, collecting, () => onAction("tick"));
   const lastRound = payload.round >= payload.totalRounds;
   const iAnswered = payload.answered[me] ?? false;
-  const winners = winnersOf(payload.scoreboard);
   const names = players.map((p) => p.name);
 
   return (
@@ -134,15 +105,14 @@ export function RoundGameScreen<TPrompt, TResult, TAnswer>({
               })
             ))}
 
-          {collecting && <AnswerProgress answered={payload.answered} />}
+          {collecting && <ProgressChips done={payload.answered} />}
 
           {revealed && payload.result !== null && (
             <div className="motion-safe:animate-stamp">{renderResult(payload.result, payload.prompt, me)}</div>
           )}
 
           {isHost && live && (
-            <div className="flex flex-wrap items-center gap-3 border-t-2 border-dashed border-ink pt-4">
-              <Eyebrow>Host</Eyebrow>
+            <HostBar>
               {collecting && (
                 <Button variant="secondary" size="sm" disabled={busy} onClick={() => onAction("reveal")}>
                   <PlayIcon className="size-4" /> Reveal now
@@ -154,19 +124,12 @@ export function RoundGameScreen<TPrompt, TResult, TAnswer>({
                   {lastRound ? "Finish game" : "Next round"}
                 </Button>
               )}
-            </div>
+            </HostBar>
           )}
         </section>
       )}
 
-      {over && (
-        <section className="surface-dark rounded-xl border-2 border-ink bg-ink p-6 text-center text-paper shadow-ticket motion-safe:animate-stamp">
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-mustard">Game over</p>
-          <p className="mt-2 font-display text-3xl font-black sm:text-4xl">
-            {winners.length === 0 ? "Nobody scored" : winners.length === 1 ? `${winners[0]} wins` : `${winners.join(" & ")} tie`}
-          </p>
-        </section>
-      )}
+      {over && <GameOver scoreboard={payload.scoreboard} />}
 
       {over && revealed && payload.prompt !== null && payload.result !== null && (
         <section aria-label="Last round" className="rounded-xl border-2 border-ink bg-card p-5">

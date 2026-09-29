@@ -43,7 +43,7 @@ authored as `AmosQuety`.
 | Never Have I Ever | done | backend + frontend tests, smoke-tested against the running API |
 | Family Feud-style (Survey Showdown) | done | individual scoring, board only sent at reveal |
 | Trivia upgrades (categories, bank, time limit) | done | additive: two nullable columns, starter bank of 30, server-checked per-question deadline; all original trivia tests still pass |
-| Two Truths and a Lie | blocked | " |
+| Two Truths and a Lie | done | custom engine on the shared primitives; the lie is only ever in the storyteller's own payload until the reveal |
 | Guess Who | blocked | " |
 | Song/Movie intro guessing | blocked | " |
 | Spin the Wheel | blocked | " |

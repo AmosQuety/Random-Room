@@ -1,7 +1,7 @@
 using System.Text.Json;
 using RandomRoom.Api.Services;
 
-namespace RandomRoom.Api.Games.Rounds;
+namespace RandomRoom.Api.Games.Shared;
 
 /// <summary>Reads a player's raw answer at the boundary, turning a wrong shape into a friendly InvalidInput.</summary>
 public static class AnswerJson

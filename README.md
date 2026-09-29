@@ -66,6 +66,7 @@ Notes:
 | Most Likely To | Poll & Reveal | Vote for a friend (not yourself); the most-voted is crowned. 30 built-in prompts, 3+ players |
 | Never Have I Ever | Poll & Reveal | Clean statements; "still standing" scoring. 30 built-in statements |
 | Survey Showdown | Poll & Reveal | Guess the hidden survey board; matching an answer scores its points. 15 built-in surveys |
+| Two Truths and a Lie | Quiz | Each player is storyteller once; the others vote on the lie. 3+ players |
 
 ## Adding a game
 
