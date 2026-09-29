@@ -21,17 +21,18 @@ interface Reading {
  * snapshot arrives, so a wrong device clock does not shorten or lengthen the round. Reaching zero only asks the
  * server to check (onExpire); the server decides whether the round is really over.
  */
-export function useCountdown(timer: TimerView, active: boolean, onExpire: () => void): number | null {
-  const deadline = timer.deadlineAt;
+export function useCountdown(timer: TimerView | null, active: boolean, onExpire: () => void): number | null {
+  const deadline = timer?.deadlineAt ?? null;
+  const serverNow = timer?.serverNow ?? null;
   const offset = useRef(0);
   const expire = useRef(onExpire);
   const [reading, setReading] = useState<Reading | null>(() =>
-    deadline ? { deadline, seconds: secondsUntil(deadline, Date.parse(timer.serverNow) - Date.now()) } : null,
+    deadline && serverNow ? { deadline, seconds: secondsUntil(deadline, Date.parse(serverNow) - Date.now()) } : null,
   );
 
   useEffect(() => {
-    offset.current = Date.parse(timer.serverNow) - Date.now();
-  }, [timer.serverNow]);
+    if (serverNow) offset.current = Date.parse(serverNow) - Date.now();
+  }, [serverNow]);
 
   useEffect(() => {
     expire.current = onExpire;

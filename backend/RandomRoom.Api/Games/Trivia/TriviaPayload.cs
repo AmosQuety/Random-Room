@@ -1,8 +1,10 @@
+using RandomRoom.Api.Games.Shared;
+
 namespace RandomRoom.Api.Games.Trivia;
 
 public sealed record TriviaPreview(int QuestionCount);
 
-public sealed record TriviaQuestionView(string Text, IReadOnlyList<string> Options);
+public sealed record TriviaQuestionView(string Text, IReadOnlyList<string> Options, string? Category = null);
 
 /// <summary>The just-finished question, shown alongside the next one so players see what they got right.</summary>
 public sealed record TriviaReveal(string Text, IReadOnlyList<string> Options, int CorrectIndex, IReadOnlyDictionary<string, int> Answers);
@@ -18,4 +20,6 @@ public sealed record TriviaPayload(
     IReadOnlyDictionary<string, bool> Answered,
     TriviaReveal? LastReveal,
     IReadOnlyList<TriviaScore> Scoreboard,
-    IReadOnlyList<TriviaActivityView> Activity);
+    IReadOnlyList<TriviaActivityView> Activity,
+    TimerView? Timer = null,
+    int? TimeLimitSeconds = null);

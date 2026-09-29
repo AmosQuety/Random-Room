@@ -42,7 +42,7 @@ authored as `AmosQuety`.
 | Most Likely To | done | backend + frontend tests, smoke-tested against the running API |
 | Never Have I Ever | done | backend + frontend tests, smoke-tested against the running API |
 | Family Feud-style (Survey Showdown) | done | individual scoring, board only sent at reveal |
-| Trivia upgrades (categories, bank, time limit) | blocked | " |
+| Trivia upgrades (categories, bank, time limit) | done | additive: two nullable columns, starter bank of 30, server-checked per-question deadline; all original trivia tests still pass |
 | Two Truths and a Lie | blocked | " |
 | Guess Who | blocked | " |
 | Song/Movie intro guessing | blocked | " |

@@ -60,7 +60,7 @@ Notes:
 | Game | Category | Notes |
 | --- | --- | --- |
 | Random Picker | Reflex & Chance | Everyone triggers a server-random pick from a shared list |
-| Trivia | Quiz | Host-curated multiple choice with a scoreboard |
+| Trivia | Quiz | Host-curated multiple choice with a scoreboard; optional categories, a 30-question starter bank, and a per-question timer |
 | Would You Rather | Poll & Reveal | Private two-way pick; sit with the majority to score. 30 built-in dilemmas |
 | This or That | Poll & Reveal | Rapid pairs, same scoring. 30 built-in pairs |
 | Most Likely To | Poll & Reveal | Vote for a friend (not yourself); the most-voted is crowned. 30 built-in prompts, 3+ players |

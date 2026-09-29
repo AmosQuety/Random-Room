@@ -9,4 +9,7 @@ public sealed class TriviaQuestion
     public required string Text { get; set; }
     public required List<string> Options { get; set; }
     public int CorrectIndex { get; set; }
+
+    /// <summary>Optional label such as "Science", shown as a chip on the question.</summary>
+    public string? Category { get; set; }
 }

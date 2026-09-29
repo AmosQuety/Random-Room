@@ -2,6 +2,8 @@ import { CheckIcon, CloseIcon } from "../../components/icons";
 import { Scoreboard } from "../../components/Scoreboard";
 import { Eyebrow } from "../../components/ui";
 import { formatTime } from "../../lib/format";
+import { Countdown } from "../rounds/Countdown";
+import { useCountdown } from "../rounds/useCountdown";
 import type { GameScreenProps } from "../types";
 import type { TriviaActivityView, TriviaPayload, TriviaReveal } from "./types";
 
@@ -57,6 +59,7 @@ function ActivityLog({ activity }: { activity: TriviaActivityView[] }) {
 
 export function TriviaGameScreen({ me, players, session, payload, busy, onAction }: GameScreenProps<TriviaPayload>) {
   const myAnswered = payload.answered[me] ?? false;
+  const secondsLeft = useCountdown(payload.timer ?? null, session.status === "Active" && payload.currentQuestion !== null, () => onAction("tick"));
   const answeredCount = Object.values(payload.answered).filter(Boolean).length;
   const progress = payload.totalQuestions > 0 ? Math.round(((payload.questionNumber - (payload.currentQuestion ? 1 : 0)) / payload.totalQuestions) * 100) : 0;
 
@@ -66,9 +69,15 @@ export function TriviaGameScreen({ me, players, session, payload, busy, onAction
 
       {payload.currentQuestion ? (
         <section aria-labelledby="question-heading" className="rounded-xl border-2 border-ink bg-card p-5 shadow-ticket sm:p-6">
-          <p id="question-heading" className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
-            Question {payload.questionNumber} of {payload.totalQuestions}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p id="question-heading" className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
+              Question {payload.questionNumber} of {payload.totalQuestions}
+              {payload.currentQuestion.category && (
+                <span className="ml-2 rounded-md border-2 border-ink bg-accent-soft px-2 py-0.5 text-ink">{payload.currentQuestion.category}</span>
+              )}
+            </p>
+            {secondsLeft !== null && payload.timeLimitSeconds ? <Countdown secondsLeft={secondsLeft} totalSeconds={payload.timeLimitSeconds} /> : null}
+          </div>
           <div
             role="progressbar"
             aria-label="Quiz progress"

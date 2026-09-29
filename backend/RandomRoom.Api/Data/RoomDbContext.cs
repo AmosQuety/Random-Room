@@ -67,6 +67,7 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
         modelBuilder.Entity<TriviaQuestion>(q =>
         {
             q.Property(x => x.Text).HasMaxLength(300);
+            q.Property(x => x.Category).HasMaxLength(40);
             q.Property(x => x.Options)
                 .HasConversion(
                     v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
