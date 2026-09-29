@@ -50,8 +50,8 @@ authored as `AmosQuety`.
 | Buzzer | done | first buzz decided by one atomic UPDATE (`TryClaimInPhaseAsync`), outside the session lock; host judges so needs 3 players; wrong answer locks the player out; 30 built-in prompts. Race tested with 3 concurrent contexts and 3 concurrent HTTP requests |
 | Bingo | done | 5x5 cards, distinct per player, dealt server-side and sent only to their owner; server draws the call order; marks must be called items; claims are checked against real lines; concurrent claims give one winner. 40 built-in words |
 | Mad Libs (Fill-in Stories) | done | round engine + `ViewPromptFor` hook (additive); blanks shared out by player order, story text only sent at reveal; words rendered as plain text; 30 built-in stories |
-| One-word story | blocked | " |
-| Fortunately/Unfortunately | blocked | " |
+| One-word story | done | shared turn-based `StoryChainEngine` (rules injected); one word per turn validated server-side; 30 built-in openers; contributions scored 1 each |
+| Fortunately/Unfortunately | done | same engine; server adds the alternating lead-in and strips a typed one; each entry records its own lead-in so skips do not shift it; 30 built-in openers |
 | Codenames-style | blocked | " |
 | Taboo-style | blocked | " |
 | Pictionary-style | blocked | " |

@@ -73,6 +73,8 @@ Notes:
 | Buzzer Round | Reflex | The host reads a prompt; the first to buzz answers and the host judges. Server decides who was first. 3+ players |
 | Bingo | Reflex | Each player gets their own card. The host calls items, you mark them, and the server checks every claim. 2+ players |
 | Fill-in Stories | Story | Everyone fills a few blanks of a story they cannot see, then it is read out. 30 built-in stories or your own. 2+ players |
+| One-Word Story | Story | Build a story one word per turn from a random opener. 2+ players |
+| Fortunately / Unfortunately | Story | A story that swings between good luck and bad, one sentence per turn. The game supplies the lead-in. 2+ players |
 
 ## Adding a game
 
