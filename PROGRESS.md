@@ -44,7 +44,7 @@ authored as `AmosQuety`.
 | Family Feud-style (Survey Showdown) | done | individual scoring, board only sent at reveal |
 | Trivia upgrades (categories, bank, time limit) | done | additive: two nullable columns, starter bank of 30, server-checked per-question deadline; all original trivia tests still pass |
 | Two Truths and a Lie | done | custom engine on the shared primitives; the lie is only ever in the storyteller's own payload until the reveal |
-| Guess Who | blocked | " |
+| Guess Who | done | text facts only; authorship only in the author's own payload until the reveal; guess progress is a count, not a per-player list (a list would single out the author) |
 | Song/Movie intro guessing | blocked | " |
 | Spin the Wheel | blocked | " |
 | Buzzer | blocked | " |

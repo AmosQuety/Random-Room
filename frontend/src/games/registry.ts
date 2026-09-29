@@ -1,3 +1,4 @@
+import { guessWhoModule } from "./guess-who";
 import { mostLikelyToModule } from "./most-likely-to";
 import { neverHaveIEverModule } from "./never-have-i-ever";
 import { randomPickerModule } from "./random-picker";
@@ -17,6 +18,7 @@ export const GAMES: Record<string, AnyGameModule> = {
   [neverHaveIEverModule.key]: neverHaveIEverModule,
   [surveyShowdownModule.key]: surveyShowdownModule,
   [twoTruthsModule.key]: twoTruthsModule,
+  [guessWhoModule.key]: guessWhoModule,
 };
 
 export const GAME_LIST: AnyGameModule[] = Object.values(GAMES);
