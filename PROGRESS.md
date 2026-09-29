@@ -4,7 +4,7 @@
 
 **Status: Phase 1 (design overhaul) done. Phase 2 (shared primitives) done. Phase 3 (games): every game in the brief is built as a registered plugin, see the checklist. Nothing is blocked.**
 
-**Built (18 games, all registered plugins with backend and frontend tests):** Random Picker, Trivia, Would You Rather,
+**Built (19 games, all registered plugins with backend and frontend tests):** Random Picker, Trivia, Would You Rather,
 This or That, Most Likely To, Never Have I Ever, Survey Showdown, Two Truths and a Lie, Guess Who Wrote It, Name That
 Song or Movie, Spin the Wheel, Buzzer Round, Bingo, Fill-in Stories, One-Word Story, Fortunately/Unfortunately, Word
 Spies, Forbidden Words, Sketch Guess.
