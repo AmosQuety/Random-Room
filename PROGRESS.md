@@ -2,7 +2,9 @@
 
 ## Summary (updated at the end of each phase)
 
-**Status: Phase 1 (design overhaul) done. Backend work is blocked by the build environment.**
+**Status: Phase 1 (design overhaul) done. Phase 2 (shared primitives) backend done; games in progress.**
+
+(The paragraphs below describe run 1, where NuGet was unreachable. It is reachable now and the backend builds and tests.)
 
 The unattended cloud session this ran in could reach npm and GitHub but not NuGet
 (`api.nuget.org` is denied by the session's egress policy; the proxy answers 403 to CONNECT and its

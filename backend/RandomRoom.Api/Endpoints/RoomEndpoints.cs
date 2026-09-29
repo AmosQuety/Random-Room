@@ -34,15 +34,15 @@ public static class RoomEndpoints
 
         var room = api.MapGroup("/room").RequireAuthorization();
         room.MapGet("/", (GameSessionService rooms, HttpContext http, CancellationToken ct) =>
-            rooms.GetSnapshotAsync(http.User.GetRoomId(), ct));
-        room.MapPost("/action", (HttpContext http, ActionRequest request, GameSessionService rooms, IRoomNotifier notifier, CancellationToken ct) =>
-            Act(http, notifier, (roomId, player) => rooms.PerformActionAsync(roomId, player, request.Action, request.Payload, ct), ct));
-        room.MapPost("/session/start", (HttpContext http, GameSessionService rooms, IRoomNotifier notifier, CancellationToken ct) =>
-            Act(http, notifier, (roomId, player) => rooms.StartSessionAsync(roomId, player, ct), ct));
-        room.MapPost("/session/end", (HttpContext http, GameSessionService rooms, IRoomNotifier notifier, CancellationToken ct) =>
-            Act(http, notifier, (roomId, player) => rooms.EndSessionAsync(roomId, player, ct), ct));
-        room.MapPost("/session/new", (HttpContext http, GameSessionService rooms, IRoomNotifier notifier, CancellationToken ct) =>
-            Act(http, notifier, (roomId, player) => rooms.StartNewSessionAsync(roomId, player, ct), ct));
+            rooms.GetSnapshotForAsync(http.User.GetRoomId(), http.User.GetPlayerName(), ct));
+        room.MapPost("/action", (HttpContext http, ActionRequest request, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
+            Act(http, broadcaster, (roomId, player) => rooms.PerformActionAsync(roomId, player, request.Action, request.Payload, ct), ct));
+        room.MapPost("/session/start", (HttpContext http, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
+            Act(http, broadcaster, (roomId, player) => rooms.StartSessionAsync(roomId, player, ct), ct));
+        room.MapPost("/session/end", (HttpContext http, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
+            Act(http, broadcaster, (roomId, player) => rooms.EndSessionAsync(roomId, player, ct), ct));
+        room.MapPost("/session/new", (HttpContext http, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
+            Act(http, broadcaster, (roomId, player) => rooms.StartNewSessionAsync(roomId, player, ct), ct));
     }
 
     private static async Task<IResult> Join(JoinRequest request, PlayerTokenService tokens, CancellationToken ct)
@@ -74,10 +74,11 @@ public static class RoomEndpoints
     }
 
     private static async Task<IResult> Act(
-        HttpContext http, IRoomNotifier notifier, Func<Guid, string, Task<RoomSnapshot>> action, CancellationToken ct)
+        HttpContext http, RoomBroadcaster broadcaster, Func<Guid, string, Task<RoomSnapshot>> action, CancellationToken ct)
     {
-        var snapshot = await action(http.User.GetRoomId(), http.User.GetPlayerName());
-        await notifier.PublishAsync(snapshot, ct);
+        var roomId = http.User.GetRoomId();
+        var snapshot = await action(roomId, http.User.GetPlayerName());
+        await broadcaster.PublishAsync(roomId, ct);
         return Results.Ok(snapshot);
     }
 }

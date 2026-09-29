@@ -16,4 +16,9 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.*" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Built-in prompt/word banks, versioned JSON, read through Games/Shared/ContentBank. -->
+    <EmbeddedResource Include="Games\Content\*.json" LogicalName="Content.%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>
