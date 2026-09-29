@@ -9,6 +9,7 @@ import { nameThatModule } from "./name-that";
 import { neverHaveIEverModule } from "./never-have-i-ever";
 import { oneWordStoryModule } from "./one-word-story";
 import { randomPickerModule } from "./random-picker";
+import { sketchGuessModule } from "./sketch-guess";
 import { spinWheelModule } from "./spin-wheel";
 import { surveyShowdownModule } from "./survey-showdown";
 import { thisOrThatModule } from "./this-or-that";
@@ -37,6 +38,7 @@ export const GAMES: Record<string, AnyGameModule> = {
   [fortunatelyModule.key]: fortunatelyModule,
   [wordSpiesModule.key]: wordSpiesModule,
   [forbiddenWordsModule.key]: forbiddenWordsModule,
+  [sketchGuessModule.key]: sketchGuessModule,
 };
 
 export const GAME_LIST: AnyGameModule[] = Object.values(GAMES);

@@ -77,6 +77,7 @@ Notes:
 | Fortunately / Unfortunately | Story | A story that swings between good luck and bad, one sentence per turn. The game supplies the lead-in. 2+ players |
 | Word Spies | Word | Two teams, one grid of words. Only each spymaster sees the key and gives one-word clues; avoid the assassin. 4+ players |
 | Forbidden Words | Word | Describe a secret word without saying the forbidden ones; everyone else guesses and a judge who sees the card flags slips. 3+ players |
+| Sketch Guess | Word | One player draws a secret word on a shared canvas while everyone else guesses; only the drawer sees the word. 2+ players |
 
 ## Adding a game
 

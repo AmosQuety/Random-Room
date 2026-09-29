@@ -2,7 +2,7 @@
 
 ## Summary (updated at the end of each phase)
 
-**Status: Phase 1 (design overhaul) done. Phase 2 (shared primitives) done. Phase 3 (games) in progress: see the checklist.**
+**Status: Phase 1 (design overhaul) done. Phase 2 (shared primitives) done. Phase 3 (games): every game in the brief is built as a registered plugin, see the checklist. Nothing is blocked.**
 
 Run 1 could not build the backend (NuGet was unreachable). Run 2 has NuGet, so the backend compiles and its tests
 run against a real Postgres. Every game below is a full plugin: backend engine, frontend module, tests on both sides.
@@ -54,7 +54,7 @@ authored as `AmosQuety`.
 | Fortunately/Unfortunately | done | same engine; server adds the alternating lead-in and strips a typed one; each entry records its own lead-in so skips do not shift it; 30 built-in openers |
 | Codenames-style (Word Spies) | done | teams dealt at random, one spymaster each; key only in spymaster payloads (everyone once over); assassin and all rules server-side; leak tests over every role and the public view; 132 built-in words |
 | Taboo-style (Forbidden Words) | done | card only in the describer's and judge's payloads (leak-tested across every role and the public view); judge (next player) or host flags; server matches guesses, caps guesses per round, server-checked timer; 40 built-in cards |
-| Pictionary-style | blocked | " |
+| Pictionary-style (Sketch Guess) | done | word only in the drawer's payload (leak-tested for every role, the public view and the preview); stroke, point, batch and total caps plus a per-drawer rate limit enforced server-side; drawing kept only for its round; atomic first-correct-guess wins under concurrency; 105 built-in words; canvas frontend with pointer events, palette, pen sizes, undo, clear |
 | Full-diff review | done for Phase 1 | |
 
 ## Phase 1 verification

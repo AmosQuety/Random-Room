@@ -28,3 +28,15 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **Deadlines are server time.** Clients only receive a countdown view; at zero a client sends a `tick` and the server honours it only if its own clock agrees. No background service is needed and a restart loses nothing.
 - **Buzzer ordering is by server receipt.** The first writer wins through one atomic `UPDATE ... WHERE claimant IS NULL`. Limitation: a player with a slower connection can lose to a faster one even if they tapped first; the game is fair to the server's clock, not to the players' latency.
 - **Built-in content is embedded, versioned JSON** so lists are reviewed like code and are never fetched at run time.
+
+## Phase 3 games
+
+- **Generic game names, not trademarks.** Survey Showdown, Guess Who Wrote It, Name That Song or Movie, Fill-in Stories, Word Spies, Forbidden Words and Sketch Guess describe the mechanic without borrowing a brand.
+- **Accents are shared.** The theme has only five accent tokens, so several games reuse one; the glyph and category are what tell them apart.
+- **Story games share one engine.** One-Word Story and Fortunately/Unfortunately differ only in how a turn is validated and shown (`IChainRules`), so they share `StoryChainEngine`.
+- **`ViewPromptFor` hook on the round engine.** Fill-in Stories must show each player only their own blanks; the hook lets a game reshape the prompt per viewer without forking the engine.
+- **`GameStore.TryClaimInPhaseAsync`.** Buzzer claims are a single UPDATE that also checks the phase, so a buzz can never land on a round that is not open, with no lock held for the race itself.
+- **Sketch Guess: REST in, SignalR out.** Actions (including stroke batches) go through `POST /api/room/action`; the hub stays push-only and fans the per-viewer snapshot out. One path means one place for authentication, validation and rate limits.
+- **Sketch Guess bounds.** At most 20 strokes per batch, 200 strokes and 4000 points per round, 200 points per stroke, a 100ms gap between canvas actions per round; the client batches every 160ms to stay inside it.
+- **Sketch Guess keeps nothing beyond its round.** Strokes live in the session state row and are cleared when the next round starts and when the game completes. Limitation: if a host ends a session abnormally, the last round's strokes stay in that row until the room is deleted.
+- **Drawing is pointer-only.** A canvas has no keyboard equivalent for freehand drawing; the drawer can skip the word, and guessers (who never draw) get a full keyboard path. Noted as a known accessibility limit.
