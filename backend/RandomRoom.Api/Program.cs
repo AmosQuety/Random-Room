@@ -48,6 +48,7 @@ builder.Services.AddScoped<IGameEngine, SpinWheelEngine>();
 builder.Services.AddScoped<IGameEngine, BuzzerEngine>();
 builder.Services.AddScoped<IGameEngine, BingoEngine>();
 builder.Services.AddRoundGame<IntroPrompt, NameThatRules>();
+builder.Services.AddRoundGame<MadLibPrompt, MadLibsRules>();
 builder.Services.AddRoundGame<TwoWayPrompt, WouldYouRatherRules>();
 builder.Services.AddRoundGame<TwoWayPrompt, ThisOrThatRules>();
 builder.Services.AddRoundGame<StatementPrompt, MostLikelyToRules>();

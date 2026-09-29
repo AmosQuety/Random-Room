@@ -1,6 +1,7 @@
 import { bingoModule } from "./bingo";
 import { buzzerModule } from "./buzzer";
 import { guessWhoModule } from "./guess-who";
+import { madLibsModule } from "./mad-libs";
 import { mostLikelyToModule } from "./most-likely-to";
 import { nameThatModule } from "./name-that";
 import { neverHaveIEverModule } from "./never-have-i-ever";
@@ -27,6 +28,7 @@ export const GAMES: Record<string, AnyGameModule> = {
   [spinWheelModule.key]: spinWheelModule,
   [buzzerModule.key]: buzzerModule,
   [bingoModule.key]: bingoModule,
+  [madLibsModule.key]: madLibsModule,
 };
 
 export const GAME_LIST: AnyGameModule[] = Object.values(GAMES);

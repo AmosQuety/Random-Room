@@ -165,7 +165,7 @@ public sealed class RoundGameEngine<TPrompt>(IRoundRules<TPrompt> rules, GameSto
             state.Phase,
             state.Round,
             state.Data.Order.Count == 0 ? setup.Rounds : state.Data.Order.Count,
-            inRound ? rules.ViewPrompt(CurrentPrompt(setup, state)) : null,
+            inRound ? rules.ViewPromptFor(CurrentPrompt(setup, state), players) : null,
             players.ToDictionary(p => p, p => entries.Any(e => e.Player == p)),
             viewer is null ? null : entries.FirstOrDefault(e => e.Player == viewer)?.Value,
             revealed ? state.Data.Result : null,

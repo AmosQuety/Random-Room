@@ -30,6 +30,12 @@ public interface IRoundRules<TPrompt>
     /// <summary>The prompt as players see it while answering. Must never contain the answer key.</summary>
     object ViewPrompt(TPrompt prompt);
 
+    /// <summary>
+    /// The prompt as players see it, when it depends on who is in the room (who is assigned which blank).
+    /// Games that do not need the player list leave the default.
+    /// </summary>
+    object ViewPromptFor(TPrompt prompt, IReadOnlyList<string> players) => ViewPrompt(prompt);
+
     /// <summary>Validates one player's raw answer and returns the normalized form to store. Throws InvalidInput.</summary>
     JsonElement ValidateAnswer(TPrompt prompt, string actor, IReadOnlyList<string> players, JsonElement raw);
 
