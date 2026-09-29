@@ -16,11 +16,11 @@ Nothing here is fixed yet. Each entry says what was seen, what is not yet known,
 - **To investigate:** Reproduce from room creation through invite claim to join, watching the network calls. Check what "ready" means in `JoinScreen`, `ClaimInviteScreen` and the room snapshot, and what unlocks the button.
 - **Done when:** A fresh room can be created, all players can join, and the game screen is reachable, with a test covering the path.
 
-### B2. Search icon renders huge in the game picker (fixed locally, not committed)
+### B2. Search icon renders huge in the game picker (fixed)
 
 - **Seen:** The magnifier in the picker's search box filled the page.
 - **Cause:** `Icon` in `frontend/src/components/icons.tsx` spread the caller's `className` over its default `size-5`, so the SVG had no size.
-- **Status:** Fixed in the working tree (merge the classes instead of replacing them). Needs a regression test and its own commit.
+- **Status:** Fixed by merging the caller's classes with the default size instead of replacing it. A regression test for icon sizing is still worth adding.
 
 ## Gaps
 
@@ -47,7 +47,6 @@ Low-bandwidth note: keep whatever is added small (no image assets, no heavy libr
 
 - **Migrations run on startup against whatever database is configured.** A `.env` pointing at a production database will be migrated just by running the app locally. Consider a safeguard, such as refusing to auto-migrate outside Development unless an explicit setting is on.
 - **Stale local server.** An old backend process kept port 5184 and served an out-of-date build, which produced confusing "unknown game type" errors. Worth documenting the dev workflow in the README.
-- **Commit authorship.** Three early commits on this branch are attributed to the wrong identity and need re-authoring before merge.
 - **Sketch Guess has no keyboard equivalent** for drawing (pointer and touch only).
 - **Buzzer fairness** depends on which connection reaches the server first.
 - **Leftover drawing strokes** stay in the database if a session is ended abnormally, until the room is deleted.
