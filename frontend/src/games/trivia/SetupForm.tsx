@@ -1,4 +1,5 @@
-import { addButtonClass, fieldInputClass, removeButtonClass, ListEditor } from "../../components/ListEditor";
+import { ListEditor } from "../../components/ListEditor";
+import { addButtonClass, fieldInputClass, removeButtonClass } from "../../components/styles";
 import type { SetupFormProps } from "../types";
 import type { TriviaQuestionInput, TriviaSetup } from "./types";
 
@@ -18,7 +19,7 @@ function QuestionEditor({
   return (
     <div className="flex flex-col gap-3 rounded-lg border-2 border-ink bg-paper p-4">
       <div className="flex items-center justify-between gap-2">
-        <label className="font-mono text-xs uppercase tracking-widest text-muted">Question {index + 1}</label>
+        <p className="font-mono text-xs uppercase tracking-widest text-muted">Question {index + 1}</p>
         {canRemove && (
           <button type="button" aria-label={`Remove question ${index + 1}`} onClick={onRemove} className={removeButtonClass}>
             ×

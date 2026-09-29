@@ -1,3 +1,5 @@
+import { StarIcon } from "../../components/icons";
+
 interface Props {
   roundNumber: number;
   tally: { choice: string; count: number }[];
@@ -10,12 +12,19 @@ export function FinalResult({ roundNumber, tally }: Props) {
   const headline = total === 0 ? "No rolls this round" : leaders.length > 1 ? "It's a tie" : `${leaders[0].choice} takes it`;
 
   return (
-    <section aria-labelledby="final-heading" className="animate-stamp rounded-xl border-4 border-ink bg-ink p-6 text-center text-paper shadow-ticket">
+    <section
+      aria-labelledby="final-heading"
+      className="surface-dark animate-stamp rounded-xl border-2 border-ink bg-ink p-6 text-center text-paper shadow-ticket"
+    >
       <p id="final-heading" className="font-mono text-xs uppercase tracking-[0.3em] text-mustard">
         Final result · round {roundNumber}
       </p>
-      <p className="mt-2 font-display text-4xl font-black sm:text-5xl">🎉 {headline} 🎉</p>
-      <dl className="mt-6 flex justify-center gap-10">
+      <p className="mt-3 flex items-center justify-center gap-3 font-display text-4xl font-black sm:text-5xl">
+        <StarIcon className="size-7 shrink-0 text-mustard" />
+        {headline}
+        <StarIcon className="size-7 shrink-0 text-mustard" />
+      </p>
+      <dl className="mt-6 flex flex-wrap justify-center gap-x-10 gap-y-4">
         {tally.map((t) => (
           <div key={t.choice}>
             <dt className="text-lg font-semibold">{t.choice}</dt>

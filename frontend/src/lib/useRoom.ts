@@ -8,6 +8,9 @@ export type ConnectionStatus = "connecting" | "live" | "reconnecting";
 interface UseRoom {
   snapshot: RoomSnapshot | null;
   connection: ConnectionStatus;
+  /** True when the first load failed for a reason other than an expired session. */
+  loadFailed: boolean;
+  retry: () => void;
   applySnapshot: (snapshot: RoomSnapshot) => void;
 }
 
@@ -15,12 +18,15 @@ interface UseRoom {
 export function useRoom(token: string, onUnauthorized: () => void): UseRoom {
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
   const [connection, setConnection] = useState<ConnectionStatus>("connecting");
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const refetch = useCallback(async () => {
     try {
       setSnapshot(await getRoom(token));
+      setLoadFailed(false);
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) onUnauthorized();
+      else setLoadFailed(true);
     }
   }, [token, onUnauthorized]);
 
@@ -51,5 +57,5 @@ export function useRoom(token: string, onUnauthorized: () => void): UseRoom {
     };
   }, [token, refetch]);
 
-  return { snapshot, connection, applySnapshot: setSnapshot };
+  return { snapshot, connection, loadFailed, retry: () => void refetch(), applySnapshot: setSnapshot };
 }

@@ -1,23 +1,62 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { GAMES } from "../games/registry";
 import { ApiError, endSession, performAction, startNewSession, startSession } from "../lib/api";
-import type { RoomSnapshot, Session } from "../lib/types";
-import { useRoom } from "../lib/useRoom";
+import type { RoomSnapshot, Session, SessionStatus } from "../lib/types";
+import { useRoom, type ConnectionStatus } from "../lib/useRoom";
+import { Avatar } from "./Avatar";
 import { HostControls } from "./HostControls";
+import { Shell } from "./Shell";
+import { Alert, Button, EmptyState, Eyebrow, Skeleton } from "./ui";
 
-const STATUS_COPY = {
+const STATUS_COPY: Record<SessionStatus, string> = {
   Waiting: "Waiting for the host to start",
   Active: "Round is live",
   Completed: "Round complete",
-} as const;
+};
+
+const STATUS_SHORT: Record<SessionStatus, string> = {
+  Waiting: "Waiting",
+  Active: "Live",
+  Completed: "Complete",
+};
+
+const STATUS_STYLE: Record<SessionStatus, string> = {
+  Waiting: "bg-paper-deep text-ink",
+  Active: "bg-accent text-on-accent",
+  Completed: "bg-ink text-paper",
+};
 
 interface Props {
   session: Session;
   onLeave: () => void;
 }
 
+function ConnectionPill({ connection }: { connection: ConnectionStatus }) {
+  const live = connection === "live";
+  return (
+    <span role="status" className="inline-flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-widest">
+      <span
+        aria-hidden="true"
+        className={`size-3 rounded-full border-2 border-ink ${live ? "bg-leaf" : "bg-mustard motion-safe:animate-shimmer"}`}
+      />
+      {live ? "Live" : connection === "connecting" ? "Connecting" : "Reconnecting"}
+    </span>
+  );
+}
+
+function RoomSkeleton() {
+  return (
+    <div role="status" aria-label="Loading the room" className="flex flex-col gap-6">
+      <Skeleton className="h-6 w-40" />
+      <Skeleton className="h-16 w-3/4" />
+      <Skeleton className="h-48" />
+      <Skeleton className="h-32" />
+    </div>
+  );
+}
+
 export function RoomScreen({ session, onLeave }: Props) {
-  const { snapshot, connection, applySnapshot } = useRoom(session.token, onLeave);
+  const { snapshot, connection, loadFailed, retry, applySnapshot } = useRoom(session.token, onLeave);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,57 +72,128 @@ export function RoomScreen({ session, onLeave }: Props) {
     }
   }
 
-  if (!snapshot) return <p className="p-6 font-mono text-muted">Loading the room...</p>;
+  const headerRight = (
+    <>
+      <ConnectionPill connection={connection} />
+      <span className="hidden items-center gap-2 sm:flex">
+        <Avatar name={session.player} />
+        <span className="truncate font-bold">{session.player}</span>
+      </span>
+    </>
+  );
+
+  if (!snapshot) {
+    return (
+      <Shell width="wide" headerRight={headerRight}>
+        {loadFailed ? (
+          <EmptyState
+            tone="error"
+            title="Couldn't load the room"
+            action={
+              <>
+                <Button variant="primary" onClick={retry}>
+                  Try again
+                </Button>
+                <Button variant="secondary" onClick={onLeave}>
+                  Leave room
+                </Button>
+              </>
+            }
+          >
+            <p>Check your connection. Your place in the room is safe.</p>
+          </EmptyState>
+        ) : (
+          <RoomSkeleton />
+        )}
+      </Shell>
+    );
+  }
 
   const game = GAMES[snapshot.gameType];
-  if (!game) return <p className="p-6 font-mono text-tomato">Unknown game type "{snapshot.gameType}".</p>;
+  if (!game) {
+    return (
+      <Shell width="wide" headerRight={headerRight}>
+        <EmptyState
+          tone="error"
+          title="Unknown game type"
+          action={
+            <Button variant="secondary" onClick={onLeave}>
+              Leave room
+            </Button>
+          }
+        >
+          <p>This room uses "{snapshot.gameType}", which this version of the app doesn't know. Try refreshing the page.</p>
+        </EmptyState>
+      </Shell>
+    );
+  }
 
   const { GameScreen } = game;
+  const { status, number } = snapshot.session;
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
-      <header className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-xs uppercase tracking-widest text-muted">
-          <span>
-            Round {snapshot.session.number} · {STATUS_COPY[snapshot.session.status]}
-          </span>
-          <span role="status">{connection === "live" ? "🟢 Live" : "🟠 Reconnecting..."}</span>
-        </div>
-        <h1 className="font-display text-4xl font-black leading-none sm:text-6xl">{snapshot.roomTitle}</h1>
-        <p className="text-sm text-muted">
-          You are <strong className="text-ink">{session.player}</strong>
-          {session.isHost && " (host)"} ·{" "}
-          <button type="button" onClick={onLeave} className="underline">
-            Not you?
-          </button>
+    <Shell width="wide" accent={game.accent} headerRight={headerRight}>
+      <div className="flex flex-col gap-8">
+        {/* Announces round changes to screen readers without moving focus. */}
+        <p role="status" className="sr-only">
+          Round {number}: {STATUS_COPY[status]}
         </p>
-      </header>
 
-      {error && (
-        <p role="alert" className="rounded-lg border-2 border-tomato bg-card px-4 py-3 font-semibold text-tomato">
-          {error}
-        </p>
-      )}
+        <header className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <Eyebrow className="flex items-center gap-2">
+              <game.Glyph className="size-6" />
+              {game.name}
+            </Eyebrow>
+            <span
+              className={`rounded-md border-2 border-ink px-2 py-1 font-mono text-xs font-bold uppercase tracking-widest ${STATUS_STYLE[status]}`}
+            >
+              Round {number} · {STATUS_SHORT[status]}
+            </span>
+          </div>
+          <h1 className="font-display text-4xl font-black leading-[0.95] tracking-tight sm:text-6xl">{snapshot.roomTitle || "Game room"}</h1>
+          <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted">
+            <span>
+              You are <strong className="text-ink">{session.player}</strong>
+              {session.isHost && " (host)"}
+            </span>
+            <span aria-hidden="true">·</span>
+            <button type="button" onClick={onLeave} className="-my-2 min-h-11 rounded-lg px-1 underline">
+              Not you?
+            </button>
+          </p>
+        </header>
 
-      <GameScreen
-        me={session.player}
-        isHost={session.isHost}
-        players={snapshot.players}
-        session={snapshot.session}
-        payload={snapshot.gamePayload}
-        busy={busy}
-        onAction={(action, payload) => run((token) => performAction(token, action, payload))}
-      />
+        {connection === "reconnecting" && (
+          <p role="status" className="rounded-lg border-2 border-ink bg-mustard-soft px-4 py-3 font-semibold">
+            Connection lost - reconnecting. Anything you've already played is safe on the server.
+          </p>
+        )}
 
-      {session.isHost && (
-        <HostControls
-          status={snapshot.session.status}
-          busy={busy}
-          onStart={() => run(startSession)}
-          onEnd={() => run(endSession)}
-          onNewRound={() => run(startNewSession)}
-        />
-      )}
-    </main>
+        {error && <Alert>{error}</Alert>}
+
+        <Suspense fallback={<RoomSkeleton />}>
+          <GameScreen
+            me={session.player}
+            isHost={session.isHost}
+            players={snapshot.players}
+            session={snapshot.session}
+            payload={snapshot.gamePayload}
+            busy={busy}
+            onAction={(action, payload) => run((token) => performAction(token, action, payload))}
+          />
+        </Suspense>
+
+        {session.isHost && (
+          <HostControls
+            status={status}
+            busy={busy}
+            onStart={() => run(startSession)}
+            onEnd={() => run(endSession)}
+            onNewRound={() => run(startNewSession)}
+          />
+        )}
+      </div>
+    </Shell>
   );
 }

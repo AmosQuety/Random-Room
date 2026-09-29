@@ -1,4 +1,6 @@
 import { Avatar } from "../../components/Avatar";
+import { CheckIcon, DiceIcon } from "../../components/icons";
+import { PresenceDot } from "../../components/ui";
 
 /** A room player merged with their Random Picker state for this session. */
 export interface RandomPickerPlayer {
@@ -19,7 +21,7 @@ interface Props {
 export function PlayerCard({ player, isMe, canTrigger, rolling, onTrigger }: Props) {
   return (
     <li
-      className={`flex flex-col gap-4 rounded-xl border-2 border-ink p-4 shadow-ticket ${isMe ? "bg-card ring-4 ring-mustard/60" : "bg-card"}`}
+      className={`flex flex-col gap-4 rounded-xl border-2 border-ink bg-card p-4 shadow-ticket ${isMe ? "ring-4 ring-mustard/60" : ""}`}
     >
       <div className="flex items-center gap-3">
         <Avatar name={player.name} />
@@ -28,7 +30,7 @@ export function PlayerCard({ player, isMe, canTrigger, rolling, onTrigger }: Pro
             {player.name}
             {isMe && <span className="ml-2 font-mono text-xs font-normal uppercase text-muted">(you)</span>}
           </p>
-          <p className="text-sm text-muted">{player.online ? "🟢 Online" : "⚪ Offline"}</p>
+          <PresenceDot online={player.online} />
         </div>
       </div>
 
@@ -40,10 +42,14 @@ export function PlayerCard({ player, isMe, canTrigger, rolling, onTrigger }: Pro
 function CardBody({ player, canTrigger, rolling, isMe, onTrigger }: Props) {
   if (player.result) {
     return (
-      <div key={player.result} className="animate-stamp rounded-lg border-2 border-ink bg-paper px-3 py-4 text-center">
-        <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">🎲 System random result</p>
-        <p className="mt-1 font-display text-4xl font-black text-tomato">{player.result}</p>
-        <p className="mt-2 text-sm font-semibold text-leaf">✅ Result recorded</p>
+      <div key={player.result} className="animate-stamp rounded-lg border-2 border-ink bg-accent-soft px-3 py-4 text-center">
+        <p className="flex items-center justify-center gap-1.5 font-mono text-xs font-bold uppercase tracking-widest text-ink">
+          <DiceIcon className="size-4" /> System random result
+        </p>
+        <p className="mt-1 font-display text-4xl font-black text-accent-ink">{player.result}</p>
+        <p className="mt-2 flex items-center justify-center gap-1.5 text-sm font-semibold text-leaf">
+          <CheckIcon className="size-4" /> Result recorded
+        </p>
       </div>
     );
   }
@@ -54,14 +60,18 @@ function CardBody({ player, canTrigger, rolling, isMe, onTrigger }: Props) {
         type="button"
         disabled={!canTrigger || rolling}
         onClick={onTrigger}
-        className="min-h-20 rounded-lg border-2 border-ink bg-tomato px-4 text-lg font-black uppercase leading-tight tracking-wide text-white shadow-ticket-sm transition active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:bg-muted disabled:shadow-none"
+        className="flex min-h-20 items-center justify-center gap-2 rounded-lg border-2 border-ink bg-accent px-4 text-lg font-black uppercase leading-tight tracking-wide text-on-accent shadow-ticket-sm transition active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:bg-muted disabled:text-white disabled:shadow-none"
       >
         {rolling ? (
           <>
-            <span className="animate-roll mr-2 inline-block">🎲</span>Randomizing...
+            <DiceIcon className="size-6 motion-safe:animate-roll" />
+            Randomizing...
           </>
         ) : (
-          "🎲 Let randomness decide"
+          <>
+            <DiceIcon className="size-6" />
+            Let randomness decide
+          </>
         )}
       </button>
     );
