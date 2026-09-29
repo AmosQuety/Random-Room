@@ -3,7 +3,7 @@ import type { SVGProps } from "react";
 type IconProps = SVGProps<SVGSVGElement>;
 
 /** Small stroke icons, decorative by default (callers put the meaning in adjacent text or an aria-label). */
-function Icon({ children, ...rest }: IconProps) {
+function Icon({ children, className = "", ...rest }: IconProps) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -13,7 +13,7 @@ function Icon({ children, ...rest }: IconProps) {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className="size-5 shrink-0"
+      className={`size-5 shrink-0 ${className}`}
       {...rest}
     >
       {children}
