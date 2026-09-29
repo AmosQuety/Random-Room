@@ -1,6 +1,7 @@
-# Random Room
+# The Playground
 
-"Who do we choose?" - four fixed players share one room. Each one presses a button, and the
+Live party games for reunions, cell groups and game nights. The original mode, Random Picker, works like this:
+"Who do we choose?" - players share one room. Each one presses a button, and the
 **server** picks Sarah or Judith with a cryptographically secure RNG and shows it to everyone.
 Nobody votes; nobody can choose or change a result. Spec: `random-room-mvp-spec.md`.
 
@@ -53,3 +54,28 @@ Notes:
 - Render's free web tier sleeps after ~15 min idle, so the first visit can take up to a minute to wake it.
   Room history lives in Postgres and is unaffected. Render's free Postgres expires after 30 days - use a
   paid instance if you need it to last.
+
+## Games
+
+| Game | Category | Notes |
+| --- | --- | --- |
+| Random Picker | Reflex & Chance | Everyone triggers a server-random pick from a shared list |
+| Trivia | Quiz | Host-curated multiple choice with a scoreboard |
+
+## Adding a game
+
+Trivia was added as the proof of the plugin seam; copy its shape.
+
+Backend (`backend/RandomRoom.Api`):
+1. Add domain entities under `Domain/` if the game persists state, and register them in `Data/RoomDbContext.cs`.
+2. Implement `IGameEngine` in `Games/<Name>/` (validate setup, build the per-player payload, handle actions with `RoomRuleException` for illegal moves; never put hidden information in a payload for someone not entitled to it).
+3. Register the engine in `Program.cs`, then create one additive migration with `dotnet ef migrations add`.
+4. Add xUnit tests next to `TriviaEngineTests.cs`: happy path, wrong phase, wrong actor, duplicate submission, invalid input, no leaks, completion.
+
+Frontend (`frontend/src/games/<name>/`):
+1. `types.ts` for the setup and payload shapes, `SetupForm.tsx`, `GameScreen.tsx`, and a `Glyph.tsx` drawn with token classes (`fill-accent`, `stroke-ink`).
+2. `index.ts` exporting a `GameModule`: `key`, `name`, `hook`, `category`, `accent`, `minPlayers`/`maxPlayers`, setup helpers, and `React.lazy` for `SetupForm` and `GameScreen`.
+3. Add it to `games/registry.ts`. The picker, categories and player-count messages pick it up automatically.
+4. Use the shared `Scoreboard`, `Button`, `Card`, `Field` and `ListEditor` components; keep colours as tokens from `src/index.css`.
+
+`npm run check:contrast` verifies every text/background pairing against WCAG AA.
