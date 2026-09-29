@@ -69,6 +69,7 @@ Notes:
 | Two Truths and a Lie | Quiz | Each player is storyteller once; the others vote on the lie. 3+ players |
 | Guess Who Wrote It | Quiz | Everyone writes a fact about themselves; the group guesses who wrote each. Text only. 3+ players |
 | Name That Song or Movie | Quiz | The host writes clues (text, emoji, riddles) with accepted answers and an optional https link; the server marks guesses. First correct gets a bonus |
+| Spin the Wheel | Reflex | Take turns spinning a wheel of challenges. The server decides where it lands; the host can award a point. 2+ players |
 
 ## Adding a game
 
