@@ -1,3 +1,4 @@
+import { buzzerModule } from "./buzzer";
 import { guessWhoModule } from "./guess-who";
 import { mostLikelyToModule } from "./most-likely-to";
 import { nameThatModule } from "./name-that";
@@ -23,6 +24,7 @@ export const GAMES: Record<string, AnyGameModule> = {
   [guessWhoModule.key]: guessWhoModule,
   [nameThatModule.key]: nameThatModule,
   [spinWheelModule.key]: spinWheelModule,
+  [buzzerModule.key]: buzzerModule,
 };
 
 export const GAME_LIST: AnyGameModule[] = Object.values(GAMES);

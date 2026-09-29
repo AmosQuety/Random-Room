@@ -47,7 +47,7 @@ authored as `AmosQuety`.
 | Guess Who | done | text facts only; authorship only in the author's own payload until the reveal; guess progress is a count, not a per-player list (a list would single out the author) |
 | Song/Movie intro guessing (Name That) | done | host clues plus optional https link (new tab, no iframe); host-set accepted answers marked server-side; first correct by receipt order gets a bonus |
 | Spin the Wheel | done | server picks the segment (scripted random in tests); client only animates, no motion under reduced-motion; host awards a point per spin; built-in bank of 30 tops the wheel up to 8 |
-| Buzzer | blocked | " |
+| Buzzer | done | first buzz decided by one atomic UPDATE (`TryClaimInPhaseAsync`), outside the session lock; host judges so needs 3 players; wrong answer locks the player out; 30 built-in prompts. Race tested with 3 concurrent contexts and 3 concurrent HTTP requests |
 | Bingo | blocked | " |
 | Mad Libs | blocked | " |
 | One-word story | blocked | " |

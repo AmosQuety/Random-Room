@@ -70,6 +70,7 @@ Notes:
 | Guess Who Wrote It | Quiz | Everyone writes a fact about themselves; the group guesses who wrote each. Text only. 3+ players |
 | Name That Song or Movie | Quiz | The host writes clues (text, emoji, riddles) with accepted answers and an optional https link; the server marks guesses. First correct gets a bonus |
 | Spin the Wheel | Reflex | Take turns spinning a wheel of challenges. The server decides where it lands; the host can award a point. 2+ players |
+| Buzzer Round | Reflex | The host reads a prompt; the first to buzz answers and the host judges. Server decides who was first. 3+ players |
 
 ## Adding a game
 

@@ -97,6 +97,18 @@ public sealed class GameStore(RoomDbContext db, TimeProvider clock)
         return updated == 1;
     }
 
+    /// <summary>
+    /// Like TryClaimAsync, but only while the session is in the given phase, so a claim can never land on a round
+    /// that is not open. Still a single UPDATE: the check and the write cannot be split by a concurrent claimant.
+    /// </summary>
+    public async Task<bool> TryClaimInPhaseAsync(Guid sessionId, int round, string phase, string player, CancellationToken ct)
+    {
+        var updated = await db.GameSessionStates
+            .Where(s => s.SessionId == sessionId && s.Round == round && s.Phase == phase && s.Claimant == null)
+            .ExecuteUpdateAsync(set => set.SetProperty(s => s.Claimant, player).SetProperty(s => s.Version, s => s.Version + 1), ct);
+        return updated == 1;
+    }
+
     // ---- entries ----
 
     public async Task AddEntryAsync<T>(Guid sessionId, int round, string kind, string player, T value, string duplicateMessage, CancellationToken ct, int seq = 0)
