@@ -1,0 +1,125 @@
+{
+ "version": 1,
+ "items": [
+  {
+   "a": "Cats",
+   "b": "Dogs"
+  },
+  {
+   "a": "Summer",
+   "b": "Winter"
+  },
+  {
+   "a": "Sweet",
+   "b": "Salty"
+  },
+  {
+   "a": "Beach",
+   "b": "Mountains"
+  },
+  {
+   "a": "Books",
+   "b": "Movies"
+  },
+  {
+   "a": "Morning",
+   "b": "Night"
+  },
+  {
+   "a": "Pizza",
+   "b": "Tacos"
+  },
+  {
+   "a": "Sunrise",
+   "b": "Sunset"
+  },
+  {
+   "a": "Swimming",
+   "b": "Skating"
+  },
+  {
+   "a": "Chocolate",
+   "b": "Vanilla"
+  },
+  {
+   "a": "Rain",
+   "b": "Snow"
+  },
+  {
+   "a": "Bike",
+   "b": "Scooter"
+  },
+  {
+   "a": "Pancakes",
+   "b": "Waffles"
+  },
+  {
+   "a": "Sneakers",
+   "b": "Sandals"
+  },
+  {
+   "a": "City",
+   "b": "Countryside"
+  },
+  {
+   "a": "Movies at home",
+   "b": "Movies at the cinema"
+  },
+  {
+   "a": "Pen",
+   "b": "Pencil"
+  },
+  {
+   "a": "Hot chocolate",
+   "b": "Lemonade"
+  },
+  {
+   "a": "Video games",
+   "b": "Board games"
+  },
+  {
+   "a": "Camping",
+   "b": "Hotel"
+  },
+  {
+   "a": "Popcorn",
+   "b": "Chips"
+  },
+  {
+   "a": "Ketchup",
+   "b": "Mustard"
+  },
+  {
+   "a": "Stairs",
+   "b": "Elevator"
+  },
+  {
+   "a": "Soup",
+   "b": "Sandwich"
+  },
+  {
+   "a": "Sing",
+   "b": "Dance"
+  },
+  {
+   "a": "Puzzles",
+   "b": "Riddles"
+  },
+  {
+   "a": "Ocean",
+   "b": "Lake"
+  },
+  {
+   "a": "Plane",
+   "b": "Train"
+  },
+  {
+   "a": "Crunchy",
+   "b": "Chewy"
+  },
+  {
+   "a": "Early bird",
+   "b": "Night owl"
+  }
+ ]
+}

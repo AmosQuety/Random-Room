@@ -41,6 +41,10 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
             throw new RoomRuleException(RuleViolation.InvalidInput, "The host must be one of the room's players.");
 
         var engine = EngineFor(request.GameType);
+        if (players.Count < engine.MinPlayers)
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"This game needs at least {engine.MinPlayers} players.");
+        if (players.Count > engine.MaxPlayers)
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"This game works with at most {engine.MaxPlayers} players.");
 
         var room = new Room
         {

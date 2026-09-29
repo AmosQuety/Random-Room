@@ -34,6 +34,8 @@ public sealed class GameStore(RoomDbContext db, TimeProvider clock)
 
     public static string Serialize<T>(T value) => JsonSerializer.Serialize(value, JsonOptions);
 
+    public static JsonElement ToElement<T>(T value) => JsonSerializer.SerializeToElement(value, JsonOptions);
+
     public static T Deserialize<T>(string json) =>
         JsonSerializer.Deserialize<T>(json, JsonOptions) ?? throw new InvalidOperationException("Stored game data was empty.");
 
@@ -147,6 +149,16 @@ public sealed class GameStore(RoomDbContext db, TimeProvider clock)
         await db.Rooms.AsNoTracking().Where(r => r.Id == roomId).Select(r => r.HostPlayer).SingleAsync(ct);
 
     // ---- transactions ----
+
+    /// <summary>
+    /// Takes a row lock on the session's state until the surrounding transaction ends, so actions on one session
+    /// (an answer racing the reveal, two hosts pressing next) are applied one at a time. Call inside InTransactionAsync.
+    /// </summary>
+    public async Task LockSessionAsync(Guid sessionId, CancellationToken ct) =>
+        _ = await db.GameSessionStates
+            .FromSql($"SELECT * FROM \"GameSessionStates\" WHERE \"SessionId\" = {sessionId} FOR UPDATE")
+            .AsNoTracking()
+            .ToListAsync(ct);
 
     /// <summary>Runs a multi-step write atomically. Nested calls join the outer transaction.</summary>
     public async Task InTransactionAsync(Func<Task> work, CancellationToken ct)

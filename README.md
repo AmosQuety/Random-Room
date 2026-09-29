@@ -61,10 +61,26 @@ Notes:
 | --- | --- | --- |
 | Random Picker | Reflex & Chance | Everyone triggers a server-random pick from a shared list |
 | Trivia | Quiz | Host-curated multiple choice with a scoreboard |
+| Would You Rather | Poll & Reveal | Private two-way pick; sit with the majority to score. 30 built-in dilemmas |
+| This or That | Poll & Reveal | Rapid pairs, same scoring. 30 built-in pairs |
+| Most Likely To | Poll & Reveal | Vote for a friend (not yourself); the most-voted is crowned. 30 built-in prompts, 3+ players |
+| Never Have I Ever | Poll & Reveal | Clean statements; "still standing" scoring. 30 built-in statements |
+| Survey Showdown | Poll & Reveal | Guess the hidden survey board; matching an answer scores its points. 15 built-in surveys |
 
 ## Adding a game
 
 Trivia was added as the proof of the plugin seam; copy its shape.
+
+**Prompt-and-answer games (the easy path).** If the game is "a prompt appears, everyone answers privately, then it
+reveals" (polls, votes, guesses), you do not write an engine. Write a small rules class in
+`Games/Rounds/` implementing `IRoundRules<TPrompt>` (parse a host prompt, view a prompt, validate an answer,
+resolve a round into a summary and points), add an embedded bank in `Games/Content/<name>.json`, and register it
+with `services.AddRoundGame<TPrompt, TRules>()`. On the frontend, build the module from `games/rounds`
+(`roundSetupFor`, `RoundSetupForm`, `RoundGameScreen`); see `games/would-you-rather` for the smallest example.
+Phases, hidden answers, one answer per player, deadlines, scoring totals and restart recovery come for free.
+
+**Anything else** uses the shared primitives in `Games/Shared/`: `GameStore` (setup, session state, entries, locks),
+`PhaseGuard`, `ServerTimer`, `AnswerNormalizer`, `ContentBank`; override `GetPayloadForAsync` for per-player views.
 
 Backend (`backend/RandomRoom.Api`):
 1. Add domain entities under `Domain/` if the game persists state, and register them in `Data/RoomDbContext.cs`.

@@ -2,25 +2,15 @@
 
 ## Summary (updated at the end of each phase)
 
-**Status: Phase 1 (design overhaul) done. Phase 2 (shared primitives) backend done; games in progress.**
+**Status: Phase 1 (design overhaul) done. Phase 2 (shared primitives) done. Phase 3 (games) in progress: see the checklist.**
 
-(The paragraphs below describe run 1, where NuGet was unreachable. It is reachable now and the backend builds and tests.)
+Run 1 could not build the backend (NuGet was unreachable). Run 2 has NuGet, so the backend compiles and its tests
+run against a real Postgres. Every game below is a full plugin: backend engine, frontend module, tests on both sides.
 
-The unattended cloud session this ran in could reach npm and GitHub but not NuGet
-(`api.nuget.org` is denied by the session's egress policy; the proxy answers 403 to CONNECT and its
-status endpoint records it). `dotnet restore` therefore cannot download EF Core, Npgsql, SignalR test
-packages and so on, which means **no backend code can be compiled, tested or run in that session**.
-The .NET 10 SDK and Postgres 16 were installed and working; only package restore is blocked.
-
-Consequences, decided deliberately rather than papered over:
-
-- Phase 1 is frontend-only and fully verified (lint, build, 26 vitest tests, contrast script, screenshots).
-- Phases 2 and 3 need new backend engines, migrations and tests. Writing roughly sixteen engines and
-  migrations with no compiler, no test run and no database would break the "only push green commits" and
-  "do not claim a result you did not run" rules, so none were written. Nothing is faked.
-- To unblock: run this task again in an environment that can reach `api.nuget.org` (or give the session a
-  NuGet mirror). Nothing in Phase 1 needs redoing; the game modules plug into the picker, categories, accents,
-  shared `Scoreboard` and lazy-loading seam that Phase 1 built.
+Open item for the owner: the three run-1 commits are authored as the tool's identity, not as `AmosQuety`. Rewriting
+them needs a history rewrite and a force-push (`git rebase -r --exec 'git commit --amend --no-edit --reset-author'`,
+then `git push --force-with-lease`), which this session was not permitted to run. Every commit from run 2 onward is
+authored as `AmosQuety`.
 
 ## Environment notes
 
@@ -44,14 +34,14 @@ Consequences, decided deliberately rather than papered over:
 
 | Item | Status | Note |
 | --- | --- | --- |
-| Environment bootstrap | done (partial) | Backend restore blocked, see above |
+| Environment bootstrap | done | Postgres 16 on 5433, .NET 10 SDK, npm ci |
 | Phase 1: design overhaul | done | Wordmark hero + persistent header, stepped create flow, categorized picker, per-game accents, states, motion, a11y |
-| Phase 2: shared primitives | partly | Frontend `Scoreboard`, category/accent registry and lazy loading done; backend round engine, timing, phase guards blocked |
-| Would You Rather | blocked | needs backend engine (NuGet) |
-| This or That | blocked | " |
-| Most Likely To | blocked | " |
-| Never Have I Ever | blocked | " |
-| Family Feud-style | blocked | " |
+| Phase 2: shared primitives | done | Per-viewer snapshots, generic state/entry tables, phase guard, server timer, answer matching, content banks, round engine + shared round screen and setup form. See `DECISIONS.md` |
+| Would You Rather | done | backend + frontend tests, smoke-tested against the running API |
+| This or That | done | backend + frontend tests, smoke-tested against the running API |
+| Most Likely To | done | backend + frontend tests, smoke-tested against the running API |
+| Never Have I Ever | done | backend + frontend tests, smoke-tested against the running API |
+| Family Feud-style (Survey Showdown) | done | individual scoring, board only sent at reveal |
 | Trivia upgrades (categories, bank, time limit) | blocked | " |
 | Two Truths and a Lie | blocked | " |
 | Guess Who | blocked | " |

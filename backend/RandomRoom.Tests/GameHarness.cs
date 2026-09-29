@@ -55,14 +55,24 @@ public sealed class GameHarness : IDisposable
         Players = players ?? DefaultPlayers;
 
         Db = NewContext();
-        Db.Database.Migrate();
-        var (service, engine) = Wire(Db);
-        Service = service;
+        try
+        {
+            Db.Database.Migrate();
+            var (service, engine) = Wire(Db);
+            Service = service;
 
-        var admin = new RoomAdminService(Db, Clock, [engine]);
-        var created = admin.CreateRoomAsync(new CreateRoomRequest("Test room", gameType, TestSetup.Of(setup), Players, Host))
-            .GetAwaiter().GetResult();
-        RoomId = Db.Rooms.Single(r => r.Slug == created.Slug).Id;
+            var admin = new RoomAdminService(Db, Clock, [engine]);
+            var created = admin.CreateRoomAsync(new CreateRoomRequest("Test room", gameType, TestSetup.Of(setup), Players, Host))
+                .GetAwaiter().GetResult();
+            RoomId = Db.Rooms.Single(r => r.Slug == created.Slug).Id;
+        }
+        catch
+        {
+            // A rejected setup must not leave a throwaway database behind.
+            Db.Dispose();
+            database.Dispose();
+            throw;
+        }
     }
 
     private RoomDbContext NewContext() =>

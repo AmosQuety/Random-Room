@@ -1,0 +1,529 @@
+{
+ "version": 1,
+ "items": [
+  {
+   "text": "Name something you find in a kitchen",
+   "answers": [
+    {
+     "text": "Fridge",
+     "points": 35,
+     "aliases": []
+    },
+    {
+     "text": "Oven",
+     "points": 25,
+     "aliases": [
+      "Stove",
+      "Cooker"
+     ]
+    },
+    {
+     "text": "Sink",
+     "points": 18,
+     "aliases": []
+    },
+    {
+     "text": "Kettle",
+     "points": 12,
+     "aliases": []
+    },
+    {
+     "text": "Toaster",
+     "points": 10,
+     "aliases": []
+    }
+   ]
+  },
+  {
+   "text": "Name a popular pet",
+   "answers": [
+    {
+     "text": "Dog",
+     "points": 40,
+     "aliases": [
+      "Puppy"
+     ]
+    },
+    {
+     "text": "Cat",
+     "points": 30,
+     "aliases": [
+      "Kitten"
+     ]
+    },
+    {
+     "text": "Fish",
+     "points": 14,
+     "aliases": [
+      "Goldfish"
+     ]
+    },
+    {
+     "text": "Rabbit",
+     "points": 9,
+     "aliases": [
+      "Bunny"
+     ]
+    },
+    {
+     "text": "Hamster",
+     "points": 7,
+     "aliases": []
+    }
+   ]
+  },
+  {
+   "text": "Name a fruit that is yellow",
+   "answers": [
+    {
+     "text": "Banana",
+     "points": 42,
+     "aliases": []
+    },
+    {
+     "text": "Lemon",
+     "points": 28,
+     "aliases": []
+    },
+    {
+     "text": "Pineapple",
+     "points": 14,
+     "aliases": []
+    },
+    {
+     "text": "Mango",
+     "points": 9,
+     "aliases": []
+    },
+    {
+     "text": "Melon",
+     "points": 7,
+     "aliases": []
+    }
+   ]
+  },
+  {
+   "text": "Name something you take on a beach holiday",
+   "answers": [
+    {
+     "text": "Sunscreen",
+     "points": 30,
+     "aliases": [
+      "Sun cream",
+      "Suncream"
+     ]
+    },
+    {
+     "text": "Towel",
+     "points": 26,
+     "aliases": []
+    },
+    {
+     "text": "Swimsuit",
+     "points": 18,
+     "aliases": [
+      "Swimming costume",
+      "Bikini"
+     ]
+    },
+    {
+     "text": "Sunglasses",
+     "points": 14,
+     "aliases": [
+      "Shades"
+     ]
+    },
+    {
+     "text": "Bucket and spade",
+     "points": 12,
+     "aliases": [
+      "Bucket",
+      "Spade"
+     ]
+    }
+   ]
+  },
+  {
+   "text": "Name a school subject",
+   "answers": [
+    {
+     "text": "Maths",
+     "points": 34,
+     "aliases": [
+      "Math",
+      "Mathematics"
+     ]
+    },
+    {
+     "text": "English",
+     "points": 24,
+     "aliases": []
+    },
+    {
+     "text": "Science",
+     "points": 20,
+     "aliases": []
+    },
+    {
+     "text": "History",
+     "points": 12,
+     "aliases": []
+    },
+    {
+     "text": "Art",
+     "points": 10,
+     "aliases": []
+    }
+   ]
+  },
+  {
+   "text": "Name something that comes in pairs",
+   "answers": [
+    {
+     "text": "Shoes",
+     "points": 32,
+     "aliases": [
+      "Shoe"
+     ]
+    },
+    {
+     "text": "Socks",
+     "points": 26,
+     "aliases": [
+      "Sock"
+     ]
+    },
+    {
+     "text": "Gloves",
+     "points": 18,
+     "aliases": [
+      "Glove"
+     ]
+    },
+    {
+     "text": "Twins",
+     "points": 14,
+     "aliases": []
+    },
+    {
+     "text": "Earrings",
+     "points": 10,
+     "aliases": [
+      "Earring"
+     ]
+    }
+   ]
+  },
+  {
+   "text": "Name a season of the year",
+   "answers": [
+    {
+     "text": "Summer",
+     "points": 36,
+     "aliases": []
+    },
+    {
+     "text": "Winter",
+     "points": 26,
+     "aliases": []
+    },
+    {
+     "text": "Spring",
+     "points": 20,
+     "aliases": []
+    },
+    {
+     "text": "Autumn",
+     "points": 18,
+     "aliases": [
+      "Fall"
+     ]
+    }
+   ]
+  },
+  {
+   "text": "Name something you do on a birthday",
+   "answers": [
+    {
+     "text": "Eat cake",
+     "points": 34,
+     "aliases": [
+      "Cake"
+     ]
+    },
+    {
+     "text": "Open presents",
+     "points": 26,
+     "aliases": [
+      "Presents",
+      "Gifts"
+     ]
+    },
+    {
+     "text": "Blow out candles",
+     "points": 18,
+     "aliases": [
+      "Candles"
+     ]
+    },
+    {
+     "text": "Sing",
+     "points": 12,
+     "aliases": [
+      "Sing happy birthday"
+     ]
+    },
+    {
+     "text": "Have a party",
+     "points": 10,
+     "aliases": [
+      "Party"
+     ]
+    }
+   ]
+  },
+  {
+   "text": "Name a musical instrument",
+   "answers": [
+    {
+     "text": "Piano",
+     "points": 30,
+     "aliases": [
+      "Keyboard"
+     ]
+    },
+    {
+     "text": "Guitar",
+     "points": 28,
+     "aliases": []
+    },
+    {
+     "text": "Drums",
+     "points": 18,
+     "aliases": [
+      "Drum"
+     ]
+    },
+    {
+     "text": "Violin",
+     "points": 14,
+     "aliases": []
+    },
+    {
+     "text": "Flute",
+     "points": 10,
+     "aliases": []
+    }
+   ]
+  },
+  {
+   "text": "Name something you find in a park",
+   "answers": [
+    {
+     "text": "Bench",
+     "points": 28,
+     "aliases": [
+      "Benches"
+     ]
+    },
+    {
+     "text": "Swings",
+     "points": 24,
+     "aliases": [
+      "Swing"
+     ]
+    },
+    {
+     "text": "Trees",
+     "points": 20,
+     "aliases": [
+      "Tree"
+     ]
+    },
+    {
+     "text": "Pond",
+     "points": 16,
+     "aliases": [
+      "Lake"
+     ]
+    },
+    {
+     "text": "Ducks",
+     "points": 12,
+     "aliases": [
+      "Duck"
+     ]
+    }
+   ]
+  },
+  {
+   "text": "Name a vegetable",
+   "answers": [
+    {
+     "text": "Carrot",
+     "points": 30,
+     "aliases": [
+      "Carrots"
+     ]
+    },
+    {
+     "text": "Potato",
+     "points": 26,
+     "aliases": [
+      "Potatoes"
+     ]
+    },
+    {
+     "text": "Broccoli",
+     "points": 18,
+     "aliases": []
+    },
+    {
+     "text": "Peas",
+     "points": 14,
+     "aliases": [
+      "Pea"
+     ]
+    },
+    {
+     "text": "Tomato",
+     "points": 12,
+     "aliases": []
+    }
+   ]
+  },
+  {
+   "text": "Name something you wear when it rains",
+   "answers": [
+    {
+     "text": "Raincoat",
+     "points": 34,
+     "aliases": [
+      "Coat",
+      "Mac"
+     ]
+    },
+    {
+     "text": "Boots",
+     "points": 26,
+     "aliases": [
+      "Wellies",
+      "Wellington boots",
+      "Rain boots"
+     ]
+    },
+    {
+     "text": "Umbrella",
+     "points": 22,
+     "aliases": []
+    },
+    {
+     "text": "Hood",
+     "points": 10,
+     "aliases": [
+      "Hoodie"
+     ]
+    },
+    {
+     "text": "Poncho",
+     "points": 8,
+     "aliases": []
+    }
+   ]
+  },
+  {
+   "text": "Name a colour in the rainbow",
+   "answers": [
+    {
+     "text": "Red",
+     "points": 26,
+     "aliases": []
+    },
+    {
+     "text": "Blue",
+     "points": 22,
+     "aliases": []
+    },
+    {
+     "text": "Green",
+     "points": 20,
+     "aliases": []
+    },
+    {
+     "text": "Yellow",
+     "points": 18,
+     "aliases": []
+    },
+    {
+     "text": "Purple",
+     "points": 14,
+     "aliases": [
+      "Violet"
+     ]
+    }
+   ]
+  },
+  {
+   "text": "Name a game you play at a party",
+   "answers": [
+    {
+     "text": "Musical chairs",
+     "points": 30,
+     "aliases": []
+    },
+    {
+     "text": "Pass the parcel",
+     "points": 24,
+     "aliases": []
+    },
+    {
+     "text": "Hide and seek",
+     "points": 20,
+     "aliases": []
+    },
+    {
+     "text": "Charades",
+     "points": 16,
+     "aliases": []
+    },
+    {
+     "text": "Pin the tail on the donkey",
+     "points": 10,
+     "aliases": []
+    }
+   ]
+  },
+  {
+   "text": "Name something you find in a bathroom",
+   "answers": [
+    {
+     "text": "Toothbrush",
+     "points": 30,
+     "aliases": []
+    },
+    {
+     "text": "Soap",
+     "points": 24,
+     "aliases": []
+    },
+    {
+     "text": "Towel",
+     "points": 20,
+     "aliases": [
+      "Towels"
+     ]
+    },
+    {
+     "text": "Shower",
+     "points": 14,
+     "aliases": []
+    },
+    {
+     "text": "Mirror",
+     "points": 12,
+     "aliases": []
+    }
+   ]
+  }
+ ]
+}

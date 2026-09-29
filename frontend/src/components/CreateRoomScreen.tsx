@@ -166,7 +166,7 @@ export function CreateRoomScreen() {
     setPending(true);
     setError(null);
     try {
-      setResult(await createRoom(title.trim(), game.key, game.toApiSetup(setup), cleanPlayers, hostPlayer));
+      setResult(await createRoom(title.trim() || `${game.name} night`, game.key, game.toApiSetup(setup), cleanPlayers, hostPlayer));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not reach the server. Check your connection and try again.");
     } finally {
@@ -211,7 +211,7 @@ export function CreateRoomScreen() {
               </div>
             </div>
 
-            <Field id="room-title" label="Room name" hint="Shown to everyone who joins. Optional.">
+            <Field id="room-title" label="Room name" hint={`Shown to everyone who joins. Leave blank for "${game.name} night".`}>
               <input
                 id="room-title"
                 value={title}

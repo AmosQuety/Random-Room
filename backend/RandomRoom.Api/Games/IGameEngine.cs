@@ -12,6 +12,12 @@ public interface IGameEngine
     /// <summary>Matches Room.GameType. Used to pick this engine out of the registered set.</summary>
     string GameType { get; }
 
+    /// <summary>The fewest players this game works with. Rooms hold 2 to 12 players; a game may narrow that.</summary>
+    int MinPlayers => 2;
+
+    /// <summary>The most players this game works with.</summary>
+    int MaxPlayers => 12;
+
     /// <summary>
     /// Validates and persists this game's room-level setup (e.g. Random Picker's choices,
     /// Trivia's question bank). Called once, at room creation. Throws RoomRuleException.InvalidInput
