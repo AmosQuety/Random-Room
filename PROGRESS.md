@@ -45,7 +45,7 @@ authored as `AmosQuety`.
 | Trivia upgrades (categories, bank, time limit) | done | additive: two nullable columns, starter bank of 30, server-checked per-question deadline; all original trivia tests still pass |
 | Two Truths and a Lie | done | custom engine on the shared primitives; the lie is only ever in the storyteller's own payload until the reveal |
 | Guess Who | done | text facts only; authorship only in the author's own payload until the reveal; guess progress is a count, not a per-player list (a list would single out the author) |
-| Song/Movie intro guessing | blocked | " |
+| Song/Movie intro guessing (Name That) | done | host clues plus optional https link (new tab, no iframe); host-set accepted answers marked server-side; first correct by receipt order gets a bonus |
 | Spin the Wheel | blocked | " |
 | Buzzer | blocked | " |
 | Bingo | blocked | " |

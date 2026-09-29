@@ -41,6 +41,7 @@ builder.Services.AddScoped<IGameEngine, RandomPickerEngine>();
 builder.Services.AddScoped<IGameEngine, TriviaEngine>();
 builder.Services.AddScoped<IGameEngine, TwoTruthsEngine>();
 builder.Services.AddScoped<IGameEngine, GuessWhoEngine>();
+builder.Services.AddRoundGame<IntroPrompt, NameThatRules>();
 builder.Services.AddRoundGame<TwoWayPrompt, WouldYouRatherRules>();
 builder.Services.AddRoundGame<TwoWayPrompt, ThisOrThatRules>();
 builder.Services.AddRoundGame<StatementPrompt, MostLikelyToRules>();
