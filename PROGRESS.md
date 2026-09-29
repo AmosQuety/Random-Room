@@ -4,6 +4,20 @@
 
 **Status: Phase 1 (design overhaul) done. Phase 2 (shared primitives) done. Phase 3 (games): every game in the brief is built as a registered plugin, see the checklist. Nothing is blocked.**
 
+**Built (18 games, all registered plugins with backend and frontend tests):** Random Picker, Trivia, Would You Rather,
+This or That, Most Likely To, Never Have I Ever, Survey Showdown, Two Truths and a Lie, Guess Who Wrote It, Name That
+Song or Movie, Spin the Wheel, Buzzer Round, Bingo, Fill-in Stories, One-Word Story, Fortunately/Unfortunately, Word
+Spies, Forbidden Words, Sketch Guess.
+
+**Blocked:** nothing in the games. Only the author rewrite of three run-1 commits (below).
+
+**Limitations:** the buzzer favours the faster connection; Sketch Guess drawing is pointer-only and an abnormally
+ended session leaves its last round's strokes in the state row; timers are checked lazily when a client sends `tick`;
+built-in content is English only.
+
+**Suggestions:** a background sweeper for expired rounds, a keyboard-drivable drawing mode, localized content banks,
+end-to-end browser tests against a real API.
+
 Run 1 could not build the backend (NuGet was unreachable). Run 2 has NuGet, so the backend compiles and its tests
 run against a real Postgres. Every game below is a full plugin: backend engine, frontend module, tests on both sides.
 
@@ -55,7 +69,7 @@ authored as `AmosQuety`.
 | Codenames-style (Word Spies) | done | teams dealt at random, one spymaster each; key only in spymaster payloads (everyone once over); assassin and all rules server-side; leak tests over every role and the public view; 132 built-in words |
 | Taboo-style (Forbidden Words) | done | card only in the describer's and judge's payloads (leak-tested across every role and the public view); judge (next player) or host flags; server matches guesses, caps guesses per round, server-checked timer; 40 built-in cards |
 | Pictionary-style (Sketch Guess) | done | word only in the drawer's payload (leak-tested for every role, the public view and the preview); stroke, point, batch and total caps plus a per-drawer rate limit enforced server-side; drawing kept only for its round; atomic first-correct-guess wins under concurrency; 105 built-in words; canvas frontend with pointer events, palette, pen sizes, undo, clear |
-| Full-diff review | done for Phase 1 | |
+| Full-diff review | done | Checked for hidden-info leaks (per-role tests on every hidden-info game), secrets, committed env files and stray tool-identity text: none found. Only the three run-1 commits carry a different author (see Summary) |
 
 ## Phase 1 verification
 
