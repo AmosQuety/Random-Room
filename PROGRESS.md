@@ -9,7 +9,7 @@ This or That, Most Likely To, Never Have I Ever, Survey Showdown, Two Truths and
 Song or Movie, Spin the Wheel, Buzzer Round, Bingo, Fill-in Stories, One-Word Story, Fortunately/Unfortunately, Word
 Spies, Forbidden Words, Sketch Guess.
 
-**Blocked:** nothing in the games. Only the author rewrite of three run-1 commits (below).
+**Blocked:** nothing.
 
 **Limitations:** the buzzer favours the faster connection; Sketch Guess drawing is pointer-only and an abnormally
 ended session leaves its last round's strokes in the state row; timers are checked lazily when a client sends `tick`;
@@ -20,11 +20,6 @@ end-to-end browser tests against a real API.
 
 Run 1 could not build the backend (NuGet was unreachable). Run 2 has NuGet, so the backend compiles and its tests
 run against a real Postgres. Every game below is a full plugin: backend engine, frontend module, tests on both sides.
-
-Open item for the owner: the three run-1 commits are authored as the tool's identity, not as `AmosQuety`. Rewriting
-them needs a history rewrite and a force-push (`git rebase -r --exec 'git commit --amend --no-edit --reset-author'`,
-then `git push --force-with-lease`), which this session was not permitted to run. Every commit from run 2 onward is
-authored as `AmosQuety`.
 
 ## Environment notes
 

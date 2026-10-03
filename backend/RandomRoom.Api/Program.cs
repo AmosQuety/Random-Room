@@ -29,7 +29,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOptions<RoomOptions>()
     .BindConfiguration(RoomOptions.SectionName)
-    .Validate(RoomOptions.IsValid, "Room settings need a 32+ char JwtSigningKey.")
+    .Validate(RoomOptions.IsValid, "Room settings need a 32+ char JwtSigningKey and a RetentionDays of 0 or more.")
     .ValidateOnStart();
 
 builder.Services.AddDbContext<RoomDbContext>(o =>
@@ -45,6 +45,8 @@ builder.Services.AddScoped<GameSessionService>();
 builder.Services.AddScoped<RoomBroadcaster>();
 builder.Services.AddScoped<GameStore>();
 builder.Services.AddScoped<RoomAdminService>();
+builder.Services.AddScoped<RoomRetentionService>();
+builder.Services.AddHostedService<RoomRetentionWorker>();
 builder.Services.AddScoped<IGameEngine, RandomPickerEngine>();
 builder.Services.AddScoped<IGameEngine, TriviaEngine>();
 builder.Services.AddScoped<IGameEngine, TwoTruthsEngine>();

@@ -44,6 +44,13 @@ that folder first. To build somewhere else without touching it: `npm run build -
     cd backend && dotnet test          # needs the Postgres container above; each test uses a throwaway database
     cd frontend && npx vitest run && npx tsc -b
 
+## Data retention
+
+A background job runs a minute after the API starts and then daily. It deletes every room with no activity for
+`Room__RetentionDays` days (default 30; set 0 to turn it off), together with its players, games, answers and audit
+records, so the database does not grow for ever on a small plan. Activity means a room or game being created, started
+or ended, or a player doing something in a game. Set the number to the period you are allowed or required to keep data.
+
 ## Deploy on Render
 
 The repo root `Dockerfile` builds the UI and API into one container.

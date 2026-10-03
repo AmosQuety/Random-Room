@@ -57,3 +57,10 @@ Judgment calls where the brief was silent, each with a one-line reason.
 ## Trivia limits
 
 - **6 options per question, 100 characters per option, 300 per question, 50 questions per room (your own and the starter ones together).** Chosen to fit a phone screen and a round that stays fun; the server enforces them with a 400 that names the limit, and the setup form mirrors them so a problem shows on the setup step. The constants live in `TriviaEngine` and `games/trivia/setup.ts`; change both together.
+
+## Retention
+
+- **Rooms with no activity for `Room__RetentionDays` (default 30) are deleted, with everything in them.** A daily background job, first run a minute after start. 30 days is a placeholder for a personal-project database; set it to whatever period the deployment is allowed or required to keep data. 0 turns the job off.
+- **Activity** is a room created, a game created, started or ended, or a recorded action in a game. An old room that is played again is kept.
+- **The job is the one place allowed to delete recorded answers and picks.** They are append-only while their room lives, and their foreign keys refuse a cascade, so the job deletes them first with `ExecuteDelete` (which bypasses the context's immutability guard on purpose) and then the room, in one transaction, 100 rooms at a time.
+- **A failed run is logged and retried at the next run.** Deleting is idempotent, so two instances running it at once is harmless.

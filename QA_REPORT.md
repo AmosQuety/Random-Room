@@ -752,6 +752,8 @@ Lighthouse mobile preset, throttling on, production build via vite preview:
 
 ## 14. Status after fixes
 
+The second audit, which re-tested these fixes in a real browser, is in `QA_REPORT_2.md`.
+
 Written after the audit, from the commits on `feat/playground-redesign-and-games`. "Verified" means checked again after the fix:
 a failing test that passes, plus a real-browser or live-API run where stated. Everything not listed here is still open.
 

@@ -51,7 +51,7 @@ Low-bandwidth note: keep whatever is added small (no image assets, no heavy libr
 
 ## Findings from the QA audit
 
-The first full QA audit is in `QA_REPORT.md` (47 findings, no blockers). All 8 Major findings and nearly all Minor and Polish ones are fixed; section 14 of the report lists every finding's status and the commit that fixed it. Still open: the Sketch Guess canvas below the fold on a laptop (WORD-07), local content for the built-in banks (POLL-09), focus after voting in Two Truths (QUIZ-07), a dev-only console message (LEAD-03), and (the trivia caps, QUIZ-06, are now done: 6 options, 100 characters per option, 50 questions).
+The first full QA audit is in `QA_REPORT.md` (47 findings, no blockers). All 8 Major findings and nearly all Minor and Polish ones are fixed; section 14 of the report lists every finding's status and the commit that fixed it. Still open: the Sketch Guess canvas below the fold on a laptop (WORD-07), local content for the built-in banks (POLL-09), focus after voting in Two Truths (QUIZ-07), and a dev-only console message (LEAD-03). The trivia caps (QUIZ-06) are now done: 6 options, 100 characters per option, 50 questions.
 
 ## Other known gaps
 
@@ -59,4 +59,4 @@ The first full QA audit is in `QA_REPORT.md` (47 findings, no blockers). All 8 M
 - **Stale local server.** An old backend process kept port 5184 and served an out-of-date build, which produced confusing "unknown game type" errors. Worth documenting the dev workflow in the README.
 - **Sketch Guess has no keyboard equivalent** for drawing (pointer and touch only).
 - **Buzzer fairness** depends on which connection reaches the server first.
-- **Leftover drawing strokes** stay in the database if a session is ended abnormally, until the room is deleted.
+- **Leftover drawing strokes** stay in the database if a session is ended abnormally, until the room is deleted (rooms are now deleted after `Room__RetentionDays` of inactivity, 30 by default).

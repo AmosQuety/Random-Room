@@ -4,30 +4,25 @@ Written 2026-10-03 at the end of the second QA round. Read this first when you c
 
 ## Where things stand
 
-- **Branch:** `feat/playground-redesign-and-games`. It is 74 commits ahead of `main` and `main` has nothing the branch lacks, so a merge is a plain fast-forward. **12 of those commits are not pushed yet.** Every commit is authored as you.
-- **Built:** 19 games, all registered plugins with backend and frontend tests. Per-player snapshots keep hidden information (spymaster key, drawer's word, Bingo cards, the lie) out of other players' payloads. The invite and PIN model works end to end.
-- **Tests, last run:** backend 483 passing against a local Postgres on port 5433; frontend 281 passing, plus lint (one old warning in `useRoom.ts`), `tsc -b`, `npm run check:contrast` and `npm run build`.
-- **QA:** two full audits (`QA_REPORT.md`, `QA_REPORT_2.md`, prompts in `docs/`). The first found 8 Majors, all fixed and confirmed. The second found 1 Major and 14 smaller items, all fixed and committed. `QA_REPORT_2.md` is still untracked: decide whether to commit it.
-- **Checked against the real API and Chrome after the fixes:** the End-game-versus-answer race (old code 11 of 12 stale, fixed code 0 of 12), the stroke caps, two-finger touch, sign-in expiry, Bingo, Word Spies layout, the no-JavaScript message and the favicon.
+- **Branch:** `feat/playground-redesign-and-games`, 79 commits ahead of `main` (nothing on `main` that the branch lacks, so a merge is a plain fast-forward). **17 commits are not pushed yet.** Every commit is authored as you.
+- **Built:** 19 games, all registered plugins with backend and frontend tests. Per-player snapshots keep hidden information (spymaster key, drawer's word, Bingo cards, the lie) out of other players' payloads.
+- **Added after the second audit:** host seat reset for forgotten PINs, Share / Copy / QR for invite links, trivia size limits, and a daily job that deletes rooms inactive for `Room__RetentionDays` (default 30). Each is in `DECISIONS.md` and was checked against the real API and browser.
+- **Tests, last run:** backend 509 passing against a local Postgres on port 5433; frontend 299 passing; `tsc -b`, `npm run check:contrast` and `npm run build` clean; lint shows one old warning in `useRoom.ts`. Main bundle 105 kB gzipped (QR code is a separate 7.6 kB chunk loaded on request).
+- **QA:** two full audits (`QA_REPORT.md`, `QA_REPORT_2.md`, prompts in `docs/`). Everything they found is fixed. `QA_REPORT_2.md` is still untracked: decide whether to commit it.
+- **Database changes this round:** one additive migration (`AddSeatResetAndAudit`: a `TokenVersion` column and a `RoomAuditEvents` table). It has been applied to your local database.
 
 ## First things to do (small, in this order)
 
 1. **Push the branch** (`git push`) and open a PR into `main`. CI (`.github/workflows/ci.yml`) runs on pull requests only, so the PR is the first time it runs. Fix anything it finds.
-2. **Commit or discard `QA_REPORT_2.md`.** Then update the stale docs below.
-3. **Refresh stale docs:**
-   - `Gaps_Bugs.md` says "Nothing here is fixed yet" and still lists B1 and B2 as open-ish. B1 and B2 are fixed; the QA section needs the second audit's result.
-   - `PROGRESS.md` has an "Open item" about rewriting three commits' author. That is no longer true: all commits are yours. Remove it.
-   - `QA_REPORT.md` section 14 is the status table for audit 1; add a short pointer to `QA_REPORT_2.md`.
+2. **Commit or discard `QA_REPORT_2.md`.**
+3. **Pick the database and set `Room__RetentionDays`** before deploying (see Decisions below). The first deploy will run the new migration.
 
-## To build (in this order; remove each when done)
+## To build (remove each when done)
 
-Done so far in this round: PIN recovery (host-only seat reset, `Gaps_Bugs.md` G2) better invites (Share, Copy, QR code; G1 items 1, 2 and 6) and trivia size limits. Still open from them: a recovery path for the host's own seat, a host lobby view (G1 item 4), and a shared "pick your name" link, which I decided against because anyone with it could claim any unclaimed seat.
+Done so far in this round: PIN recovery (host-only seat reset, `Gaps_Bugs.md` G2), better invites (Share, Copy, QR code; G1 items 1, 2 and 6), trivia size limits and deleting inactive rooms (`Room__RetentionDays`, default 30). Still open from them: a recovery path for the host's own seat, a host lobby view (G1 item 4), and a shared "pick your name" link, which I decided against because anyone with it could claim any unclaimed seat.
 
 ### 1. Local trivia content
 A draft of 20 East Africa questions is in `docs/trivia-east-africa-draft.md`, **not shipped**. Review every answer, swap in questions your players know, then add it as a second bank and a "pack" choice on the Trivia setup. (The caps part is done: 6 options, 100 characters per option, 50 questions per room.)
-
-### 2. Delete inactive rooms
-Daily background job removes rooms with no activity for `Room:RetentionDays` (default 30, 0 turns it off). Keeps free-tier databases from filling.
 
 ## Decisions waiting for you
 
