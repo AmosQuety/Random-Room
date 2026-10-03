@@ -33,6 +33,8 @@ const TIMER_TICK = "tick";
 interface Props {
   session: Session;
   onLeave: () => void;
+  /** The server no longer accepts this player's token; the app returns to the join screen and says why. */
+  onSessionExpired: () => void;
 }
 
 const isUnauthorized = (e: unknown) => e instanceof ApiError && e.status === 401;
@@ -61,8 +63,8 @@ function RoomSkeleton() {
   );
 }
 
-export function RoomScreen({ session, onLeave }: Props) {
-  const { snapshot, connection, loadFailed, retry, applySnapshot } = useRoom(session.token, onLeave);
+export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
+  const { snapshot, connection, loadFailed, retry, applySnapshot } = useRoom(session.token, onSessionExpired);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<RoomError | null>(null);
 
@@ -79,7 +81,7 @@ export function RoomScreen({ session, onLeave }: Props) {
       applySnapshot(await action(session.token));
     } catch (e) {
       // An expired token ends the session the same way it does when the room is loaded: back to the join screen.
-      if (isUnauthorized(e)) return onLeave();
+      if (isUnauthorized(e)) return onSessionExpired();
       const message = e instanceof ApiError ? e.message : "Could not reach the server. Check your connection and try again.";
       setError({ message, sequence: latestSequence.current });
     } finally {
@@ -93,7 +95,7 @@ export function RoomScreen({ session, onLeave }: Props) {
     try {
       applySnapshot(await action(session.token));
     } catch (e) {
-      if (isUnauthorized(e)) onLeave();
+      if (isUnauthorized(e)) onSessionExpired();
       // Anything else is deliberately ignored, see above.
     }
   }

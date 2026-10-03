@@ -11,6 +11,8 @@ import { buttonClass, inputClass, sectionHeadingClass } from "./styles";
 interface Props {
   slug: string;
   onJoined: (session: Session) => void;
+  /** Said first when the player was sent here rather than choosing to come, e.g. their sign-in expired. */
+  notice?: string | null;
 }
 
 type Load = { status: "loading" } | { status: "missing" } | { status: "failed" } | { status: "ready"; preview: RoomPreview };
@@ -31,7 +33,7 @@ function JoinSkeleton() {
   );
 }
 
-export function JoinScreen({ slug, onJoined }: Props) {
+export function JoinScreen({ slug, onJoined, notice }: Props) {
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [player, setPlayer] = useState<string | null>(null);
   const [pin, setPin] = useState("");
@@ -121,6 +123,11 @@ export function JoinScreen({ slug, onJoined }: Props) {
   return (
     <Shell accent={game?.accent}>
       <div className="flex flex-col gap-8">
+        {notice && (
+          <p role="status" className="rounded-lg border-2 border-ink bg-mustard-soft px-4 py-3 font-semibold">
+            {notice}
+          </p>
+        )}
         <header className="flex flex-col gap-3">
           <Eyebrow className="flex items-center gap-2">
             {game && <game.Glyph className="size-6" />}

@@ -4,10 +4,13 @@ import { ApiError } from "../lib/api";
 import type { RoomSnapshot, Session } from "../lib/types";
 import { RoomScreen } from "./RoomScreen";
 
-const mocks = vi.hoisted(() => ({ snapshot: null as unknown, performAction: vi.fn() }));
+const mocks = vi.hoisted(() => ({ snapshot: null as unknown, performAction: vi.fn(), onUnauthorized: null as null | (() => void) }));
 
 vi.mock("../lib/useRoom", () => ({
-  useRoom: () => ({ snapshot: mocks.snapshot, connection: "live", loadFailed: false, retry: vi.fn(), applySnapshot: vi.fn() }),
+  useRoom: (_token: string, onUnauthorized: () => void) => {
+    mocks.onUnauthorized = onUnauthorized;
+    return { snapshot: mocks.snapshot, connection: "live", loadFailed: false, retry: vi.fn(), applySnapshot: vi.fn() };
+  },
 }));
 vi.mock("../lib/api", async (importOriginal) => ({ ...(await importOriginal<object>()), performAction: mocks.performAction }));
 vi.mock("../games/registry", () => ({
@@ -54,20 +57,20 @@ describe("RoomScreen errors", () => {
 
   it("clears a failed action's message once a newer snapshot arrives", async () => {
     mocks.performAction.mockRejectedValue(new ApiError("Answers are closed for this round.", 409));
-    const { rerender } = render(<RoomScreen session={session} onLeave={vi.fn()} />);
+    const { rerender } = render(<RoomScreen session={session} onLeave={vi.fn()} onSessionExpired={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("button", { name: "answer" }));
     expect(await screen.findByText("Answers are closed for this round.")).toBeInTheDocument();
 
     show(11);
-    rerender(<RoomScreen session={session} onLeave={vi.fn()} />);
+    rerender(<RoomScreen session={session} onLeave={vi.fn()} onSessionExpired={vi.fn()} />);
 
     expect(screen.queryByText("Answers are closed for this round.")).not.toBeInTheDocument();
   });
 
   it("does not show an error, or lock the screen, when a background timer tick fails", async () => {
     mocks.performAction.mockRejectedValue(new ApiError("The session is not active.", 409));
-    render(<RoomScreen session={session} onLeave={vi.fn()} />);
+    render(<RoomScreen session={session} onLeave={vi.fn()} onSessionExpired={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("button", { name: "tick" }));
 
@@ -80,11 +83,22 @@ describe("RoomScreen errors", () => {
   it("returns to the join screen, with no error, when an action finds the sign-in has expired", async () => {
     mocks.performAction.mockRejectedValue(new ApiError("Unauthorized", 401));
     const onLeave = vi.fn();
-    render(<RoomScreen session={session} onLeave={onLeave} />);
+    const onSessionExpired = vi.fn();
+    render(<RoomScreen session={session} onLeave={onLeave} onSessionExpired={onSessionExpired} />);
 
     fireEvent.click(screen.getByRole("button", { name: "answer" }));
 
-    await waitFor(() => expect(onLeave).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(onSessionExpired).toHaveBeenCalledTimes(1));
+    expect(onLeave).not.toHaveBeenCalled();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("treats a 401 while loading the room as an expired sign-in too", () => {
+    const onSessionExpired = vi.fn();
+    render(<RoomScreen session={session} onLeave={vi.fn()} onSessionExpired={onSessionExpired} />);
+
+    mocks.onUnauthorized?.();
+
+    expect(onSessionExpired).toHaveBeenCalledTimes(1);
   });
 });

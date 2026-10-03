@@ -32,4 +32,17 @@ describe("JoinScreen", () => {
     expect(button).toBeEnabled();
     expect(screen.queryByText(/pick your name above/i)).not.toBeInTheDocument();
   });
+
+  it("explains why the player is here when sent back after an expired sign-in", async () => {
+    render(<JoinScreen slug="abc123" onJoined={vi.fn()} notice="Your sign-in has ended." />);
+
+    expect(await screen.findByText("Your sign-in has ended.")).toBeInTheDocument();
+  });
+
+  it("shows no notice when the player came here on their own", async () => {
+    render(<JoinScreen slug="abc123" onJoined={vi.fn()} />);
+
+    await screen.findByRole("button", { name: /enter the room/i });
+    expect(screen.queryByText(/sign-in has ended/i)).not.toBeInTheDocument();
+  });
 });
