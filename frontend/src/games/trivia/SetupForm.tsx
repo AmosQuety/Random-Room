@@ -30,6 +30,7 @@ function QuestionEditor({
 
       <input
         value={question.text}
+        maxLength={300}
         onChange={(e) => onChange({ ...question, text: e.target.value })}
         placeholder="What's the question?"
         aria-label={`Question ${index + 1} text`}

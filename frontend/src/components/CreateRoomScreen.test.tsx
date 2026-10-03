@@ -42,4 +42,17 @@ describe("CreateRoomScreen", () => {
     expect(screen.getByText(/each player needs a different name/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /create the room/i })).toBeDisabled();
   });
+
+  it("stops typing at the limits the server enforces, so the form cannot produce a rejected room", async () => {
+    render(<CreateRoomScreen />);
+    fireEvent.click(screen.getByRole("radio", { name: /random picker/i }));
+    fireEvent.click(screen.getByRole("button", { name: /continue with random picker/i }));
+
+    expect(await screen.findByLabelText("Choice 1")).toHaveAttribute("maxlength", "80");
+    fireEvent.change(screen.getByLabelText("Choice 1"), { target: { value: "A" } });
+    fireEvent.change(screen.getByLabelText("Choice 2"), { target: { value: "B" } });
+    fireEvent.click(screen.getByRole("button", { name: /next/i }));
+
+    expect(screen.getByLabelText("Player 1")).toHaveAttribute("maxlength", "32");
+  });
 });

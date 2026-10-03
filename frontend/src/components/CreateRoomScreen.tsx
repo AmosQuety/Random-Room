@@ -261,7 +261,7 @@ export function CreateRoomScreen() {
               onChange={setPlayers}
               placeholder={(i) => `Player ${i + 1}`}
               maxItems={12}
-              maxLength={40}
+              maxLength={32}
               addLabel="Add a player"
             />
 
