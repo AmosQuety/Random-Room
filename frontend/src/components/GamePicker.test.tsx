@@ -58,6 +58,15 @@ describe("GamePicker", () => {
     expect(screen.getByRole("radio", { name: /Game 7/ })).toBeInTheDocument();
   });
 
+  it("finds games by their category name, as the placeholder suggests", () => {
+    render(<GamePicker games={twenty} selectedKey={null} onSelect={() => {}} />);
+
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "quiz" } });
+
+    expect(screen.getAllByRole("radio")).toHaveLength(4);
+    for (const n of [1, 6, 11, 16]) expect(screen.getByRole("radio", { name: new RegExp(`Game ${n}(?!\\d)`) })).toBeInTheDocument();
+  });
+
   it("shows an empty state when nothing matches", () => {
     render(<GamePicker games={twenty} selectedKey={null} onSelect={() => {}} />);
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "zzzz" } });

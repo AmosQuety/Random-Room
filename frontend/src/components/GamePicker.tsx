@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { groupByCategory } from "../games/categories";
+import { CATEGORIES, groupByCategory } from "../games/categories";
 import type { AnyGameModule } from "../games/types";
 import { describePlayerRange } from "../lib/players";
 import { CheckIcon, SearchIcon } from "./icons";
@@ -18,7 +18,8 @@ interface Props {
 function matches(game: AnyGameModule, query: string): boolean {
   const needle = query.trim().toLowerCase();
   if (!needle) return true;
-  return [game.name, game.hook, game.description].some((text) => text.toLowerCase().includes(needle));
+  const categoryLabel = CATEGORIES.find((c) => c.key === game.category)?.label ?? "";
+  return [game.name, game.hook, game.description, categoryLabel].some((text) => text.toLowerCase().includes(needle));
 }
 
 function GameTile({ game, selected, onSelect }: { game: AnyGameModule; selected: boolean; onSelect: () => void }) {
