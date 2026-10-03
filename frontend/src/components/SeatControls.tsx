@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ApiError } from "../lib/api";
 import { claimUrl } from "../lib/invites";
 import type { PlayerInvite, PlayerView, SessionStatus } from "../lib/types";
@@ -8,6 +8,7 @@ import { Alert, Eyebrow } from "./ui";
 
 interface Props {
   slug: string;
+  roomTitle: string;
   hostPlayer: string;
   players: PlayerView[];
   status: SessionStatus;
@@ -18,19 +19,14 @@ interface Props {
  * For a player who forgot their PIN, changed phone, or lost their link: the host empties the seat and sends a fresh
  * one-time link. Hidden inside a details element because most games never need it.
  */
-export function SeatControls({ slug, hostPlayer, players, status, onReset }: Props) {
+export function SeatControls({ slug, roomTitle, hostPlayer, players, status, onReset }: Props) {
   const [links, setLinks] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const gameRunning = status === "Active";
   const seats = players.filter((p) => p.name !== hostPlayer);
 
-  // A link is only useful until its owner has used it.
-  useEffect(() => {
-    setLinks((current) => {
-      const stillWaiting = Object.entries(current).filter(([name]) => players.find((p) => p.name === name)?.claimed === false);
-      return stillWaiting.length === Object.keys(current).length ? current : Object.fromEntries(stillWaiting);
-    });
-  }, [players]);
+  // A link is only useful until its owner has used it, so it is shown only while the seat is still empty.
+  const linkFor = (seat: PlayerView) => (seat.claimed ? undefined : links[seat.name]);
 
   async function reset(player: string) {
     setError(null);
@@ -73,11 +69,13 @@ export function SeatControls({ slug, hostPlayer, players, status, onReset }: Pro
                   <span className="sr-only">for {seat.name}</span>
                 </ConfirmButton>
               </div>
-              {links[seat.name] && (
-                <div className="flex flex-wrap items-center gap-3">
-                  <Eyebrow>New link</Eyebrow>
-                  <p className="min-w-0 flex-1 truncate font-mono text-xs text-muted">{claimUrl(slug, links[seat.name])}</p>
-                  <InviteActions slug={slug} player={seat.name} token={links[seat.name]} />
+              {linkFor(seat) && (
+                <div className="flex flex-col gap-2">
+                  <Eyebrow>New link for {seat.name}</Eyebrow>
+                  <p className="truncate font-mono text-xs text-muted">{claimUrl(slug, linkFor(seat)!)}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <InviteActions slug={slug} roomTitle={roomTitle} player={seat.name} token={linkFor(seat)!} />
+                  </div>
                 </div>
               )}
             </li>

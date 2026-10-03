@@ -12,7 +12,7 @@ const players: PlayerView[] = [
 
 function renderControls(overrides: Partial<Parameters<typeof SeatControls>[0]> = {}) {
   const onReset = vi.fn().mockResolvedValue({ player: "Lydia", inviteToken: "fresh-token" });
-  const view = render(<SeatControls slug="abc" hostPlayer="Amos" players={players} status="Completed" onReset={onReset} {...overrides} />);
+  const view = render(<SeatControls slug="abc" roomTitle="Friday" hostPlayer="Amos" players={players} status="Completed" onReset={onReset} {...overrides} />);
   return { onReset, ...view };
 }
 
@@ -41,11 +41,16 @@ describe("SeatControls", () => {
     await waitFor(() => expect(onReset).toHaveBeenCalledWith("Lydia"));
   });
 
-  it("shows the new one-time link once the seat is reset", async () => {
-    renderControls();
+  it("shows the new one-time link once the seat is reset and the room shows it empty", async () => {
+    const { rerender, onReset } = renderControls();
     open();
     fireEvent.click(screen.getByRole("button", { name: /reset pin for lydia/i }));
     fireEvent.click(screen.getByRole("button", { name: /yes, reset/i }));
+    await waitFor(() => expect(onReset).toHaveBeenCalled());
+
+    // The server pushes the emptied seat to everyone after a reset.
+    const emptied = players.map((p) => (p.name === "Lydia" ? { ...p, claimed: false } : p));
+    rerender(<SeatControls slug="abc" roomTitle="Friday" hostPlayer="Amos" players={emptied} status="Completed" onReset={onReset} />);
 
     expect(await screen.findByText(/\/room\/abc\/claim\/fresh-token/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /copy link for lydia/i })).toBeInTheDocument();
@@ -83,7 +88,7 @@ describe("SeatControls", () => {
     fireEvent.click(screen.getByRole("button", { name: /yes, reset/i }));
     await screen.findByText(/claim\/fresh-token/);
 
-    rerender(<SeatControls slug="abc" hostPlayer="Amos" players={players} status="Completed" onReset={onReset} />);
+    rerender(<SeatControls slug="abc" roomTitle="Friday" hostPlayer="Amos" players={players} status="Completed" onReset={onReset} />);
 
     await waitFor(() => expect(screen.queryByText(/claim\/fresh-token/)).not.toBeInTheDocument());
   });

@@ -21,18 +21,13 @@ Written 2026-10-03 at the end of the second QA round. Read this first when you c
 
 ## To build (in this order; remove each when done)
 
-Done so far in this round: PIN recovery (host-only seat reset, see `Gaps_Bugs.md` G2). Still open from it: a recovery path for the host's own seat.
+Done so far in this round: PIN recovery (host-only seat reset, `Gaps_Bugs.md` G2) and better invites (Share, Copy, QR code; G1 items 1, 2 and 6). Still open from them: a recovery path for the host's own seat, a host lobby view (G1 item 4), and a shared "pick your name" link, which I decided against because anyone with it could claim any unclaimed seat.
 
-### 1. Better invites
-- Step 1: Share (Web Share API into WhatsApp) and Copy per player. Frontend only.
-- Step 2: QR code per player, generated in the browser, lazy-loaded on the host screen. Decision: small library or a self-written encoder.
-- Not doing: one shared link where anyone picks their own name (lets anyone claim any unclaimed seat).
-
-### 2. Trivia caps and content
+### 1. Trivia caps and content
 - Caps: 2 to 6 options, 100 characters per option, 300 per question, 50 questions per room. Shared constants, server enforces with a 400 naming the limit, form mirrors them, tested at the limits.
 - Content: optional local pack (for example East African topics). Needs someone with local knowledge to write or review it.
 
-### 3. Delete inactive rooms
+### 2. Delete inactive rooms
 Daily background job removes rooms with no activity for `Room:RetentionDays` (default 30, 0 turns it off). Keeps free-tier databases from filling.
 
 ## Decisions waiting for you

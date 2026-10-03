@@ -58,6 +58,22 @@ export const CopyIcon = (p: IconProps) => (
   </Icon>
 );
 
+export const ShareIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 15V4M8 8l4-4 4 4" />
+    <path d="M5 12v6a2 2 0 002 2h10a2 2 0 002-2v-6" />
+  </Icon>
+);
+
+export const QrIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="4" y="4" width="6" height="6" rx="1" />
+    <rect x="14" y="4" width="6" height="6" rx="1" />
+    <rect x="4" y="14" width="6" height="6" rx="1" />
+    <path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z" />
+  </Icon>
+);
+
 export const FlagIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M6 21V4M6 5h11l-2 4 2 4H6" />

@@ -47,3 +47,9 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **A per-seat `TokenVersion` is checked on every request.** Tokens last 12 hours, so without it a reset would leave the old device signed in. The check is one indexed query in `OnTokenValidated`; tokens issued before the column existed count as version 0.
 - **The reset also cuts live connections.** The old device is told (`seatReset`), removed from its SignalR groups and from presence, so it receives no further snapshots.
 - **An append-only `RoomAuditEvents` table**, separate from game state and logs, records who reset which seat and when. It is rejected for update or delete by `RoomDbContext` and is removed only with its room.
+
+## Invites
+
+- **QR codes use `qrcode-generator` (MIT, no dependencies), loaded only when a host presses "Show code".** Error correction and mask selection are easy to get subtly wrong, so a mature library beats a hand-written encoder. It adds about 7.6 kB gzipped as its own chunk and nothing to the main bundle. The code is drawn in the browser as inline SVG, so a private link never reaches a third party. It is always black on white with the standard 4-module quiet zone, whatever the theme.
+- **Share uses the Web Share API only where the browser has it.** Closing the sheet is not an error; any other failure falls back to copying the link.
+- **No shared "pick your name" link.** Anyone holding it could claim any unclaimed seat, which weakens one-link-per-seat.

@@ -236,6 +236,7 @@ export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
         {session.isHost && (
           <SeatControls
             slug={snapshot.roomSlug}
+            roomTitle={snapshot.roomTitle}
             hostPlayer={snapshot.hostPlayer}
             players={snapshot.players}
             status={status}

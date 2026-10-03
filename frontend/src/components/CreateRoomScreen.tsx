@@ -53,7 +53,7 @@ function Stepper({ step, onGoTo }: { step: number; onGoTo: (step: number) => voi
   );
 }
 
-function RoomCreatedCard({ result, hostPlayer }: { result: CreateRoomResult; hostPlayer: string }) {
+function RoomCreatedCard({ result, hostPlayer, roomTitle }: { result: CreateRoomResult; hostPlayer: string; roomTitle: string }) {
   const [copied, setCopied] = useState<string | null>(null);
   const urlFor = (token: string) => claimUrl(result.slug, token);
 
@@ -106,7 +106,7 @@ function RoomCreatedCard({ result, hostPlayer }: { result: CreateRoomResult; hos
                   Set my PIN <ArrowRightIcon className="size-4" />
                 </Button>
               )}
-              <InviteActions slug={result.slug} player={invite.player} token={invite.inviteToken} />
+              <InviteActions slug={result.slug} roomTitle={roomTitle} player={invite.player} token={invite.inviteToken} />
             </li>
           ))}
         </ul>
@@ -184,7 +184,7 @@ export function CreateRoomScreen() {
     }
   }
 
-  if (result) return <RoomCreatedCard result={result} hostPlayer={createdHost} />;
+  if (result) return <RoomCreatedCard result={result} hostPlayer={createdHost} roomTitle={title.trim()} />;
 
   const stepReady = step === 0 ? game !== null : step === 1 ? setupReady : !playersIssue;
   const setupBlocker = game?.setupIssue?.(setup) ?? "Finish the setup to continue.";

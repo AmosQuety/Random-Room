@@ -20,7 +20,11 @@ Each entry says what was seen, what is not yet known, and what "done" looks like
 
 ## Gaps
 
-### G1. Better ways to invite players
+### G1. Better ways to invite players (partly done)
+
+**Done:** per-player Share (Web Share API, so a tap opens WhatsApp and the like), Copy link, and a QR code drawn in the browser (items 1, 2 and 6 below; the re-send is the seat panel's "Get a new link"). **Still open:** the host lobby view (item 4) and the room-code display (item 5). Item 3 (one shared "pick your name" link) was decided against: anyone with the link could claim any unclaimed seat.
+
+Original list:
 
 Today the host has to send each person a private link by hand. Suggestions, roughly in order of value for effort:
 
