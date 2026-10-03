@@ -42,3 +42,4 @@ short quotes with paths, never fabricate.
 ## Log
 
 - 21:26 Phase 0: branch checked out from the pushed preflight branch, identity set, preflight notes tidied.
+- 21:27 Phase 1 done: notes/our-app.md. Plan doc and NEXT_STEPS were on main (PR merged), no fetch of the docs branch needed.
