@@ -17,10 +17,11 @@ public sealed class RoomSnapshotSequencer
 
     private readonly ConcurrentDictionary<Guid, RoomSequence> rooms = new();
 
-    public async Task<T> RunAsync<T>(Guid roomId, Func<long, Task<T>> build)
+    /// <param name="ct">Stops waiting for a turn if the caller gives up, so an abandoned request does not queue up database work.</param>
+    public async Task<T> RunAsync<T>(Guid roomId, Func<long, Task<T>> build, CancellationToken ct = default)
     {
         var room = rooms.GetOrAdd(roomId, _ => new RoomSequence());
-        await room.Gate.WaitAsync();
+        await room.Gate.WaitAsync(ct);
         try
         {
             return await build(room.Next());

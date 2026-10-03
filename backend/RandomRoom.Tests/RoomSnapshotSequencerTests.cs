@@ -81,4 +81,33 @@ public class RoomSnapshotSequencerTests
         var next = await sequencer.RunAsync(room, seq => Task.FromResult(seq)).WaitAsync(TimeSpan.FromSeconds(2));
         Assert.True(next > 0);
     }
+
+    [Fact]
+    public async Task A_caller_that_gives_up_while_waiting_does_not_block_the_room_or_run_its_build()
+    {
+        var sequencer = new RoomSnapshotSequencer();
+        var room = Guid.NewGuid();
+        var release = new TaskCompletionSource();
+        var first = sequencer.RunAsync(room, async seq =>
+        {
+            await release.Task;
+            return seq;
+        });
+        using var cancel = new CancellationTokenSource();
+        var built = false;
+
+        var waiting = sequencer.RunAsync(room, seq =>
+        {
+            built = true;
+            return Task.FromResult(seq);
+        }, cancel.Token);
+        cancel.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiting);
+        release.SetResult();
+        await first;
+        var next = await sequencer.RunAsync(room, seq => Task.FromResult(seq)).WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.False(built);
+        Assert.True(next > 0);
+    }
 }
