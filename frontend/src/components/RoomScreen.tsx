@@ -11,8 +11,8 @@ import { Alert, Button, EmptyState, Eyebrow, Skeleton } from "./ui";
 
 const STATUS_COPY: Record<SessionStatus, string> = {
   Waiting: "Waiting for the host to start",
-  Active: "Round is live",
-  Completed: "Round complete",
+  Active: "Game is live",
+  Completed: "Game complete",
 };
 
 const STATUS_SHORT: Record<SessionStatus, string> = {
@@ -158,7 +158,7 @@ export function RoomScreen({ session, onLeave }: Props) {
       <div className="flex flex-col gap-8">
         {/* Announces round changes to screen readers without moving focus. */}
         <p role="status" className="sr-only">
-          Round {number}: {STATUS_COPY[status]}
+          Game {number}: {STATUS_COPY[status]}
         </p>
 
         <header className="flex flex-col gap-3">
@@ -170,7 +170,7 @@ export function RoomScreen({ session, onLeave }: Props) {
             <span
               className={`rounded-md border-2 border-ink px-2 py-1 font-mono text-xs font-bold uppercase tracking-widest ${STATUS_STYLE[status]}`}
             >
-              Round {number} · {STATUS_SHORT[status]}
+              Game {number} · {STATUS_SHORT[status]}
             </span>
           </div>
           <h1 className="font-display text-4xl font-black leading-[0.95] tracking-tight sm:text-6xl">{snapshot.roomTitle || "Game room"}</h1>

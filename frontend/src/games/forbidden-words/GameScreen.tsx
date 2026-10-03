@@ -76,7 +76,7 @@ export function ForbiddenGameScreen({ me, isHost, session, payload, busy, onActi
         <section className="rounded-xl border-2 border-dashed border-ink bg-card p-6 text-center">
           <Eyebrow>Ready when you are</Eyebrow>
           <p className="mt-2 font-display text-3xl font-black">Say it without saying it</p>
-          <p className="mt-1 text-muted">{isHost ? "Press Start round below when everyone is here (3 or more players)." : "Waiting for the host to start."}</p>
+          <p className="mt-1 text-muted">{isHost ? "Press Start game below when everyone is here (3 or more players)." : "Waiting for the host to start."}</p>
         </section>
       )}
 

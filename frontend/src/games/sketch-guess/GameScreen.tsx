@@ -60,7 +60,7 @@ export function SketchGuessGameScreen({ me, isHost, session, payload, busy, onAc
         <section className="rounded-xl border-2 border-dashed border-ink bg-card p-6 text-center">
           <Eyebrow>Ready when you are</Eyebrow>
           <p className="mt-2 font-display text-3xl font-black">Draw it, guess it</p>
-          <p className="mt-1 text-muted">{isHost ? "Press Start round below when everyone is here (2 or more players)." : "Waiting for the host to start."}</p>
+          <p className="mt-1 text-muted">{isHost ? "Press Start game below when everyone is here (2 or more players)." : "Waiting for the host to start."}</p>
         </section>
       )}
 

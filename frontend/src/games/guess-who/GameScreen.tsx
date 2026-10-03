@@ -46,7 +46,7 @@ export function GuessWhoGameScreen({ me, isHost, players, session, payload, busy
         <section className="rounded-xl border-2 border-dashed border-ink bg-card p-6 text-center">
           <Eyebrow>Ready when you are</Eyebrow>
           <p className="mt-2 font-display text-3xl font-black">Everyone writes one fact</p>
-          <p className="mt-1 text-muted">{isHost ? "Press Start round below when everyone is here." : "Waiting for the host to start."}</p>
+          <p className="mt-1 text-muted">{isHost ? "Press Start game below when everyone is here." : "Waiting for the host to start."}</p>
         </section>
       )}
 

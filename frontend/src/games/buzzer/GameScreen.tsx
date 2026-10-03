@@ -84,7 +84,7 @@ export function BuzzerGameScreen({ me, isHost, session, payload, busy, onAction 
         <section className="rounded-xl border-2 border-dashed border-ink bg-card p-6 text-center">
           <Eyebrow>Ready when you are</Eyebrow>
           <p className="mt-2 font-display text-3xl font-black">Fingers on the buzzers</p>
-          <p className="mt-1 text-muted">{isHost ? "You read the prompts and judge answers. Press Start round below when everyone is here." : "Waiting for the host to start."}</p>
+          <p className="mt-1 text-muted">{isHost ? "You read the prompts and judge answers. Press Start game below when everyone is here." : "Waiting for the host to start."}</p>
         </section>
       )}
 
