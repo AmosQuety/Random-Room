@@ -91,7 +91,13 @@ function turnLine(payload: SpyPayload, me: string): string {
   return payload.myTeam === payload.turn && !payload.isSpymaster ? "Your team is guessing. Pick a card." : `The ${team} team is guessing.`;
 }
 
-const END_TEXT = { assassin: "found the assassin", "all-found": "found every word", ended: "ended early" } as const;
+/** The assassin ends the game for the team that found it; finding every word ends it for the team that did. */
+function endLine(winner: Team, reason: NonNullable<SpyPayload["endReason"]>): string {
+  const loser = winner === "red" ? "blue" : "red";
+  if (reason === "assassin") return `The ${teamName(loser)} team found the assassin.`;
+  if (reason === "all-found") return `The ${teamName(winner)} team found every word.`;
+  return `The ${teamName(loser)} team ended early.`;
+}
 
 export function WordSpiesGameScreen({ me, isHost, session, payload, busy, onAction }: GameScreenProps<SpyPayload>) {
   const live = session.status === "Active";
@@ -120,7 +126,7 @@ export function WordSpiesGameScreen({ me, isHost, session, payload, busy, onActi
           <h3 id="spy-heading" className="font-display text-xl font-black">
             {over ? (payload.winner ? `${teamName(payload.winner)} team wins` : "Game ended") : turnLine(payload, me)}
           </h3>
-          {over && payload.endReason && <p className="text-sm text-muted">{payload.winner ? `The ${teamName(payload.winner === "red" ? "blue" : "red")} team ${END_TEXT[payload.endReason]}.` : ""}</p>}
+          {over && payload.endReason && <p className="text-sm text-muted">{payload.winner ? endLine(payload.winner, payload.endReason) : ""}</p>}
           {!over && roleLine(payload) && <p className="text-sm text-muted">{roleLine(payload)}</p>}
 
           {payload.clue && (

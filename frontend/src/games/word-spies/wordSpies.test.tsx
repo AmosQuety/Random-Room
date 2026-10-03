@@ -95,6 +95,18 @@ describe("Word Spies screen", () => {
     expect(onAction).toHaveBeenCalledWith("end");
   });
 
+  it("names the winning team as the one that found every word", () => {
+    const board = KEY.map((owner, i) => ({ word: `word${i}`, owner }));
+    renderScreen(payload({ phase: "complete", board, key: KEY, winner: "blue", endReason: "all-found", turn: null, clue: null }), "Lydia");
+    expect(screen.getByText("The Blue team found every word.")).toBeInTheDocument();
+  });
+
+  it("names the losing team as the one that found the assassin", () => {
+    const board = KEY.map((owner, i) => ({ word: `word${i}`, owner }));
+    renderScreen(payload({ phase: "complete", board, key: KEY, winner: "blue", endReason: "assassin", turn: null, clue: null }), "Lydia");
+    expect(screen.getByText("The Red team found the assassin.")).toBeInTheDocument();
+  });
+
   it("shows the winner and the whole board once the game is over", () => {
     const board = payload().board.map((c, i) => ({ ...c, owner: KEY[i] }));
     renderScreen(payload({ phase: "complete", board, key: KEY, winner: "blue", endReason: "assassin", turn: null, clue: null }), "Lydia");
