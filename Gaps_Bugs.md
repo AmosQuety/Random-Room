@@ -51,6 +51,10 @@ Low-bandwidth note: keep whatever is added small (no image assets, no heavy libr
 - **Security notes:** Rate-limit the reset endpoint, expire the new invite, never return the old PIN hash, and make sure resetting the host's own seat is handled (probably not allowed).
 - **Done when:** A host can issue a replacement link for a locked-out player, the old PIN stops working, the event is visible in the room and audited, and a test covers the reset and the lockout of the old PIN.
 
+## Findings from the QA audit
+
+The first full QA audit is in `QA_REPORT.md` (47 findings, no blockers). All 8 Major findings are fixed, along with most Minors; section 14 of the report lists every finding's status and the commit that fixed it. Still open: setup errors shown only on the last step (POLL-07, STORY-05, WORD-10), slow-3G first paint (POLL-11), the join page LCP (LEAD-01), a few Polish items, and caps on trivia question and option counts.
+
 ## Other known gaps
 
 - **Migrations run on startup against whatever database is configured.** A `.env` pointing at a production database will be migrated just by running the app locally. Consider a safeguard, such as refusing to auto-migrate outside Development unless an explicit setting is on.
