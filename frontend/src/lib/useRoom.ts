@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { HubConnectionBuilder, HubConnectionState, LogLevel } from "@microsoft/signalr";
 import { ApiError, getRoom } from "./api";
+import { newerSnapshot } from "./snapshots";
 import type { RoomSnapshot } from "./types";
 
 export type ConnectionStatus = "connecting" | "live" | "reconnecting";
@@ -17,18 +18,19 @@ interface UseRoom {
 /** Keeps the room in sync: push updates over SignalR, with a full refetch after every (re)connect. */
 export function useRoom(token: string, onUnauthorized: () => void): UseRoom {
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
+  const acceptSnapshot = useCallback((next: RoomSnapshot) => setSnapshot((current) => newerSnapshot(current, next)), []);
   const [connection, setConnection] = useState<ConnectionStatus>("connecting");
   const [loadFailed, setLoadFailed] = useState(false);
 
   const refetch = useCallback(async () => {
     try {
-      setSnapshot(await getRoom(token));
+      acceptSnapshot(await getRoom(token));
       setLoadFailed(false);
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) onUnauthorized();
       else setLoadFailed(true);
     }
-  }, [token, onUnauthorized]);
+  }, [token, onUnauthorized, acceptSnapshot]);
 
   useEffect(() => {
     const hub = new HubConnectionBuilder()
@@ -37,7 +39,7 @@ export function useRoom(token: string, onUnauthorized: () => void): UseRoom {
       .configureLogging(LogLevel.Warning)
       .build();
 
-    hub.on("roomChanged", (next: RoomSnapshot) => setSnapshot(next));
+    hub.on("roomChanged", acceptSnapshot);
     hub.onreconnecting(() => setConnection("reconnecting"));
     hub.onreconnected(() => {
       setConnection("live");
@@ -55,7 +57,7 @@ export function useRoom(token: string, onUnauthorized: () => void): UseRoom {
       hub.off("roomChanged");
       if (hub.state !== HubConnectionState.Disconnected) void hub.stop();
     };
-  }, [token, refetch]);
+  }, [token, refetch, acceptSnapshot]);
 
-  return { snapshot, connection, loadFailed, retry: () => void refetch(), applySnapshot: setSnapshot };
+  return { snapshot, connection, loadFailed, retry: () => void refetch(), applySnapshot: acceptSnapshot };
 }

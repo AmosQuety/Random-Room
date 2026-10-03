@@ -24,6 +24,8 @@ export interface RoomSnapshot {
   players: PlayerView[];
   // Opaque here on purpose - each game module (see src/games) knows its own payload shape.
   gamePayload: unknown;
+  /** Orders snapshots of one room; see newerSnapshot. */
+  sequence: number;
 }
 
 export interface Session {
