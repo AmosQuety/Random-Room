@@ -103,6 +103,33 @@ public class TriviaEngineTests
     }
 
     [Fact]
+    public async Task Activity_does_not_reveal_whether_answers_are_right_while_the_question_is_open()
+    {
+        using var h = new TriviaTestHarness();
+        await h.Room.StartRoundAsync(TriviaTestHarness.HostPlayer);
+
+        var snapshot = await h.Room.AnswerAsync("Amos", 1); // correct, but Lydia has not answered yet
+
+        Assert.Empty(Payload(snapshot).Activity);
+        Assert.Empty(Payload(await h.Room.GetSnapshotAsync()).Activity);
+        Assert.True(Payload(snapshot).Answered["Amos"]);
+    }
+
+    [Fact]
+    public async Task Activity_shows_how_everyone_did_once_the_question_has_closed()
+    {
+        using var h = new TriviaTestHarness();
+        await h.Room.StartRoundAsync(TriviaTestHarness.HostPlayer);
+        await h.Room.AnswerAsync("Amos", 1); // correct
+        var snapshot = await h.Room.AnswerAsync("Lydia", 0); // incorrect, closes the question
+
+        var activity = Payload(snapshot).Activity;
+
+        Assert.True(activity.Single(a => a.TriggeredBy == "Amos").Correct);
+        Assert.False(activity.Single(a => a.TriggeredBy == "Lydia").Correct);
+    }
+
+    [Fact]
     public async Task Session_completes_after_the_last_question_is_answered_by_everyone()
     {
         using var h = new TriviaTestHarness();

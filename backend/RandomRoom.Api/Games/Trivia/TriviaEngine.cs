@@ -251,8 +251,9 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
             .OrderByDescending(s => s.Correct)
             .ToList();
 
+        // Only closed questions: whether an answer was right must not be visible while others can still answer.
         var activity = allAnswers
-            .Join(questions, a => a.QuestionId, q => q.Id, (a, q) => new TriviaActivityView(a.Id, q.Position + 1, a.TriggeredBy, a.OptionIndex == q.CorrectIndex, a.Timestamp))
+            .Join(questions.Where(q => q.Position < state.CurrentQuestionIndex), a => a.QuestionId, q => q.Id, (a, q) => new TriviaActivityView(a.Id, q.Position + 1, a.TriggeredBy, a.OptionIndex == q.CorrectIndex, a.Timestamp))
             .OrderByDescending(a => a.Timestamp)
             .Take(50)
             .ToList();
