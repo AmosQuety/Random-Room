@@ -14,7 +14,8 @@ export const randomPickerModule: GameModule<RandomPickerSetup, RandomPickerPaylo
   minPlayers: 2,
   maxPlayers: 12,
   defaultSetup: ["", ""],
-  isSetupValid: (setup) => setup.map((c) => c.trim()).filter(Boolean).length >= 2,
+  // The server keeps only distinct, non-empty choices and needs two of them, so count them the same way.
+  isSetupValid: (setup) => new Set(setup.map((c) => c.trim()).filter(Boolean)).size >= 2,
   toApiSetup: (setup) => ({ choices: setup.map((c) => c.trim()).filter(Boolean) }),
   SetupForm: lazy(() => import("./SetupForm").then((m) => ({ default: m.RandomPickerSetupForm }))),
   GameScreen: lazy(() => import("./GameScreen").then((m) => ({ default: m.RandomPickerGameScreen }))),
