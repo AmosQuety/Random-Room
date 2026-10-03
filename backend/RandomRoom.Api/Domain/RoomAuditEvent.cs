@@ -7,6 +7,8 @@ namespace RandomRoom.Api.Domain;
 public sealed class RoomAuditEvent
 {
     public const string SeatReset = "seat-reset";
+    public const string HostRecovered = "host-recovered";
+    public const string RecoveryCodeMade = "recovery-code-made";
 
     public Guid Id { get; set; }
     public Guid RoomId { get; set; }

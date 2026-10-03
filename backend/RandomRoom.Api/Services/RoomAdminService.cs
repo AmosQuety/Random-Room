@@ -13,7 +13,10 @@ public sealed record CreateRoomRequest(string Title, string GameType, JsonElemen
 
 public sealed record PlayerInvite(string Player, string InviteToken);
 
-public sealed record CreateRoomResult(string Slug, IReadOnlyList<PlayerInvite> Invites);
+/// <param name="RecoveryCode">The host's way back in if they forget their PIN. Shown once; only its hash is kept.</param>
+public sealed record CreateRoomResult(string Slug, IReadOnlyList<PlayerInvite> Invites, string RecoveryCode);
+
+public sealed record HostRecovery(Guid RoomId, string Player, string InviteToken, string NewRecoveryCode);
 
 public sealed record RoomPreviewPlayer(string Name, bool Claimed);
 
@@ -56,8 +59,10 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
         if (players.Count > engine.MaxPlayers)
             throw new RoomRuleException(RuleViolation.InvalidInput, $"This game works with at most {engine.MaxPlayers} players.");
 
+        var recoveryCode = RecoveryCode.Generate();
         var room = new Room
         {
+            RecoveryCodeHash = PinHasher.Hash(RecoveryCode.Normalize(recoveryCode)),
             Id = Guid.NewGuid(),
             Slug = await GenerateUniqueSlugAsync(ct),
             Title = title,
@@ -97,7 +102,8 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
 
         return new CreateRoomResult(
             room.Slug,
-            invites.Select(i => new PlayerInvite(i.Player.Name, i.Player.InviteToken!)).ToList());
+            invites.Select(i => new PlayerInvite(i.Player.Name, i.Player.InviteToken!)).ToList(),
+            recoveryCode);
     }
 
     public async Task<RoomPreview> GetPreviewAsync(string slug, CancellationToken ct = default)
@@ -150,7 +156,7 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
         if (actor != room.HostPlayer)
             throw new RoomRuleException(RuleViolation.Forbidden, "Only the host can reset a seat.");
         if (target == room.HostPlayer)
-            throw new RoomRuleException(RuleViolation.InvalidInput, "The host's own seat cannot be reset. If the host forgot their PIN, start a new room.");
+            throw new RoomRuleException(RuleViolation.InvalidInput, "The host's own seat cannot be reset here. If the host forgot their PIN, they can use their recovery code on the join page.");
 
         var seat = await db.RoomPlayers.FirstOrDefaultAsync(p => p.RoomId == roomId && p.Name == target, ct)
             ?? throw new RoomRuleException(RuleViolation.NotFound, "There is no such player in this room.");
@@ -162,18 +168,77 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
         seat.ClaimedAt = null;
         seat.InviteToken = GenerateToken();
         seat.TokenVersion++;
-        db.RoomAuditEvents.Add(new RoomAuditEvent
-        {
-            Id = Guid.NewGuid(),
-            RoomId = roomId,
-            Actor = actor,
-            Action = RoomAuditEvent.SeatReset,
-            Target = target,
-            OccurredAt = clock.GetUtcNow(),
-        });
+        db.RoomAuditEvents.Add(AuditEvent(roomId, actor, RoomAuditEvent.SeatReset, target));
         await db.SaveChangesAsync(ct);
         return new PlayerInvite(seat.Name, seat.InviteToken);
     }
+
+    /// <summary>Makes a new recovery code for the room, replacing the old one. Host only; the code is returned once.</summary>
+    public async Task<string> MakeRecoveryCodeAsync(Guid roomId, string actor, CancellationToken ct = default)
+    {
+        var room = await db.Rooms.FirstOrDefaultAsync(r => r.Id == roomId, ct)
+            ?? throw new RoomRuleException(RuleViolation.NotFound, "Room not found.");
+        if (actor != room.HostPlayer)
+            throw new RoomRuleException(RuleViolation.Forbidden, "Only the host can make a recovery code.");
+
+        var code = RecoveryCode.Generate();
+        room.RecoveryCodeHash = PinHasher.Hash(RecoveryCode.Normalize(code));
+        db.RoomAuditEvents.Add(AuditEvent(roomId, actor, RoomAuditEvent.RecoveryCodeMade, room.HostPlayer));
+        await db.SaveChangesAsync(ct);
+        return code;
+    }
+
+    /// <summary>
+    /// For a host who forgot their PIN and is signed out: the recovery code empties the host's seat, signs out
+    /// whatever device held it, and returns a one-time link to choose a new PIN. The code is spent and replaced by a
+    /// new one in the same step, so a host is never left without one and an old code never works twice.
+    /// </summary>
+    public async Task<HostRecovery> RecoverHostSeatAsync(string slug, string code, CancellationToken ct = default)
+    {
+        var room = await db.Rooms.FirstOrDefaultAsync(r => r.Slug == slug, ct);
+
+        // A room with no code still pays for a hash comparison, so the answer does not take less time.
+        var matches = PinHasher.Verify(RecoveryCode.Normalize(code), room?.RecoveryCodeHash ?? AbsentCodeHash.Value);
+        if (!matches || room is null || room.RecoveryCodeHash is null)
+            throw new RoomRuleException(RuleViolation.Forbidden, "That recovery code is not right.");
+
+        var newCode = RecoveryCode.Generate();
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+
+        // Spend the code only if nobody else has since the check above, so two uses at once cannot both succeed.
+        var spent = await db.Rooms
+            .Where(r => r.Id == room.Id && r.RecoveryCodeHash == room.RecoveryCodeHash)
+            .ExecuteUpdateAsync(s => s.SetProperty(r => r.RecoveryCodeHash, PinHasher.Hash(RecoveryCode.Normalize(newCode))), ct);
+        if (spent == 0)
+            throw new RoomRuleException(RuleViolation.Conflict, "That recovery code was just used. Use the new one.");
+
+        var seat = await db.RoomPlayers.FirstAsync(p => p.RoomId == room.Id && p.Name == room.HostPlayer, ct);
+        seat.PinHash = null;
+        seat.ClaimedAt = null;
+        seat.InviteToken = GenerateToken();
+        seat.TokenVersion++;
+        // The actor is the code, not a person: nobody was signed in.
+        db.RoomAuditEvents.Add(AuditEvent(room.Id, "recovery code", RoomAuditEvent.HostRecovered, room.HostPlayer));
+        await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+
+        return new HostRecovery(room.Id, seat.Name, seat.InviteToken, newCode);
+    }
+
+    private static class AbsentCodeHash
+    {
+        public static readonly string Value = PinHasher.Hash("no recovery code");
+    }
+
+    private RoomAuditEvent AuditEvent(Guid roomId, string actor, string action, string target) => new()
+    {
+        Id = Guid.NewGuid(),
+        RoomId = roomId,
+        Actor = actor,
+        Action = action,
+        Target = target,
+        OccurredAt = clock.GetUtcNow(),
+    };
 
     private IGameEngine EngineFor(string gameType) =>
         engines.FirstOrDefault(e => e.GameType == gameType)
