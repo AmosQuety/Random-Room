@@ -51,9 +51,10 @@ function Stepper({ step, onGoTo }: { step: number; onGoTo: (step: number) => voi
   );
 }
 
-function RoomCreatedCard({ result }: { result: CreateRoomResult }) {
+function RoomCreatedCard({ result, hostPlayer }: { result: CreateRoomResult; hostPlayer: string }) {
   const [copied, setCopied] = useState<string | null>(null);
-  const urlFor = (token: string) => `${window.location.origin}/room/${result.slug}/claim/${token}`;
+  const claimPath = (token: string) => `/room/${result.slug}/claim/${token}`;
+  const urlFor = (token: string) => `${window.location.origin}${claimPath(token)}`;
 
   async function copy(label: string, text: string) {
     try {
@@ -75,8 +76,9 @@ function RoomCreatedCard({ result }: { result: CreateRoomResult }) {
         </Eyebrow>
         <h3 className="font-display text-3xl font-black leading-tight">Send each player their own link</h3>
         <p className="text-muted">
-          Each person opens their own link once to set a private PIN. Nobody else, including you, will see it - that's what
-          stops anyone from playing on someone else's behalf.
+          Each person opens their own link once to set a private PIN, and is taken straight into the room. Nobody else,
+          including you, will see it - that's what stops anyone from playing on someone else's behalf. Start with your own
+          link, since the host's seat has to be claimed before the game can begin.
         </p>
       </div>
       <div className="ticket-perforation" />
@@ -88,9 +90,21 @@ function RoomCreatedCard({ result }: { result: CreateRoomResult }) {
               className="flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-ink bg-paper px-4 py-3"
             >
               <div className="min-w-0 flex-1">
-                <p className="font-display text-lg font-bold">{invite.player}</p>
+                <p className="font-display text-lg font-bold">
+                  {invite.player}
+                  {invite.player === hostPlayer && (
+                    <span className="ml-2 rounded-md border-2 border-ink bg-accent-soft px-1.5 py-0.5 align-middle font-mono text-xs uppercase tracking-widest">
+                      You, host
+                    </span>
+                  )}
+                </p>
                 <p className="truncate font-mono text-xs text-muted">{urlFor(invite.inviteToken)}</p>
               </div>
+              {invite.player === hostPlayer && (
+                <Button size="sm" variant="primary" onClick={() => navigate(claimPath(invite.inviteToken))}>
+                  Set my PIN <ArrowRightIcon className="size-4" />
+                </Button>
+              )}
               <Button size="sm" variant="secondary" onClick={() => copy(invite.player, urlFor(invite.inviteToken))}>
                 {copied === invite.player ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
                 {copied === invite.player ? "Copied" : "Copy link"}
@@ -103,8 +117,8 @@ function RoomCreatedCard({ result }: { result: CreateRoomResult }) {
           {copied ? `Link for ${copied} copied` : ""}
         </p>
         <div className="flex flex-wrap gap-3">
-          <Button variant="primary" onClick={() => navigate(`/room/${result.slug}/join`)}>
-            Go to the room <ArrowRightIcon />
+          <Button variant="secondary" onClick={() => navigate(`/room/${result.slug}/join`)}>
+            Already set a PIN? Go to the room <ArrowRightIcon />
           </Button>
           <Button variant="secondary" onClick={() => copy("everyone", everything)}>
             <CopyIcon className="size-4" />
@@ -133,6 +147,7 @@ export function CreateRoomScreen() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<CreateRoomResult | null>(null);
+  const [createdHost, setCreatedHost] = useState("");
 
   const headingRef = useRef<HTMLHeadingElement>(null);
   const shownStep = useRef(step);
@@ -167,6 +182,7 @@ export function CreateRoomScreen() {
     setError(null);
     try {
       setResult(await createRoom(title.trim() || `${game.name} night`, game.key, game.toApiSetup(setup), cleanPlayers, hostPlayer));
+      setCreatedHost(hostPlayer);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not reach the server. Check your connection and try again.");
     } finally {
@@ -174,7 +190,7 @@ export function CreateRoomScreen() {
     }
   }
 
-  if (result) return <RoomCreatedCard result={result} />;
+  if (result) return <RoomCreatedCard result={result} hostPlayer={createdHost} />;
 
   const stepReady = step === 0 ? game !== null : step === 1 ? setupReady : !playersIssue;
   const blocker = step === 0 ? "Pick a game to continue." : step === 1 ? "Finish the setup to continue." : playersIssue;
