@@ -26,7 +26,7 @@ export function RandomPickerGameScreen({ me, players, session, payload, busy, on
       {session.status === "Completed" && <FinalResult roundNumber={session.number} tally={payload.tally} />}
 
       <section aria-labelledby="participants-heading">
-        <h2 id="participants-heading" className="mb-3 font-mono text-sm uppercase tracking-widest">
+        <h2 id="participants-heading" className="mb-3 font-mono text-sm font-bold uppercase tracking-widest">
           Participants
         </h2>
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

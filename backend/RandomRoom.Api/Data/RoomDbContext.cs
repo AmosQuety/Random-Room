@@ -15,6 +15,9 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
     public DbSet<TriviaQuestion> TriviaQuestions => Set<TriviaQuestion>();
     public DbSet<TriviaSessionState> TriviaSessionStates => Set<TriviaSessionState>();
     public DbSet<TriviaAnswer> TriviaAnswers => Set<TriviaAnswer>();
+    public DbSet<RoomGameSetup> RoomGameSetups => Set<RoomGameSetup>();
+    public DbSet<GameSessionState> GameSessionStates => Set<GameSessionState>();
+    public DbSet<GameEntry> GameEntries => Set<GameEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -64,6 +67,7 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
         modelBuilder.Entity<TriviaQuestion>(q =>
         {
             q.Property(x => x.Text).HasMaxLength(300);
+            q.Property(x => x.Category).HasMaxLength(40);
             q.Property(x => x.Options)
                 .HasConversion(
                     v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
@@ -88,6 +92,35 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
             a.Property(x => x.TriggeredBy).HasMaxLength(32);
             a.HasOne<GameSession>().WithMany().HasForeignKey(x => x.SessionId).OnDelete(DeleteBehavior.Restrict);
             a.HasOne<TriviaQuestion>().WithMany().HasForeignKey(x => x.QuestionId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<RoomGameSetup>(setup =>
+        {
+            setup.HasIndex(x => x.RoomId).IsUnique();
+            setup.Property(x => x.Json).HasColumnType("jsonb");
+            setup.HasOne<Room>().WithMany().HasForeignKey(x => x.RoomId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<GameSessionState>(state =>
+        {
+            state.HasIndex(x => x.SessionId).IsUnique();
+            state.Property(x => x.Phase).HasMaxLength(24);
+            state.Property(x => x.Claimant).HasMaxLength(32);
+            state.Property(x => x.DataJson).HasColumnType("jsonb");
+            state.Property(x => x.Version).IsConcurrencyToken();
+            state.HasOne<GameSession>().WithMany().HasForeignKey(x => x.SessionId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<GameEntry>(entry =>
+        {
+            // Database-level guarantee of one entry per player per kind per round (per seq), even under races.
+            entry.HasIndex(x => new { x.SessionId, x.Round, x.Kind, x.Player, x.Seq }).IsUnique();
+            entry.HasIndex(x => new { x.SessionId, x.Kind, x.Ordinal });
+            entry.Property(x => x.Kind).HasMaxLength(24);
+            entry.Property(x => x.Player).HasMaxLength(32);
+            entry.Property(x => x.ValueJson).HasColumnType("jsonb");
+            entry.Property(x => x.Ordinal).UseIdentityAlwaysColumn();
+            entry.HasOne<GameSession>().WithMany().HasForeignKey(x => x.SessionId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 

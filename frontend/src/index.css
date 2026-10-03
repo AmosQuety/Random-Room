@@ -1,38 +1,139 @@
 @import "tailwindcss";
+@import "@fontsource-variable/fraunces/wght.css";
 
-/* Raffle-ticket palette: warm paper, ink, one tomato accent. Text pairs all clear 4.5:1 on paper. */
+/*
+  Game-night ticket palette: warm paper, ink, and one accent per game category.
+  Every text/background pairing used by the UI is checked by `npm run check:contrast`.
+*/
 @theme {
-  --color-paper: #f3ecdd;
-  --color-card: #fbf7ee;
-  --color-ink: #17140f;
-  --color-muted: #5b5346;
-  --color-tomato: #c2361a;
-  --color-leaf: #1e6b45;
+  --color-paper: #f6efe0;
+  --color-paper-deep: #ebe0c8;
+  --color-card: #fffaf0;
+  --color-ink: #1a1612;
+  --color-muted: #574f42;
+
+  --color-tomato: #b32f16;
   --color-sky: #2b5da8;
+  --color-leaf: #1e6b45;
   --color-mustard: #e0a526;
-  --font-display: ui-serif, Georgia, "Times New Roman", serif;
+  --color-plum: #7a2f78;
+
+  /* Soft tints for tile and banner backgrounds; text on them is always ink. */
+  --color-tomato-soft: #f8d8cd;
+  --color-sky-soft: #d6e3f6;
+  --color-leaf-soft: #d3eadc;
+  --color-mustard-soft: #f7e4b0;
+  --color-plum-soft: #ecd8ea;
+
+  /* Dark enough to read as text on paper; mustard itself never is used as text. */
+  --color-mustard-ink: #7a5300;
+
+  --font-display: "Fraunces Variable", ui-serif, Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
   --shadow-ticket: 4px 4px 0 0 var(--color-ink);
   --shadow-ticket-sm: 2px 2px 0 0 var(--color-ink);
+  --shadow-ticket-lg: 7px 7px 0 0 var(--color-ink);
+
+  --animate-rise: rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-pop: pop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+  --animate-stamp: stamp 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-roll: roll 0.6s linear infinite;
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+  --animate-wobble: wobble 3.2s ease-in-out infinite;
+}
+
+/* Per-game accent: any element carrying data-accent re-themes everything inside it. */
+@theme inline {
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-on-accent: var(--on-accent);
+}
+
+:root,
+[data-accent="tomato"] {
+  --accent: var(--color-tomato);
+  --accent-soft: var(--color-tomato-soft);
+  --accent-ink: var(--color-tomato);
+  --on-accent: #ffffff;
+}
+[data-accent="sky"] {
+  --accent: var(--color-sky);
+  --accent-soft: var(--color-sky-soft);
+  --accent-ink: var(--color-sky);
+  --on-accent: #ffffff;
+}
+[data-accent="leaf"] {
+  --accent: var(--color-leaf);
+  --accent-soft: var(--color-leaf-soft);
+  --accent-ink: var(--color-leaf);
+  --on-accent: #ffffff;
+}
+[data-accent="plum"] {
+  --accent: var(--color-plum);
+  --accent-soft: var(--color-plum-soft);
+  --accent-ink: var(--color-plum);
+  --on-accent: #ffffff;
+}
+[data-accent="mustard"] {
+  --accent: var(--color-mustard);
+  --accent-soft: var(--color-mustard-soft);
+  --accent-ink: var(--color-mustard-ink);
+  --on-accent: var(--color-ink);
 }
 
 html {
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   min-height: 100dvh;
   margin: 0;
+  overflow-x: hidden;
   /* Faint ruled-paper texture using only CSS, so it costs no bytes. */
-  background-image: repeating-linear-gradient(0deg, transparent 0 31px, rgb(23 20 15 / 0.05) 31px 32px);
+  background-image: repeating-linear-gradient(0deg, transparent 0 31px, rgb(26 22 18 / 0.05) 31px 32px);
 }
 
+/* Focus ring: a solid outline that stays visible on paper and, via .surface-dark, on ink. */
 :focus-visible {
-  outline: 3px solid var(--color-sky);
+  outline: 3px solid var(--focus, var(--color-sky));
   outline-offset: 3px;
 }
+.surface-dark {
+  --focus: var(--color-mustard);
+}
+
+.sr-only-focusable:not(:focus):not(:focus-within) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Perforated ticket edge: a dashed rule with notches cut out at both ends. */
+.ticket-perforation {
+  position: relative;
+  border-top: 2px dashed var(--color-ink);
+}
+.ticket-perforation::before,
+.ticket-perforation::after {
+  content: "";
+  position: absolute;
+  top: -11px;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  border: 2px solid var(--color-ink);
+  background: var(--color-paper);
+}
+.ticket-perforation::before { left: -12px; clip-path: inset(0 0 0 50%); }
+.ticket-perforation::after { right: -12px; clip-path: inset(0 50% 0 0); }
 
 @keyframes roll {
   0% { transform: rotate(0deg) scale(1); }
@@ -46,9 +147,44 @@ body {
   100% { transform: scale(1) rotate(0); }
 }
 
-.animate-roll { animation: roll 0.6s linear infinite; }
-.animate-stamp { animation: stamp 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes rise {
+  0% { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.7); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+@keyframes wobble {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(3deg); }
+}
+
+/* Countdown ring: the element sets --duration; the stroke drains over that time. */
+@keyframes drain {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: 100; }
+}
+.animate-drain {
+  stroke-dasharray: 100;
+  animation: drain var(--duration, 10s) linear forwards;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-roll, .animate-stamp { animation: none; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

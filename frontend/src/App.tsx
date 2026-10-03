@@ -22,7 +22,7 @@ export default function App() {
   }, []);
 
   const claimMatch = path.match(/^\/room\/([^/]+)\/claim\/([^/]+)\/?$/);
-  if (claimMatch) return <ClaimInviteScreen slug={claimMatch[1]} token={claimMatch[2]} />;
+  if (claimMatch) return <ClaimInviteScreen slug={claimMatch[1]} token={claimMatch[2]} onJoined={handleJoined} />;
 
   const roomMatch = path.match(/^\/room\/([^/]+)(?:\/join)?\/?$/);
   if (roomMatch) {

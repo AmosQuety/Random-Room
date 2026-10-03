@@ -7,7 +7,7 @@ namespace RandomRoom.Api.Hubs;
 
 /// <summary>Server-to-client push only, scoped per room. Clients perform actions through the REST endpoints.</summary>
 [Authorize]
-public sealed class RoomHub(PresenceTracker presence, GameSessionService room, IRoomNotifier notifier) : Hub
+public sealed class RoomHub(PresenceTracker presence, RoomBroadcaster broadcaster) : Hub
 {
     public override async Task OnConnectedAsync()
     {
@@ -15,8 +15,9 @@ public sealed class RoomHub(PresenceTracker presence, GameSessionService room, I
         var player = Context.User!.GetPlayerName();
 
         await Groups.AddToGroupAsync(Context.ConnectionId, SignalRRoomNotifier.GroupName(roomId));
+        await Groups.AddToGroupAsync(Context.ConnectionId, SignalRRoomNotifier.PlayerGroupName(roomId, player));
         presence.Connected(Context.ConnectionId, roomId, player);
-        await notifier.PublishAsync(await room.GetSnapshotAsync(roomId));
+        await broadcaster.PublishAsync(roomId);
         await base.OnConnectedAsync();
     }
 
@@ -25,7 +26,7 @@ public sealed class RoomHub(PresenceTracker presence, GameSessionService room, I
         var roomId = Context.User!.GetRoomId();
 
         presence.Disconnected(Context.ConnectionId);
-        await notifier.PublishAsync(await room.GetSnapshotAsync(roomId));
+        await broadcaster.PublishAsync(roomId);
         await base.OnDisconnectedAsync(exception);
     }
 }

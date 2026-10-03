@@ -12,6 +12,9 @@ public sealed class PresenceTracker
 
     public void Disconnected(string connectionId) => connections.TryRemove(connectionId, out _);
 
+    public IReadOnlyList<string> OnlinePlayers(Guid roomId) =>
+        connections.Values.Where(c => c.RoomId == roomId).Select(c => c.Player).Distinct().ToList();
+
     public bool IsOnline(Guid roomId, string player) =>
         connections.Values.Any(c => c.RoomId == roomId && c.Player == player);
 }

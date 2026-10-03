@@ -1,5 +1,5 @@
 // A fixed palette (not name-keyed, since players are no longer a fixed set) - all pairs clear 4.5:1 on their text.
-const PALETTE = ["bg-tomato text-white", "bg-sky text-white", "bg-leaf text-white", "bg-mustard text-ink"];
+const PALETTE = ["bg-tomato text-white", "bg-sky text-white", "bg-leaf text-white", "bg-mustard text-ink", "bg-plum text-white"];
 
 function paletteIndex(name: string): number {
   let hash = 0;
@@ -11,7 +11,7 @@ export function Avatar({ name }: { name: string }) {
   return (
     <span
       aria-hidden="true"
-      className={`grid size-10 shrink-0 place-items-center rounded-full border-2 border-ink font-display text-lg font-bold ${PALETTE[paletteIndex(name)]}`}
+      className={`grid size-10 shrink-0 place-items-center rounded-full border-2 border-ink font-display text-lg font-black ${PALETTE[paletteIndex(name)]}`}
     >
       {name[0]?.toUpperCase()}
     </span>

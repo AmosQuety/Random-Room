@@ -26,6 +26,17 @@ public class RoomServiceTests
     }
 
     [Fact]
+    public async Task Each_snapshot_is_stamped_with_a_higher_sequence_than_the_one_before()
+    {
+        using var h = new RoomTestHarness();
+
+        var first = await h.Room.GetSnapshotAsync();
+        var second = await h.Room.GetSnapshotAsync();
+
+        Assert.True(second.Sequence > first.Sequence);
+    }
+
+    [Fact]
     public async Task Trigger_uses_the_server_random_source_and_publishes_result()
     {
         using var h = new RoomTestHarness(1);

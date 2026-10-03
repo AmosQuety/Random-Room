@@ -1,6 +1,9 @@
+import type { TimerView } from "../rounds/types";
+
 export interface TriviaQuestionView {
   text: string;
   options: string[];
+  category?: string | null;
 }
 
 /** The just-finished question, shown alongside the next one so players see what they got right. */
@@ -32,6 +35,9 @@ export interface TriviaPayload {
   lastReveal: TriviaReveal | null;
   scoreboard: TriviaScore[];
   activity: TriviaActivityView[];
+  /** Present only when the host set a time limit. */
+  timer?: TimerView | null;
+  timeLimitSeconds?: number | null;
 }
 
 export interface TriviaPreview {
@@ -42,7 +48,14 @@ export interface TriviaQuestionInput {
   text: string;
   options: string[];
   correctIndex: number;
+  category: string;
 }
 
-/** Local setup-form state: a plain list of host-curated questions, at least 1. */
-export type TriviaSetup = TriviaQuestionInput[];
+/** Local setup-form state. */
+export interface TriviaSetup {
+  questions: TriviaQuestionInput[];
+  useBuiltIn: boolean;
+  builtInCount: number;
+  /** Seconds per question, or null for no limit. */
+  timeLimit: number | null;
+}

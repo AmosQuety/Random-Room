@@ -11,9 +11,23 @@ namespace RandomRoom.Api.Services;
 /// session active, when a new one starts. Everything about what happens inside an active
 /// session is delegated to the room's IGameEngine (chosen by Room.GameType).
 /// </summary>
-public sealed class GameSessionService(RoomDbContext db, PresenceTracker presence, TimeProvider clock, IEnumerable<IGameEngine> engines)
+public sealed class GameSessionService(
+    RoomDbContext db, PresenceTracker presence, TimeProvider clock, IEnumerable<IGameEngine> engines, RoomSnapshotSequencer? sequencer = null)
 {
-    public async Task<RoomSnapshot> GetSnapshotAsync(Guid roomId, CancellationToken ct = default)
+    private readonly RoomSnapshotSequencer snapshotSequencer = sequencer ?? RoomSnapshotSequencer.Shared;
+
+    /// <summary>The public view of the room: no viewer, so games with hidden information return only what everyone may see.</summary>
+    public Task<RoomSnapshot> GetSnapshotAsync(Guid roomId, CancellationToken ct = default) =>
+        BuildSnapshotAsync(roomId, viewer: null, ct);
+
+    /// <summary>The room as one specific player may see it.</summary>
+    public Task<RoomSnapshot> GetSnapshotForAsync(Guid roomId, string viewer, CancellationToken ct = default) =>
+        BuildSnapshotAsync(roomId, viewer, ct);
+
+    private Task<RoomSnapshot> BuildSnapshotAsync(Guid roomId, string? viewer, CancellationToken ct) =>
+        snapshotSequencer.RunAsync(roomId, sequence => BuildSnapshotAsync(roomId, viewer, sequence, ct), ct);
+
+    private async Task<RoomSnapshot> BuildSnapshotAsync(Guid roomId, string? viewer, long sequence, CancellationToken ct)
     {
         var room = await RequireRoomAsync(roomId, ct);
         var session = await CurrentSessionAsync(roomId, ct);
@@ -27,8 +41,11 @@ public sealed class GameSessionService(RoomDbContext db, PresenceTracker presenc
             room.HostPlayer,
             room.GameType,
             new SessionView(session.Id, session.Number, session.Status, session.StartedAt, session.EndedAt),
-            players.Select(p => new PlayerView(p.Name, presence.IsOnline(roomId, p.Name))).ToList(),
-            await engine.GetPayloadAsync(roomId, session.Id, ct));
+            players.Select(p => new PlayerView(p.Name, presence.IsOnline(roomId, p.Name), p.IsClaimed)).ToList(),
+            viewer is null
+                ? await engine.GetPayloadAsync(roomId, session.Id, ct)
+                : await engine.GetPayloadForAsync(roomId, session.Id, viewer, ct),
+            sequence);
     }
 
     public async Task<RoomSnapshot> PerformActionAsync(
@@ -52,18 +69,20 @@ public sealed class GameSessionService(RoomDbContext db, PresenceTracker presenc
             await db.SaveChangesAsync(ct);
         }
 
-        return await GetSnapshotAsync(roomId, ct);
+        return await GetSnapshotForAsync(roomId, actor, ct);
     }
 
     public async Task<RoomSnapshot> StartSessionAsync(Guid roomId, string actor, CancellationToken ct = default)
     {
+        var room = await RequireRoomAsync(roomId, ct);
         var session = await CurrentSessionForHostAsync(roomId, actor, ct);
         if (session.Status != SessionStatus.Waiting)
             throw new RoomRuleException(RuleViolation.Conflict, "Only a waiting session can be started.");
 
         Activate(session);
         await db.SaveChangesAsync(ct);
-        return await GetSnapshotAsync(roomId, ct);
+        await EngineFor(room.GameType).OnSessionStartedAsync(roomId, session.Id, ct);
+        return await GetSnapshotForAsync(roomId, actor, ct);
     }
 
     public async Task<RoomSnapshot> EndSessionAsync(Guid roomId, string actor, CancellationToken ct = default)
@@ -74,7 +93,7 @@ public sealed class GameSessionService(RoomDbContext db, PresenceTracker presenc
 
         Complete(session);
         await db.SaveChangesAsync(ct);
-        return await GetSnapshotAsync(roomId, ct);
+        return await GetSnapshotForAsync(roomId, actor, ct);
     }
 
     public async Task<RoomSnapshot> StartNewSessionAsync(Guid roomId, string actor, CancellationToken ct = default)
@@ -95,10 +114,12 @@ public sealed class GameSessionService(RoomDbContext db, PresenceTracker presenc
             throw new RoomRuleException(RuleViolation.Conflict, "The room changed; please refresh.");
         }
 
-        await EngineFor(room.GameType).OnSessionCreatedAsync(roomId, next.Id, ct);
+        var engine = EngineFor(room.GameType);
+        await engine.OnSessionCreatedAsync(roomId, next.Id, ct);
         Activate(next);
         await db.SaveChangesAsync(ct);
-        return await GetSnapshotAsync(roomId, ct);
+        await engine.OnSessionStartedAsync(roomId, next.Id, ct);
+        return await GetSnapshotForAsync(roomId, actor, ct);
     }
 
     private IGameEngine EngineFor(string gameType) =>

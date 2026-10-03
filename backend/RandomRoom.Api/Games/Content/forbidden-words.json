@@ -1,0 +1,365 @@
+{
+ "version": 1,
+ "items": [
+  {
+   "word": "Bicycle",
+   "forbidden": [
+    "wheel",
+    "pedal",
+    "ride",
+    "chain"
+   ]
+  },
+  {
+   "word": "Pizza",
+   "forbidden": [
+    "cheese",
+    "slice",
+    "Italy",
+    "pepperoni"
+   ]
+  },
+  {
+   "word": "Rainbow",
+   "forbidden": [
+    "colors",
+    "rain",
+    "sky",
+    "arch"
+   ]
+  },
+  {
+   "word": "Library",
+   "forbidden": [
+    "books",
+    "read",
+    "borrow",
+    "shelf"
+   ]
+  },
+  {
+   "word": "Snowman",
+   "forbidden": [
+    "snow",
+    "carrot",
+    "winter",
+    "frosty"
+   ]
+  },
+  {
+   "word": "Umbrella",
+   "forbidden": [
+    "rain",
+    "wet",
+    "open",
+    "handle"
+   ]
+  },
+  {
+   "word": "Lighthouse",
+   "forbidden": [
+    "light",
+    "ship",
+    "sea",
+    "tower"
+   ]
+  },
+  {
+   "word": "Elephant",
+   "forbidden": [
+    "trunk",
+    "big",
+    "gray",
+    "tusk"
+   ]
+  },
+  {
+   "word": "Birthday",
+   "forbidden": [
+    "cake",
+    "candles",
+    "party",
+    "age"
+   ]
+  },
+  {
+   "word": "Telescope",
+   "forbidden": [
+    "stars",
+    "look",
+    "space",
+    "lens"
+   ]
+  },
+  {
+   "word": "Backpack",
+   "forbidden": [
+    "school",
+    "carry",
+    "straps",
+    "bag"
+   ]
+  },
+  {
+   "word": "Volcano",
+   "forbidden": [
+    "lava",
+    "erupt",
+    "mountain",
+    "hot"
+   ]
+  },
+  {
+   "word": "Guitar",
+   "forbidden": [
+    "strings",
+    "music",
+    "play",
+    "strum"
+   ]
+  },
+  {
+   "word": "Sandcastle",
+   "forbidden": [
+    "beach",
+    "sand",
+    "build",
+    "waves"
+   ]
+  },
+  {
+   "word": "Pirate",
+   "forbidden": [
+    "ship",
+    "treasure",
+    "sea",
+    "parrot"
+   ]
+  },
+  {
+   "word": "Robot",
+   "forbidden": [
+    "machine",
+    "metal",
+    "beep",
+    "computer"
+   ]
+  },
+  {
+   "word": "Campfire",
+   "forbidden": [
+    "marshmallow",
+    "wood",
+    "tent",
+    "flames"
+   ]
+  },
+  {
+   "word": "Dentist",
+   "forbidden": [
+    "teeth",
+    "tooth",
+    "brush",
+    "cavity"
+   ]
+  },
+  {
+   "word": "Popcorn",
+   "forbidden": [
+    "movie",
+    "corn",
+    "butter",
+    "kernels"
+   ]
+  },
+  {
+   "word": "Skateboard",
+   "forbidden": [
+    "wheels",
+    "board",
+    "ramp",
+    "trick"
+   ]
+  },
+  {
+   "word": "Penguin",
+   "forbidden": [
+    "ice",
+    "bird",
+    "cold",
+    "waddle"
+   ]
+  },
+  {
+   "word": "Vacation",
+   "forbidden": [
+    "trip",
+    "holiday",
+    "travel",
+    "relax"
+   ]
+  },
+  {
+   "word": "Balloon",
+   "forbidden": [
+    "air",
+    "float",
+    "party",
+    "pop"
+   ]
+  },
+  {
+   "word": "Scarecrow",
+   "forbidden": [
+    "farm",
+    "field",
+    "crows",
+    "straw"
+   ]
+  },
+  {
+   "word": "Fireworks",
+   "forbidden": [
+    "sky",
+    "explode",
+    "July",
+    "colorful"
+   ]
+  },
+  {
+   "word": "Kangaroo",
+   "forbidden": [
+    "Australia",
+    "jump",
+    "pouch",
+    "hop"
+   ]
+  },
+  {
+   "word": "Museum",
+   "forbidden": [
+    "art",
+    "history",
+    "exhibit",
+    "visit"
+   ]
+  },
+  {
+   "word": "Sunflower",
+   "forbidden": [
+    "yellow",
+    "seeds",
+    "tall",
+    "petals"
+   ]
+  },
+  {
+   "word": "Astronaut",
+   "forbidden": [
+    "space",
+    "rocket",
+    "moon",
+    "suit"
+   ]
+  },
+  {
+   "word": "Compass",
+   "forbidden": [
+    "north",
+    "direction",
+    "needle",
+    "map"
+   ]
+  },
+  {
+   "word": "Waterfall",
+   "forbidden": [
+    "water",
+    "cliff",
+    "falls",
+    "river"
+   ]
+  },
+  {
+   "word": "Magician",
+   "forbidden": [
+    "trick",
+    "wand",
+    "rabbit",
+    "hat"
+   ]
+  },
+  {
+   "word": "Windmill",
+   "forbidden": [
+    "wind",
+    "blades",
+    "turn",
+    "farm"
+   ]
+  },
+  {
+   "word": "Lemonade",
+   "forbidden": [
+    "lemon",
+    "drink",
+    "sour",
+    "sweet"
+   ]
+  },
+  {
+   "word": "Treehouse",
+   "forbidden": [
+    "tree",
+    "kids",
+    "climb",
+    "house"
+   ]
+  },
+  {
+   "word": "Jellyfish",
+   "forbidden": [
+    "sea",
+    "sting",
+    "float",
+    "tentacles"
+   ]
+  },
+  {
+   "word": "Bakery",
+   "forbidden": [
+    "bread",
+    "cake",
+    "oven",
+    "pastry"
+   ]
+  },
+  {
+   "word": "Dinosaur",
+   "forbidden": [
+    "extinct",
+    "fossil",
+    "roar",
+    "giant"
+   ]
+  },
+  {
+   "word": "Trampoline",
+   "forbidden": [
+    "jump",
+    "bounce",
+    "springs",
+    "net"
+   ]
+  },
+  {
+   "word": "Hammock",
+   "forbidden": [
+    "hang",
+    "swing",
+    "sleep",
+    "rope"
+   ]
+  }
+ ]
+}

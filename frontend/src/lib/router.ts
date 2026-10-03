@@ -23,3 +23,9 @@ export function navigate(path: string) {
   window.history.pushState({}, "", path);
   window.dispatchEvent(new Event(NAVIGATE_EVENT));
 }
+
+/** Like navigate, but replaces the current history entry, so Back skips a page the user was only passing through. */
+export function redirect(path: string) {
+  window.history.replaceState({}, "", path);
+  window.dispatchEvent(new Event(NAVIGATE_EVENT));
+}
