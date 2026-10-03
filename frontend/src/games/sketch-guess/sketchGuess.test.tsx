@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlayerView, SessionView } from "../../lib/types";
 import { SketchGuessGameScreen } from "./GameScreen";
 import { isSketchSetupValid, toApiSketchSetup } from "./setup";
-import { GRID, MAX_POINTS_PER_STROKE, isFull, movedEnough, toGrid } from "./strokes";
+import { GRID, MAX_POINTS_PER_STROKE, MAX_STROKES, isFull, movedEnough, toGrid } from "./strokes";
 import type { SketchPayload } from "./types";
 
 const PLAYERS: PlayerView[] = ["Amos", "Lydia"].map((name) => ({ name, online: true, claimed: true }));
@@ -136,7 +136,7 @@ describe("Sketch Guess screen", () => {
 
   it("stops taking strokes the server would refuse, and says why", () => {
     const onAction = vi.fn();
-    const full = Array.from({ length: 200 }, () => ({ color: 0, size: 9, points: [1, 1, 2, 2] }));
+    const full = Array.from({ length: MAX_STROKES }, () => ({ color: 0, size: 9, points: [1, 1, 2, 2] }));
     render(<SketchGuessGameScreen {...props} me="Amos" payload={{ ...base, word: "Bicycle", strokes: full }} onAction={onAction} />);
 
     drawLine(screen.getByRole("img", { name: "Your drawing board" }));
@@ -144,6 +144,30 @@ describe("Sketch Guess screen", () => {
 
     expect(onAction).not.toHaveBeenCalled();
     expect(screen.getByText(/the canvas is full/i)).toBeInTheDocument();
+  });
+
+  it("also stops when the points alone would pass the server's cap, well before the stroke cap", () => {
+    const onAction = vi.fn();
+    const dense = Array.from({ length: 30 }, () => ({ color: 0, size: 9, points: Array.from({ length: 400 }, (_, i) => i % 1000) }));
+    expect(dense.length).toBeLessThan(MAX_STROKES);
+    render(<SketchGuessGameScreen {...props} me="Amos" payload={{ ...base, word: "Bicycle", strokes: dense }} onAction={onAction} />);
+
+    drawLine(screen.getByRole("img", { name: "Your drawing board" }));
+    act(() => void vi.advanceTimersByTime(400));
+
+    expect(onAction).not.toHaveBeenCalled();
+    expect(screen.getByText(/the canvas is full/i)).toBeInTheDocument();
+  });
+
+  it("keeps drawing with room to spare under both caps", () => {
+    const onAction = vi.fn();
+    const some = Array.from({ length: 30 }, () => ({ color: 0, size: 9, points: [1, 1, 2, 2] }));
+    render(<SketchGuessGameScreen {...props} me="Amos" payload={{ ...base, word: "Bicycle", strokes: some }} onAction={onAction} />);
+
+    drawLine(screen.getByRole("img", { name: "Your drawing board" }));
+    act(() => void vi.advanceTimersByTime(400));
+
+    expect(onAction).toHaveBeenCalledTimes(1);
   });
 
   // jsdom has no layout, so this guards the class; the size was checked in a real browser in phone landscape.

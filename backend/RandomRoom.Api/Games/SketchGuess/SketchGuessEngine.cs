@@ -75,9 +75,9 @@ public sealed class SketchGuessEngine(GameStore store, IRandomChoiceSource rando
     public const int MinPenSize = 1;
     public const int MaxPenSize = 24;
     public const int MaxStrokeBatch = 20;
-    public const int MaxStrokes = 200;
+    public const int MaxStrokes = 400;
     public const int MaxPointsPerStroke = 200;
-    public const int MaxTotalPoints = 4000;
+    public const int MaxTotalPoints = 6000;
 
     /// <summary>The shortest gap between two canvas actions from the drawer. Clients batch to stay well inside it.</summary>
     public static readonly TimeSpan MinCanvasGap = TimeSpan.FromMilliseconds(100);

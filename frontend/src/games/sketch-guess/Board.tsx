@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
-import { FLUSH_MS, GRID, MAX_BATCH, MAX_STROKES, PALETTE, PEN_SIZES, SEGMENT_MS, isFull, movedEnough, paintStroke, toGrid } from "./strokes";
+import { FLUSH_MS, GRID, MAX_BATCH, PALETTE, PEN_SIZES, SEGMENT_MS, canvasIsFull, isFull, movedEnough, paintStroke, toGrid } from "./strokes";
 import type { Stroke } from "./types";
 
 interface BoardProps {
@@ -114,13 +114,16 @@ export function Board({ strokes, canDraw, label, onStrokes, onUndo, onClear }: B
     return toGrid(event.clientX, event.clientY, event.currentTarget.getBoundingClientRect());
   }
 
+  // Everything the server holds plus what is still on its way, which is what counts against its caps.
+  const canvasAtLimit = () => canvasIsFull([...strokes, ...inflight.current, ...pending.current]);
+
   function onDown(event: PointerEvent<HTMLCanvasElement>) {
     if (!canDraw) return;
     // One pointer draws at a time: a second finger or a resting palm must not hijack the stroke.
     if (activePointer.current !== null) return;
     // Only the main button draws; a right-click would leave a stray mark and open the context menu.
     if (event.pointerType === "mouse" && event.button !== 0) return;
-    if (strokes.length + inflight.current.length + pending.current.length >= MAX_STROKES) {
+    if (canvasAtLimit()) {
       setFull(true);
       return;
     }
@@ -148,6 +151,13 @@ export function Board({ strokes, canDraw, label, onStrokes, onUndo, onClear }: B
       // Close this stroke and carry on from the same spot, so a long line is a few strokes end to end, and
       // guessers see it grow instead of waiting for the pointer to lift.
       finishStroke();
+      if (canvasAtLimit()) {
+        // The next piece would be refused by the server, so stop here and say why.
+        current.current = null;
+        setFull(true);
+        repaint();
+        return;
+      }
       current.current = { color: stroke.color, size: stroke.size, points: [x, y] };
       segmentStartedAt.current = Date.now();
     }

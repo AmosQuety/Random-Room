@@ -5,7 +5,9 @@ export const GRID = 1000;
 export const MAX_POINTS_PER_STROKE = 200;
 export const MAX_BATCH = 20;
 /** The most strokes the server keeps for one round. */
-export const MAX_STROKES = 200;
+export const MAX_STROKES = 400;
+/** The most points the server keeps for one round, across all strokes. */
+export const MAX_TOTAL_POINTS = 6000;
 /** While the pointer is down, the line so far is cut into a stroke this often so guessers see it as it is drawn. */
 export const SEGMENT_MS = 500;
 /** The server refuses canvas actions closer than 100ms; batching slower than that keeps a fast drawer accepted. */
@@ -44,6 +46,12 @@ export function movedEnough(points: number[], x: number, y: number): boolean {
   if (n < 2) return true;
   return Math.abs(points[n - 2] - x) + Math.abs(points[n - 1] - y) >= MIN_STEP;
 }
+
+export const pointCount = (strokes: readonly Stroke[]): number => strokes.reduce((sum, s) => sum + s.points.length / 2, 0);
+
+/** True when another full-length stroke could push the round past the server's stroke or point cap. */
+export const canvasIsFull = (strokes: readonly Stroke[]): boolean =>
+  strokes.length >= MAX_STROKES || pointCount(strokes) > MAX_TOTAL_POINTS - MAX_POINTS_PER_STROKE;
 
 export const isFull = (stroke: Stroke): boolean => stroke.points.length / 2 >= MAX_POINTS_PER_STROKE;
 
