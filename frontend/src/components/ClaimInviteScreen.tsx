@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
-import { ApiError, claimInvite } from "../lib/api";
+import { ApiError, claimInvite, join } from "../lib/api";
 import { navigate } from "../lib/router";
+import type { Session } from "../lib/types";
 import { ArrowRightIcon, CheckIcon } from "./icons";
 import { Shell } from "./Shell";
 import { Alert, Button, Card, Eyebrow, Field } from "./ui";
@@ -9,11 +10,12 @@ import { inputClass } from "./styles";
 interface Props {
   slug: string;
   token: string;
+  onJoined: (session: Session) => void;
 }
 
 const pinInputClass = `${inputClass} min-h-14 text-2xl tracking-[0.4em]`;
 
-export function ClaimInviteScreen({ slug, token }: Props) {
+export function ClaimInviteScreen({ slug, token, onJoined }: Props) {
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +23,17 @@ export function ClaimInviteScreen({ slug, token }: Props) {
   const [claimedAs, setClaimedAs] = useState<string | null>(null);
 
   const mismatch = confirmPin.length > 0 && pin !== confirmPin;
+
+  // The player just typed this PIN on this device, so sign them in rather than making them retype it.
+  // If that fails the PIN is still saved and the "Continue" button leads to the manual join form.
+  async function signInWithNewPin(player: string) {
+    try {
+      onJoined(await join(slug, player, pin));
+      navigate(`/room/${slug}`);
+    } catch {
+      setPending(false);
+    }
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -30,6 +43,7 @@ export function ClaimInviteScreen({ slug, token }: Props) {
     try {
       const { player } = await claimInvite(slug, token, pin);
       setClaimedAs(player);
+      await signInWithNewPin(player);
     } catch (e) {
       setError(
         e instanceof ApiError && e.status === 404
