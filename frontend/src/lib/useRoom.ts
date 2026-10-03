@@ -6,6 +6,9 @@ import type { RoomSnapshot } from "./types";
 
 export type ConnectionStatus = "connecting" | "live" | "reconnecting";
 
+/** Why the server stopped accepting this player: their sign-in ran out, or the host reset their seat. */
+export type SessionEnd = "expired" | "reset";
+
 interface UseRoom {
   snapshot: RoomSnapshot | null;
   connection: ConnectionStatus;
@@ -16,7 +19,7 @@ interface UseRoom {
 }
 
 /** Keeps the room in sync: push updates over SignalR, with a full refetch after every (re)connect. */
-export function useRoom(token: string, onUnauthorized: () => void): UseRoom {
+export function useRoom(token: string, onUnauthorized: (reason: SessionEnd) => void): UseRoom {
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
   const acceptSnapshot = useCallback((next: RoomSnapshot) => setSnapshot((current) => newerSnapshot(current, next)), []);
   const [connection, setConnection] = useState<ConnectionStatus>("connecting");
@@ -27,7 +30,7 @@ export function useRoom(token: string, onUnauthorized: () => void): UseRoom {
       acceptSnapshot(await getRoom(token));
       setLoadFailed(false);
     } catch (error) {
-      if (error instanceof ApiError && error.status === 401) onUnauthorized();
+      if (error instanceof ApiError && error.status === 401) onUnauthorized("expired");
       else setLoadFailed(true);
     }
   }, [token, onUnauthorized, acceptSnapshot]);
@@ -40,6 +43,7 @@ export function useRoom(token: string, onUnauthorized: () => void): UseRoom {
       .build();
 
     hub.on("roomChanged", acceptSnapshot);
+    hub.on("seatReset", () => onUnauthorized("reset"));
     hub.onreconnecting(() => setConnection("reconnecting"));
     hub.onreconnected(() => {
       setConnection("live");
@@ -55,9 +59,10 @@ export function useRoom(token: string, onUnauthorized: () => void): UseRoom {
 
     return () => {
       hub.off("roomChanged");
+      hub.off("seatReset");
       if (hub.state !== HubConnectionState.Disconnected) void hub.stop();
     };
-  }, [token, refetch, acceptSnapshot]);
+  }, [token, refetch, acceptSnapshot, onUnauthorized]);
 
   return { snapshot, connection, loadFailed, retry: () => void refetch(), applySnapshot: acceptSnapshot };
 }

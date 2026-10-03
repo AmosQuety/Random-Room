@@ -1,4 +1,4 @@
-import type { CreateRoomResult, RoomPreview, RoomSnapshot, Session } from "./types";
+import type { CreateRoomResult, PlayerInvite, RoomPreview, RoomSnapshot, Session } from "./types";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -47,6 +47,10 @@ const post = (path: string, token: string) => request<RoomSnapshot>(path, { meth
 
 export const performAction = (token: string, action: string, payload?: unknown) =>
   request<RoomSnapshot>("/api/room/action", { method: "POST", body: JSON.stringify({ action, payload }) }, token);
+
+/** Host only. Empties a player's seat and returns the one-time link they use to set a new PIN. */
+export const resetPin = (token: string, player: string) =>
+  request<PlayerInvite>(`/api/room/players/${encodeURIComponent(player)}/reset-pin`, { method: "POST" }, token);
 
 export const startSession = (token: string) => post("/api/room/session/start", token);
 export const endSession = (token: string) => post("/api/room/session/end", token);

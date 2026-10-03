@@ -5,7 +5,13 @@ import { JoinScreen } from "./components/JoinScreen";
 import { RoomScreen } from "./components/RoomScreen";
 import { usePath } from "./lib/router";
 import { clearSession, loadSession, saveSession } from "./lib/session";
+import type { SessionEnd } from "./lib/useRoom";
 import type { Session } from "./lib/types";
+
+const SESSION_END_NOTICE: Record<SessionEnd, string> = {
+  expired: "Your sign-in has ended, so you were signed out. Pick your name and enter your PIN to get back in.",
+  reset: "The host reset your seat, so you were signed out. Ask them for your new invite link, open it, and choose a new PIN.",
+};
 
 export default function App() {
   const path = usePath();
@@ -25,9 +31,9 @@ export default function App() {
     setSession(null);
   }, []);
 
-  const handleSessionExpired = useCallback(() => {
+  const handleSessionExpired = useCallback((reason: SessionEnd) => {
     clearSession();
-    setNotice("Your sign-in has ended, so you were signed out. Pick your name and enter your PIN to get back in.");
+    setNotice(SESSION_END_NOTICE[reason]);
     setSession(null);
   }, []);
 

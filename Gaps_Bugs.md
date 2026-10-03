@@ -1,7 +1,7 @@
 # Gaps and Bugs
 
 Known problems and missing features, found while testing the redesigned app locally.
-Nothing here is fixed yet. Each entry says what was seen, what is not yet known, and what "done" looks like.
+Each entry says what was seen, what is not yet known, and what "done" looks like.
 
 ## Bugs
 
@@ -39,17 +39,11 @@ Security notes to keep in mind:
 
 Low-bandwidth note: keep whatever is added small (no image assets, no heavy libraries), since many players will be on slow connections.
 
-### G2. No way to recover a forgotten PIN
+### G2. No way to recover a forgotten PIN (fixed)
 
-- **Seen:** A player's PIN is set once, through their invite link, and only a hash is stored. The invite token is cleared on claim, so the link cannot be reused. If a player forgets their PIN, or opens the room on a new device without remembering it, they are locked out of that seat. The host cannot see or reset it, by design.
-- **Why it matters:** Players are casual users (reunions, cell groups) and a four-digit PIN set once is easy to forget. Today the only recovery is to create a new room.
-- **Not yet known:** Whether the host should be allowed to re-open a seat, and how that is kept safe from a host impersonating a player.
-- **Proposed direction (needs a decision):** A host-only "Reset this seat" action that clears the seat's PIN hash and issues a fresh one-time invite link. The player opens it and sets a new PIN, exactly as at first join. Options to weigh:
-  1. Host resets any non-host seat (simplest; the host could then claim that seat, so the reset should be visible to everyone in the room and recorded in an audit entry).
-  2. Allow it only while no session is running, to avoid mid-round takeovers.
-  3. Keep the PIN unrecoverable and just document it, accepting new-room as the recovery path.
-- **Security notes:** Rate-limit the reset endpoint, expire the new invite, never return the old PIN hash, and make sure resetting the host's own seat is handled (probably not allowed).
-- **Done when:** A host can issue a replacement link for a locked-out player, the old PIN stops working, the event is visible in the room and audited, and a test covers the reset and the lockout of the old PIN.
+- **Fix:** The host can reset any other seat between games ("Someone locked out? Reset a seat"). The reset empties the seat, signs the old device out at once (a per-seat token version is checked on every request, and live connections are cut), and returns a fresh one-time link. It is recorded in `RoomAuditEvents`. The host's own seat cannot be reset: if the host forgets their PIN, they start a new room.
+- **Why between games only:** a mid-game reset would let the host claim the seat and see that player's secrets (their cards, the spymaster key).
+- **Still open:** a recovery path for the host's own seat (for example a code shown once at room creation).
 
 ## Findings from the QA audit
 

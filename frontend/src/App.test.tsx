@@ -6,9 +6,10 @@ import { loadSession } from "./lib/session";
 const api = vi.hoisted(() => ({ getRoomPreview: vi.fn() }));
 vi.mock("./lib/api", async (importOriginal) => ({ ...(await importOriginal<object>()), ...api }));
 vi.mock("./components/RoomScreen", () => ({
-  RoomScreen: ({ onSessionExpired, onLeave }: { onSessionExpired: () => void; onLeave: () => void }) => (
+  RoomScreen: ({ onSessionExpired, onLeave }: { onSessionExpired: (reason: "expired" | "reset") => void; onLeave: () => void }) => (
     <>
-      <button onClick={onSessionExpired}>expire</button>
+      <button onClick={() => onSessionExpired("expired")}>expire</button>
+      <button onClick={() => onSessionExpired("reset")}>reset</button>
       <button onClick={onLeave}>leave</button>
     </>
   ),
@@ -29,6 +30,16 @@ describe("App sign-in expiry", () => {
     fireEvent.click(screen.getByRole("button", { name: "expire" }));
 
     expect(await screen.findByText(/your sign-in has ended/i)).toBeInTheDocument();
+    expect(loadSession()).toBeNull();
+  });
+
+  it("tells a player whose seat the host reset to ask for a new invite link", async () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "reset" }));
+
+    expect(await screen.findByText(/the host reset your seat/i)).toBeInTheDocument();
+    expect(screen.getByText(/ask them for your new invite link/i)).toBeInTheDocument();
     expect(loadSession()).toBeNull();
   });
 

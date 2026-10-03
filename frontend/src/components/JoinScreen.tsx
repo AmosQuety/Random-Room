@@ -176,7 +176,7 @@ export function JoinScreen({ slug, onJoined, notice }: Props) {
             )}
           </fieldset>
 
-          <Field id="pin" label="2. Your secret PIN" hint="This stops someone else joining as you.">
+          <Field id="pin" label="2. Your secret PIN" hint="This stops someone else joining as you. Forgot it? Ask the host to reset your seat.">
             <input
               id="pin"
               type="password"

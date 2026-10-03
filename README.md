@@ -13,7 +13,10 @@ hash of the PIN is stored, and nobody else (including the host) ever sees it. On
 name on the room's join page and types their PIN. Either way the browser gets a signed 12-hour token, so the PIN is
 not re-sent with every action.
 
-A forgotten PIN cannot be recovered yet (see `Gaps_Bugs.md`, G2). The deployment itself needs only a token-signing
+If a player forgets their PIN or changes phone, the host opens "Someone locked out? Reset a seat" in the room, which
+signs the old device out and gives the host a fresh one-time link to send. This is only allowed between games, and the
+host's own seat cannot be reset (the host would start a new room). Each reset is recorded in the room's audit table.
+The deployment itself needs only a token-signing
 key and a database connection string.
 
 ## Run locally

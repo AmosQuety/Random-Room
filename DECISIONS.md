@@ -40,3 +40,10 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **Sketch Guess bounds.** At most 20 strokes per batch, 400 strokes and 6000 points per round (a long continuous drag is cut into a stroke every 500ms, so the stroke cap alone would be reached in a couple of minutes), 200 points per stroke, a 100ms gap between canvas actions per round; the client batches every 160ms to stay inside it.
 - **Sketch Guess keeps nothing beyond its round.** Strokes live in the session state row and are cleared when the next round starts and when the game completes. Limitation: if a host ends a session abnormally, the last round's strokes stay in that row until the room is deleted.
 - **Drawing is pointer-only.** A canvas has no keyboard equivalent for freehand drawing; the drawer can skip the word, and guessers (who never draw) get a full keyboard path. Noted as a known accessibility limit.
+
+## PIN recovery
+
+- **Reset is host-only, between games, and never on the host's own seat.** Mid-game the host could claim the emptied seat and see that player's secrets; and a reset of the host's seat would need someone else to hold that power.
+- **A per-seat `TokenVersion` is checked on every request.** Tokens last 12 hours, so without it a reset would leave the old device signed in. The check is one indexed query in `OnTokenValidated`; tokens issued before the column existed count as version 0.
+- **The reset also cuts live connections.** The old device is told (`seatReset`), removed from its SignalR groups and from presence, so it receives no further snapshots.
+- **An append-only `RoomAuditEvents` table**, separate from game state and logs, records who reset which seat and when. It is rejected for update or delete by `RoomDbContext` and is removed only with its room.

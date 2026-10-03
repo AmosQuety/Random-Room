@@ -1,11 +1,12 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { GAMES } from "../games/registry";
-import { ApiError, endSession, performAction, startNewSession, startSession } from "../lib/api";
+import { ApiError, endSession, performAction, resetPin, startNewSession, startSession } from "../lib/api";
 import type { RoomSnapshot, Session, SessionStatus } from "../lib/types";
 import { currentError, type RoomError } from "../lib/snapshots";
-import { useRoom, type ConnectionStatus } from "../lib/useRoom";
+import { useRoom, type ConnectionStatus, type SessionEnd } from "../lib/useRoom";
 import { Avatar } from "./Avatar";
 import { HostControls } from "./HostControls";
+import { SeatControls } from "./SeatControls";
 import { Shell } from "./Shell";
 import { Alert, Button, EmptyState, Eyebrow, Skeleton } from "./ui";
 
@@ -34,7 +35,7 @@ interface Props {
   session: Session;
   onLeave: () => void;
   /** The server no longer accepts this player's token; the app returns to the join screen and says why. */
-  onSessionExpired: () => void;
+  onSessionExpired: (reason: SessionEnd) => void;
 }
 
 const isUnauthorized = (e: unknown) => e instanceof ApiError && e.status === 401;
@@ -81,7 +82,7 @@ export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
       applySnapshot(await action(session.token));
     } catch (e) {
       // An expired token ends the session the same way it does when the room is loaded: back to the join screen.
-      if (isUnauthorized(e)) return onSessionExpired();
+      if (isUnauthorized(e)) return onSessionExpired("expired");
       const message = e instanceof ApiError ? e.message : "Could not reach the server. Check your connection and try again.";
       setError({ message, sequence: latestSequence.current });
     } finally {
@@ -95,8 +96,17 @@ export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
     try {
       applySnapshot(await action(session.token));
     } catch (e) {
-      if (isUnauthorized(e)) onSessionExpired();
+      if (isUnauthorized(e)) onSessionExpired("expired");
       // Anything else is deliberately ignored, see above.
+    }
+  }
+
+  async function resetSeat(player: string) {
+    try {
+      return await resetPin(session.token, player);
+    } catch (e) {
+      if (isUnauthorized(e)) onSessionExpired("expired");
+      throw e;
     }
   }
 
@@ -220,6 +230,16 @@ export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
             onStart={() => run(startSession)}
             onEnd={() => run(endSession)}
             onNewRound={() => run(startNewSession)}
+          />
+        )}
+
+        {session.isHost && (
+          <SeatControls
+            slug={snapshot.roomSlug}
+            hostPlayer={snapshot.hostPlayer}
+            players={snapshot.players}
+            status={status}
+            onReset={resetSeat}
           />
         )}
       </div>

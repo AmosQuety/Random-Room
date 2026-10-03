@@ -1,10 +1,12 @@
 import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { GAME_LIST, GAMES } from "../games/registry";
 import { ApiError, createRoom } from "../lib/api";
+import { claimPath, claimUrl } from "../lib/invites";
 import { navigate } from "../lib/router";
 import { playerCountIssue } from "../lib/players";
 import type { CreateRoomResult } from "../lib/types";
 import { GamePicker } from "./GamePicker";
+import { InviteActions } from "./InviteActions";
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, CopyIcon, PlayIcon } from "./icons";
 import { ListEditor } from "./ListEditor";
 import { Alert, Button, Card, Eyebrow, Field, Skeleton } from "./ui";
@@ -53,8 +55,7 @@ function Stepper({ step, onGoTo }: { step: number; onGoTo: (step: number) => voi
 
 function RoomCreatedCard({ result, hostPlayer }: { result: CreateRoomResult; hostPlayer: string }) {
   const [copied, setCopied] = useState<string | null>(null);
-  const claimPath = (token: string) => `/room/${result.slug}/claim/${token}`;
-  const urlFor = (token: string) => `${window.location.origin}${claimPath(token)}`;
+  const urlFor = (token: string) => claimUrl(result.slug, token);
 
   async function copy(label: string, text: string) {
     try {
@@ -101,21 +102,14 @@ function RoomCreatedCard({ result, hostPlayer }: { result: CreateRoomResult; hos
                 <p className="truncate font-mono text-xs text-muted">{urlFor(invite.inviteToken)}</p>
               </div>
               {invite.player === hostPlayer && (
-                <Button size="sm" variant="primary" onClick={() => navigate(claimPath(invite.inviteToken))}>
+                <Button size="sm" variant="primary" onClick={() => navigate(claimPath(result.slug, invite.inviteToken))}>
                   Set my PIN <ArrowRightIcon className="size-4" />
                 </Button>
               )}
-              <Button size="sm" variant="secondary" onClick={() => copy(invite.player, urlFor(invite.inviteToken))}>
-                {copied === invite.player ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
-                {copied === invite.player ? "Copied" : "Copy link"}
-                <span className="sr-only"> for {invite.player}</span>
-              </Button>
+              <InviteActions slug={result.slug} player={invite.player} token={invite.inviteToken} />
             </li>
           ))}
         </ul>
-        <p role="status" className="sr-only">
-          {copied ? `Link for ${copied} copied` : ""}
-        </p>
         <div className="flex flex-wrap gap-3">
           <Button variant="secondary" onClick={() => navigate(`/room/${result.slug}/join`)}>
             Already set a PIN? Go to the room <ArrowRightIcon />
