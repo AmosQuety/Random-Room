@@ -73,7 +73,7 @@ export function ChainGameScreen({ config, me, isHost, session, payload, busy, on
           <p id="story-heading" className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
             {over ? "The finished story" : `Turn ${payload.turn + 1} of ${payload.totalTurns}`}
           </p>
-          <p className="text-xl leading-relaxed sm:text-2xl">
+          <p className="text-xl leading-relaxed [overflow-wrap:anywhere] sm:text-2xl">
             <span className="font-bold">{payload.opener}</span>
             {payload.entries.map((entry, i) => (
               <span key={i} title={`Added by ${entry.player}`}>

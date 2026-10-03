@@ -32,6 +32,12 @@ function renderScreen(config: ChainConfig, p: ChainPayload, me = "Amos", isHost 
 }
 
 describe("Story screen", () => {
+  // jsdom has no layout, so this guards the class; the overflow itself was reproduced and fixed in a real browser.
+  it("lets a long unbroken entry wrap inside the story instead of widening the page", () => {
+    renderScreen(fortunatelyConfig, payload({ entries: [{ player: "Lydia", text: "x".repeat(140), prefix: "" }] }));
+    expect(screen.getByText(/x{140}/).closest("p")?.className).toContain("[overflow-wrap:anywhere]");
+  });
+
   it("shows the story so far and lets the current player add a trimmed word", () => {
     const onAction = renderScreen(oneWordConfig, payload());
     expect(screen.getByText(/Once upon a time, there was a/)).toBeInTheDocument();
