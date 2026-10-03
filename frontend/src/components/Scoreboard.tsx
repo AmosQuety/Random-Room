@@ -14,6 +14,8 @@ interface Props {
 export function Scoreboard({ rows, me, unit = "points", title = "Scoreboard" }: Props) {
   const ranked = rankRows(rows);
   const topScore = ranked[0]?.row.score ?? 0;
+  // Everyone on zero means nobody is ahead, so showing every player as "1" would read as a tie for the lead.
+  const anyoneScored = topScore > 0;
 
   return (
     <section aria-labelledby="scoreboard-heading">
@@ -34,8 +36,17 @@ export function Scoreboard({ rows, me, unit = "points", title = "Scoreboard" }: 
                 <span
                   className={`grid size-9 shrink-0 place-items-center rounded-full border-2 border-ink font-mono text-sm font-bold ${leading ? "bg-mustard text-ink" : "bg-paper text-ink"}`}
                 >
-                  <span className="sr-only">Rank </span>
-                  {rank}
+                  {anyoneScored ? (
+                    <>
+                      <span className="sr-only">Rank </span>
+                      {rank}
+                    </>
+                  ) : (
+                    <>
+                      <span className="sr-only">Not ranked yet</span>
+                      <span aria-hidden="true">-</span>
+                    </>
+                  )}
                 </span>
                 <span className="min-w-0 flex-1 truncate font-display text-lg font-bold">
                   {row.name}

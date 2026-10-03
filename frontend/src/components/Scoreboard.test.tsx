@@ -50,4 +50,29 @@ describe("Scoreboard", () => {
     render(<Scoreboard rows={[{ name: "Amos", score: 0 }]} me="Amos" />);
     expect(screen.queryByRole("img", { name: /leading/i })).toBeNull();
   });
+
+  it("does not rank anyone while everyone is on zero, so nobody looks like they are winning", () => {
+    render(
+      <Scoreboard
+        rows={[
+          { name: "Amos", score: 0 },
+          { name: "Lydia", score: 0 },
+        ]}
+        me="Amos"
+      />,
+    );
+
+    const items = within(screen.getByRole("list")).getAllByRole("listitem");
+    for (const item of items) {
+      expect(item).toHaveTextContent("Not ranked yet");
+      expect(item).not.toHaveTextContent(/rank 1/i);
+    }
+  });
+
+  it("ranks players as soon as anyone scores", () => {
+    render(<Scoreboard rows={[{ name: "Amos", score: 1 }, { name: "Lydia", score: 0 }]} me="Amos" />);
+
+    expect(screen.getAllByText(/^Rank/)).toHaveLength(2);
+    expect(screen.queryByText(/not ranked yet/i)).not.toBeInTheDocument();
+  });
 });
