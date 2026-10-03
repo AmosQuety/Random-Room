@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
-import { FLUSH_MS, GRID, MAX_BATCH, PALETTE, PEN_SIZES, isFull, movedEnough, paintStroke, toGrid } from "./strokes";
+import { FLUSH_MS, GRID, MAX_BATCH, MAX_STROKES, PALETTE, PEN_SIZES, SEGMENT_MS, isFull, movedEnough, paintStroke, toGrid } from "./strokes";
 import type { Stroke } from "./types";
 
 interface BoardProps {
@@ -63,6 +63,8 @@ export function Board({ strokes, canDraw, label, onStrokes, onUndo, onClear }: B
   const inflight = useRef<Stroke[]>([]);
   const current = useRef<Stroke | null>(null);
   const lastSentAt = useRef(0);
+  const segmentStartedAt = useRef(0);
+  const [full, setFull] = useState(false);
   const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [, bump] = useState(0);
 
@@ -113,7 +115,14 @@ export function Board({ strokes, canDraw, label, onStrokes, onUndo, onClear }: B
 
   function onDown(event: PointerEvent<HTMLCanvasElement>) {
     if (!canDraw) return;
+    // Only the main button draws; a right-click would leave a stray mark and open the context menu.
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    if (strokes.length + inflight.current.length + pending.current.length >= MAX_STROKES) {
+      setFull(true);
+      return;
+    }
     event.currentTarget.setPointerCapture?.(event.pointerId);
+    segmentStartedAt.current = Date.now();
     const [x, y] = pointFrom(event);
     current.current = { color, size, points: [x, y] };
     repaint();
@@ -125,10 +134,12 @@ export function Board({ strokes, canDraw, label, onStrokes, onUndo, onClear }: B
     const [x, y] = pointFrom(event);
     if (!movedEnough(stroke.points, x, y)) return;
     stroke.points.push(x, y);
-    if (isFull(stroke)) {
-      // Close this stroke and carry on from the same spot, so a long line is a few strokes end to end.
+    if (isFull(stroke) || Date.now() - segmentStartedAt.current >= SEGMENT_MS) {
+      // Close this stroke and carry on from the same spot, so a long line is a few strokes end to end, and
+      // guessers see it grow instead of waiting for the pointer to lift.
       finishStroke();
       current.current = { color: stroke.color, size: stroke.size, points: [x, y] };
+      segmentStartedAt.current = Date.now();
     }
     repaint();
   }
@@ -136,10 +147,12 @@ export function Board({ strokes, canDraw, label, onStrokes, onUndo, onClear }: B
   function undo() {
     if (pending.current.length > 0) {
       pending.current.pop();
+      setFull(false);
       repaint();
       bump((n) => n + 1);
       return;
     }
+    setFull(false);
     onUndo();
   }
 
@@ -149,6 +162,7 @@ export function Board({ strokes, canDraw, label, onStrokes, onUndo, onClear }: B
     current.current = null;
     if (flushTimer.current) clearTimeout(flushTimer.current);
     flushTimer.current = null;
+    setFull(false);
     repaint();
     onClear();
   }
@@ -165,6 +179,11 @@ export function Board({ strokes, canDraw, label, onStrokes, onUndo, onClear }: B
         onPointerCancel={finishStroke}
         className={`aspect-square w-full max-w-xl self-center rounded-lg border-2 border-ink bg-white ${canDraw ? "cursor-crosshair touch-none" : ""}`}
       />
+      {canDraw && full && (
+        <p role="status" className="text-center font-bold text-tomato">
+          The canvas is full. Undo or clear to keep drawing.
+        </p>
+      )}
       {canDraw && (
         <div className="flex flex-col gap-3" role="group" aria-label="Drawing tools">
           <div role="group" aria-label="Color" className="flex flex-wrap gap-2">

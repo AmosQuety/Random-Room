@@ -69,6 +69,52 @@ describe("Sketch Guess screen", () => {
     expect(onAction).toHaveBeenCalledWith("strokes", { strokes: [{ color: 0, size: 9, points: [0, 0, 500, 500, 1000, 1000] }] });
   });
 
+  it("sends a long scribble in pieces while the pointer is still down, so guessers see it as it is drawn", () => {
+    const onAction = vi.fn();
+    render(<SketchGuessGameScreen {...props} me="Amos" payload={{ ...base, word: "Bicycle" }} onAction={onAction} />);
+    const canvas = screen.getByRole("img", { name: "Your drawing board" });
+
+    fireEvent.pointerDown(canvas, { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 250, clientY: 250, pointerId: 1 });
+    act(() => void vi.advanceTimersByTime(600));
+    fireEvent.pointerMove(canvas, { clientX: 500, clientY: 500, pointerId: 1 });
+    act(() => void vi.advanceTimersByTime(400));
+
+    expect(onAction).toHaveBeenCalledTimes(1);
+    expect(onAction).toHaveBeenCalledWith("strokes", { strokes: [{ color: 0, size: 9, points: [0, 0, 500, 500, 1000, 1000] }] });
+
+    // The line carries on from where the piece ended, so nothing is lost at the join.
+    fireEvent.pointerMove(canvas, { clientX: 400, clientY: 400, pointerId: 1 });
+    fireEvent.pointerUp(canvas, { pointerId: 1 });
+    act(() => void vi.advanceTimersByTime(400));
+    expect(onAction).toHaveBeenLastCalledWith("strokes", { strokes: [{ color: 0, size: 9, points: [1000, 1000, 800, 800] }] });
+  });
+
+  it("ignores a right-button drag, which would draw a stray mark and open the context menu", () => {
+    const onAction = vi.fn();
+    render(<SketchGuessGameScreen {...props} me="Amos" payload={{ ...base, word: "Bicycle" }} onAction={onAction} />);
+    const canvas = screen.getByRole("img", { name: "Your drawing board" });
+
+    fireEvent.pointerDown(canvas, { clientX: 0, clientY: 0, pointerId: 1, pointerType: "mouse", button: 2 });
+    fireEvent.pointerMove(canvas, { clientX: 250, clientY: 250, pointerId: 1 });
+    fireEvent.pointerUp(canvas, { pointerId: 1 });
+    act(() => void vi.advanceTimersByTime(400));
+
+    expect(onAction).not.toHaveBeenCalled();
+  });
+
+  it("stops taking strokes the server would refuse, and says why", () => {
+    const onAction = vi.fn();
+    const full = Array.from({ length: 200 }, () => ({ color: 0, size: 9, points: [1, 1, 2, 2] }));
+    render(<SketchGuessGameScreen {...props} me="Amos" payload={{ ...base, word: "Bicycle", strokes: full }} onAction={onAction} />);
+
+    drawLine(screen.getByRole("img", { name: "Your drawing board" }));
+    act(() => void vi.advanceTimersByTime(400));
+
+    expect(onAction).not.toHaveBeenCalled();
+    expect(screen.getByText(/the canvas is full/i)).toBeInTheDocument();
+  });
+
   it("keeps sends at least 100ms apart however fast the drawer draws", () => {
     const onAction = vi.fn();
     render(<SketchGuessGameScreen {...props} me="Amos" payload={{ ...base, word: "Bicycle" }} onAction={onAction} />);

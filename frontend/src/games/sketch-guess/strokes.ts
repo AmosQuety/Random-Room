@@ -4,6 +4,10 @@ export const GRID = 1000;
 /** Matches the server's caps, so a stroke the client sends is never refused for size. */
 export const MAX_POINTS_PER_STROKE = 200;
 export const MAX_BATCH = 20;
+/** The most strokes the server keeps for one round. */
+export const MAX_STROKES = 200;
+/** While the pointer is down, the line so far is cut into a stroke this often so guessers see it as it is drawn. */
+export const SEGMENT_MS = 500;
 /** The server refuses canvas actions closer than 100ms; batching slower than that keeps a fast drawer accepted. */
 export const FLUSH_MS = 160;
 const MIN_STEP = 4;
