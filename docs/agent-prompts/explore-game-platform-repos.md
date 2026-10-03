@@ -1,5 +1,7 @@
 # Agent prompt: explore the game-playground ecosystem and write a report (cloud session)
 
+Run `preflight-check.md` (in this folder) first, while you are awake, and fix whatever it reports.
+
 How to use: start an unattended **cloud** agent session on the GitHub repository `AmosQuety/Random-Room` and paste
 everything below the line as its task. Before you start it, merge the pull request that contains this file and
 `docs/plan-switch-games-in-a-room.md` into `main`, so the agent finds them on `main` (the prompt has a fallback if you
