@@ -177,7 +177,7 @@ export function Board({ strokes, canDraw, label, onStrokes, onUndo, onClear }: B
         onPointerMove={onMove}
         onPointerUp={finishStroke}
         onPointerCancel={finishStroke}
-        className={`aspect-square w-full max-w-xl self-center rounded-lg border-2 border-ink bg-white ${canDraw ? "cursor-crosshair touch-none" : ""}`}
+        className={`aspect-square w-[min(100%,36rem,70dvh)] self-center rounded-lg border-2 border-ink bg-white ${canDraw ? "cursor-crosshair touch-none" : ""}`}
       />
       {canDraw && full && (
         <p role="status" className="text-center font-bold text-tomato">

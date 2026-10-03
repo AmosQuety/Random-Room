@@ -115,6 +115,13 @@ describe("Sketch Guess screen", () => {
     expect(screen.getByText(/the canvas is full/i)).toBeInTheDocument();
   });
 
+  // jsdom has no layout, so this guards the class; the size was checked in a real browser in phone landscape.
+  it("never makes the drawing board taller than most of the screen, so it fits in phone landscape", () => {
+    render(<SketchGuessGameScreen {...props} me="Amos" payload={{ ...base, word: "Bicycle" }} onAction={vi.fn()} />);
+
+    expect(screen.getByRole("img", { name: "Your drawing board" }).className).toContain("70dvh");
+  });
+
   it("keeps sends at least 100ms apart however fast the drawer draws", () => {
     const onAction = vi.fn();
     render(<SketchGuessGameScreen {...props} me="Amos" payload={{ ...base, word: "Bicycle" }} onAction={onAction} />);
