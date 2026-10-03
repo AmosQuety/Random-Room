@@ -110,3 +110,4 @@ short quotes with paths, never fabricate.
 - 21:39 dot-server notes done.
 - 21:41 dot-server-deploy notes done (the multi-game server and game vote live here).
 - 21:41 dot-core, dot-game notes done.
+- 21:42 priority-4 notes done: dot-net, dot-peer-to-peer, dot-user, dot-stats (+leaderboard, achievements), dot-moderation.
