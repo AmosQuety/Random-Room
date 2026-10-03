@@ -47,6 +47,12 @@ export interface RoomPreview {
   gameType: string;
   gamePreview: unknown;
   players: RoomPreviewPlayer[];
+  /** After how many days without play the room is deleted; 0 when it never is. */
+  retentionDays: number;
+}
+
+export interface AppConfig {
+  retentionDays: number;
 }
 
 export interface PlayerInvite {

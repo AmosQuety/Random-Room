@@ -1,15 +1,17 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
+import { ApiError } from "./lib/api";
 import { loadSession } from "./lib/session";
 
 const api = vi.hoisted(() => ({ getRoomPreview: vi.fn() }));
 vi.mock("./lib/api", async (importOriginal) => ({ ...(await importOriginal<object>()), ...api }));
 vi.mock("./components/RoomScreen", () => ({
-  RoomScreen: ({ onSessionExpired, onLeave }: { onSessionExpired: (reason: "expired" | "reset") => void; onLeave: () => void }) => (
+  RoomScreen: ({ onSessionExpired, onLeave }: { onSessionExpired: (reason: "expired" | "reset" | "deleted") => void; onLeave: () => void }) => (
     <>
       <button onClick={() => onSessionExpired("expired")}>expire</button>
       <button onClick={() => onSessionExpired("reset")}>reset</button>
+      <button onClick={() => onSessionExpired("deleted")}>deleted</button>
       <button onClick={onLeave}>leave</button>
     </>
   ),
@@ -40,6 +42,16 @@ describe("App sign-in expiry", () => {
 
     expect(await screen.findByText(/the host reset your seat/i)).toBeInTheDocument();
     expect(screen.getByText(/ask them for your new invite link/i)).toBeInTheDocument();
+    expect(loadSession()).toBeNull();
+  });
+
+  it("tells a player the host deleted the room, on the page that now says it is gone", async () => {
+    api.getRoomPreview.mockRejectedValue(new ApiError("Room not found.", 404));
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "deleted" }));
+
+    expect(await screen.findByText(/the host deleted this room/i)).toBeInTheDocument();
     expect(loadSession()).toBeNull();
   });
 

@@ -6,8 +6,8 @@ import type { RoomSnapshot } from "./types";
 
 export type ConnectionStatus = "connecting" | "live" | "reconnecting";
 
-/** Why the server stopped accepting this player: their sign-in ran out, or the host reset their seat. */
-export type SessionEnd = "expired" | "reset";
+/** Why the server stopped accepting this player: their sign-in ran out, the host reset their seat, or deleted the room. */
+export type SessionEnd = "expired" | "reset" | "deleted";
 
 interface UseRoom {
   snapshot: RoomSnapshot | null;
@@ -44,6 +44,7 @@ export function useRoom(token: string, onUnauthorized: (reason: SessionEnd) => v
 
     hub.on("roomChanged", acceptSnapshot);
     hub.on("seatReset", () => onUnauthorized("reset"));
+    hub.on("roomDeleted", () => onUnauthorized("deleted"));
     hub.onreconnecting(() => setConnection("reconnecting"));
     hub.onreconnected(() => {
       setConnection("live");
@@ -60,6 +61,7 @@ export function useRoom(token: string, onUnauthorized: (reason: SessionEnd) => v
     return () => {
       hub.off("roomChanged");
       hub.off("seatReset");
+      hub.off("roomDeleted");
       if (hub.state !== HubConnectionState.Disconnected) void hub.stop();
     };
   }, [token, refetch, acceptSnapshot, onUnauthorized]);

@@ -4,6 +4,7 @@ import { ApiError, getRoomPreview, join } from "../lib/api";
 import type { RoomPreview, Session } from "../lib/types";
 import { Avatar } from "./Avatar";
 import { ArrowRightIcon, CheckIcon } from "./icons";
+import { RetentionNotice } from "./RetentionNotice";
 import { Shell } from "./Shell";
 import { Alert, AppLink, Button, EmptyState, Eyebrow, Field, Skeleton } from "./ui";
 import { buttonClass, inputClass, sectionHeadingClass } from "./styles";
@@ -81,6 +82,11 @@ export function JoinScreen({ slug, onJoined, notice }: Props) {
   if (load.status === "missing") {
     return (
       <Shell>
+        {notice && (
+          <p role="status" className="mb-6 rounded-lg border-2 border-ink bg-mustard-soft px-4 py-3 font-semibold">
+            {notice}
+          </p>
+        )}
         <EmptyState
           tone="error"
           title={`No room at "${slug}"`}
@@ -140,6 +146,7 @@ export function JoinScreen({ slug, onJoined, notice }: Props) {
               {claimedCount} of {preview.players.length} players ready
             </span>
           </p>
+          <RetentionNotice days={preview.retentionDays} />
         </header>
 
         <form onSubmit={submit} className="flex flex-col gap-6">

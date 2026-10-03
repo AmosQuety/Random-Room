@@ -83,3 +83,9 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **TLS is required for any database that is not on this machine.** Npgsql's default (`Prefer`) falls back to plain text if encryption is blocked, which on the open internet lets someone on the path read the password and every room's data. The same "local" test as the migration guard decides (`localhost`, loopback, a unix socket), so local development is unchanged.
 - **An explicit choice always wins**: `?sslmode=...` on a URL or `SSL Mode=...` in a key=value string. A value that is not recognised never weakens the default.
 - **Not verified against a real hosted database.** The rule is covered by tests and local startup only; the first connection to Render, Neon or Supabase should be checked by hand. Whether a host's certificate validates under `Require` depends on the host; `Trust Server Certificate=true` is the escape hatch.
+
+## Telling people how long rooms are kept, and deleting a room
+
+- **The retention period is said where people decide to take part**: on the create screen's Players step, on the room-created card, and on a room's join page ("Rooms are deleted after N days without play"). The create screen reads it from `GET /api/config` and the join page from the room preview. If the server cannot say (or it is 0), nothing is shown rather than something wrong.
+- **The host can delete the room at any time** (`DELETE /api/room`, host only, behind a confirm). It uses the same deletion as the retention job (`RoomDeletion`), so there is one meaning of "delete a room". Everyone connected is told (`roomDeleted`) and returned to the join page with "The host deleted this room"; their tokens stop working at once because their seats no longer exist.
+- **A deleted room leaves nothing behind**, including its audit rows, which are removed with it. This is deliberate: deleting is the privacy option.

@@ -10,6 +10,7 @@ import type { Session } from "./lib/types";
 
 const SESSION_END_NOTICE: Record<SessionEnd, string> = {
   expired: "Your sign-in has ended, so you were signed out. Pick your name and enter your PIN to get back in.",
+  deleted: "The host deleted this room, so it is gone for everyone.",
   reset: "The host reset your seat, so you were signed out. Ask them for your new invite link, open it, and choose a new PIN.",
 };
 

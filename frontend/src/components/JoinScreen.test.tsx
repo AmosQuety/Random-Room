@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiError } from "../lib/api";
 import type { RoomPreview } from "../lib/types";
 import { JoinScreen } from "./JoinScreen";
 
@@ -16,7 +17,9 @@ const preview = {
 } as unknown as RoomPreview;
 
 describe("JoinScreen", () => {
-  beforeEach(() => api.getRoomPreview.mockReset().mockResolvedValue(preview));
+  beforeEach(() => {
+    api.getRoomPreview.mockReset().mockResolvedValue(preview);
+  });
 
   it("says what is still needed while the button is disabled, and updates as the player fills it in", async () => {
     render(<JoinScreen slug="abc123" onJoined={vi.fn()} />);
@@ -44,5 +47,20 @@ describe("JoinScreen", () => {
 
     await screen.findByRole("button", { name: /enter the room/i });
     expect(screen.queryByText(/sign-in has ended/i)).not.toBeInTheDocument();
+  });
+
+  it("tells people how long the room is kept", async () => {
+    api.getRoomPreview.mockResolvedValue({ ...preview, retentionDays: 30 });
+    render(<JoinScreen slug="abc123" onJoined={vi.fn()} />);
+
+    expect(await screen.findByText("Rooms are deleted after 30 days without play.")).toBeInTheDocument();
+  });
+
+  it("explains why a room is gone when the player was sent here because the host deleted it", async () => {
+    api.getRoomPreview.mockRejectedValue(new ApiError("Room not found.", 404));
+    render(<JoinScreen slug="abc123" onJoined={vi.fn()} notice="The host deleted this room." />);
+
+    expect(await screen.findByText("The host deleted this room.")).toBeInTheDocument();
+    expect(screen.getByText(/no room at/i)).toBeInTheDocument();
   });
 });

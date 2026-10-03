@@ -1,11 +1,12 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { GAMES } from "../games/registry";
-import { ApiError, endSession, performAction, resetPin, startNewSession, startSession } from "../lib/api";
+import { ApiError, deleteRoom, endSession, performAction, resetPin, startNewSession, startSession } from "../lib/api";
 import type { RoomSnapshot, Session, SessionStatus } from "../lib/types";
 import { currentError, type RoomError } from "../lib/snapshots";
 import { useRoom, type ConnectionStatus, type SessionEnd } from "../lib/useRoom";
 import { Avatar } from "./Avatar";
 import { HostControls } from "./HostControls";
+import { DeleteRoomControl } from "./DeleteRoomControl";
 import { SeatControls } from "./SeatControls";
 import { Shell } from "./Shell";
 import { Alert, Button, EmptyState, Eyebrow, Skeleton } from "./ui";
@@ -108,6 +109,16 @@ export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
       if (isUnauthorized(e)) onSessionExpired("expired");
       throw e;
     }
+  }
+
+  async function removeRoom() {
+    try {
+      await deleteRoom(session.token);
+    } catch (e) {
+      if (isUnauthorized(e)) onSessionExpired("expired");
+      throw e;
+    }
+    onSessionExpired("deleted");
   }
 
   const headerRight = (
@@ -243,6 +254,8 @@ export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
             onReset={resetSeat}
           />
         )}
+
+        {session.isHost && <DeleteRoomControl onDelete={removeRoom} />}
       </div>
     </Shell>
   );

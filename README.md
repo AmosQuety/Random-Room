@@ -66,7 +66,8 @@ Keep `Database__AutoMigrate=true` out of any `.env` you use locally.
 A background job runs a minute after the API starts and then daily. It deletes every room with no activity for
 `Room__RetentionDays` days (default 30; set 0 to turn it off), together with its players, games, answers and audit
 records, so the database does not grow for ever on a small plan. Activity means a room or game being created, started
-or ended, or a player doing something in a game. Set the number to the period you are allowed or required to keep data.
+or ended, or a player doing something in a game. Set the number to the period you are allowed or required to keep data. The app tells people this period, and the
+host can delete a room at any time ("Delete room" in the room), which removes everything in it for everyone.
 
 ## Deploy on Render
 
