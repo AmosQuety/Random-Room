@@ -7,7 +7,18 @@ using RandomRoom.Api.Auth;
 using RandomRoom.Api.Data;
 using RandomRoom.Api.Endpoints;
 using RandomRoom.Api.Games;
+using RandomRoom.Api.Games.Shared;
+using RandomRoom.Api.Games.ForbiddenWords;
+using RandomRoom.Api.Games.GuessWho;
+using RandomRoom.Api.Games.Bingo;
+using RandomRoom.Api.Games.Buzzer;
+using RandomRoom.Api.Games.SketchGuess;
+using RandomRoom.Api.Games.SpinWheel;
+using RandomRoom.Api.Games.StoryChain;
+using RandomRoom.Api.Games.WordSpies;
 using RandomRoom.Api.Games.RandomPicker;
+using RandomRoom.Api.Games.Rounds;
+using RandomRoom.Api.Games.TwoTruths;
 using RandomRoom.Api.Games.Trivia;
 using RandomRoom.Api.Hubs;
 using RandomRoom.Api.Services;
@@ -18,7 +29,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOptions<RoomOptions>()
     .BindConfiguration(RoomOptions.SectionName)
-    .Validate(RoomOptions.IsValid, "Room settings need a 32+ char JwtSigningKey.")
+    .Validate(RoomOptions.IsValid, "Room settings need a 32+ char JwtSigningKey and a RetentionDays of 0 or more.")
     .ValidateOnStart();
 
 builder.Services.AddDbContext<RoomDbContext>(o =>
@@ -29,10 +40,32 @@ builder.Services.AddSingleton<PresenceTracker>();
 builder.Services.AddSingleton<IRandomChoiceSource, CryptoRandomChoiceSource>();
 builder.Services.AddSingleton<IRoomNotifier, SignalRRoomNotifier>();
 builder.Services.AddScoped<PlayerTokenService>();
+builder.Services.AddSingleton(RoomSnapshotSequencer.Shared);
 builder.Services.AddScoped<GameSessionService>();
+builder.Services.AddScoped<RoomBroadcaster>();
+builder.Services.AddScoped<GameStore>();
 builder.Services.AddScoped<RoomAdminService>();
+builder.Services.AddScoped<RoomRetentionService>();
+builder.Services.AddHostedService<RoomRetentionWorker>();
 builder.Services.AddScoped<IGameEngine, RandomPickerEngine>();
 builder.Services.AddScoped<IGameEngine, TriviaEngine>();
+builder.Services.AddScoped<IGameEngine, TwoTruthsEngine>();
+builder.Services.AddScoped<IGameEngine, GuessWhoEngine>();
+builder.Services.AddScoped<IGameEngine, SpinWheelEngine>();
+builder.Services.AddScoped<IGameEngine, BuzzerEngine>();
+builder.Services.AddScoped<IGameEngine, BingoEngine>();
+builder.Services.AddScoped<IGameEngine, WordSpiesEngine>();
+builder.Services.AddScoped<IGameEngine, ForbiddenWordsEngine>();
+builder.Services.AddScoped<IGameEngine, SketchGuessEngine>();
+builder.Services.AddScoped<IGameEngine>(sp => new StoryChainEngine(new OneWordRules(), sp.GetRequiredService<GameStore>(), sp.GetRequiredService<IRandomChoiceSource>()));
+builder.Services.AddScoped<IGameEngine>(sp => new StoryChainEngine(new FortunatelyRules(), sp.GetRequiredService<GameStore>(), sp.GetRequiredService<IRandomChoiceSource>()));
+builder.Services.AddRoundGame<IntroPrompt, NameThatRules>();
+builder.Services.AddRoundGame<MadLibPrompt, MadLibsRules>();
+builder.Services.AddRoundGame<TwoWayPrompt, WouldYouRatherRules>();
+builder.Services.AddRoundGame<TwoWayPrompt, ThisOrThatRules>();
+builder.Services.AddRoundGame<StatementPrompt, MostLikelyToRules>();
+builder.Services.AddRoundGame<StatementPrompt, NeverHaveIEverRules>();
+builder.Services.AddRoundGame<SurveyPrompt, SurveyShowdownRules>();
 
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddSignalR().AddJsonProtocol(o => o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
@@ -44,6 +77,16 @@ builder.Services.AddExceptionHandler<ProblemExceptionHandler>();
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    // Tell clients how long to wait and use the same problem+json shape as every other error.
+    o.OnRejected = async (context, ct) =>
+    {
+        var response = context.HttpContext.Response;
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await response.WriteAsJsonAsync(
+            new Microsoft.AspNetCore.Mvc.ProblemDetails { Status = StatusCodes.Status429TooManyRequests, Title = "Too many attempts. Please wait a moment and try again." }, ct);
+    };
     o.AddPolicy(RoomEndpoints.JoinRateLimitPolicy, http =>
         RateLimitPartition.GetFixedWindowLimiter(
             http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -72,6 +115,23 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
         // Browsers cannot set headers on WebSocket upgrades, so SignalR sends the token in the query string.
         jwt.Events = new JwtBearerEvents
         {
+            // A signed token is not enough: the seat must still be on the version the token was issued for, so a
+            // reset (forgotten PIN, lost device) signs the old device out immediately.
+            OnTokenValidated = async ctx =>
+            {
+                var user = ctx.Principal!;
+                if (!Guid.TryParse(user.FindFirst(PlayerIdentity.RoomClaim)?.Value, out var roomId) || user.FindFirst(PlayerIdentity.NameClaim) is not { } name)
+                {
+                    ctx.Fail("The token has no seat.");
+                    return;
+                }
+
+                var db = ctx.HttpContext.RequestServices.GetRequiredService<RoomDbContext>();
+                var version = user.GetTokenVersion();
+                var current = await db.RoomPlayers.AsNoTracking()
+                    .AnyAsync(p => p.RoomId == roomId && p.Name == name.Value && p.TokenVersion == version, ctx.HttpContext.RequestAborted);
+                if (!current) ctx.Fail("The seat was reset or no longer exists.");
+            },
             OnMessageReceived = ctx =>
             {
                 if (ctx.Request.Path.StartsWithSegments("/hubs")) ctx.Token = ctx.Request.Query["access_token"];

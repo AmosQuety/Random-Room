@@ -15,6 +15,10 @@ public sealed class RandomPickerEngine(RoomDbContext db, IRandomChoiceSource ran
 {
     public const string Key = "random-picker";
 
+    // Label length matches the RoomChoice column; the count matches the setup form's limit.
+    private const int MaxChoiceLength = 80;
+    private const int MaxChoices = 50;
+
     public string GameType => Key;
 
     public async Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
@@ -29,6 +33,10 @@ public sealed class RandomPickerEngine(RoomDbContext db, IRandomChoiceSource ran
             .ToList();
         if (choices.Count < 2)
             throw new RoomRuleException(RuleViolation.InvalidInput, "Random Picker needs at least 2 choices.");
+        if (choices.Count > MaxChoices)
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"Random Picker allows at most {MaxChoices} choices.");
+        if (choices.Any(c => c.Length > MaxChoiceLength))
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"Each choice can be at most {MaxChoiceLength} characters.");
 
         db.RoomChoices.AddRange(choices.Select((label, i) => new RoomChoice
         {

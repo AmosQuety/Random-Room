@@ -11,12 +11,26 @@ namespace RandomRoom.Api.Services;
 /// session active, when a new one starts. Everything about what happens inside an active
 /// session is delegated to the room's IGameEngine (chosen by Room.GameType).
 /// </summary>
-public sealed class GameSessionService(RoomDbContext db, PresenceTracker presence, TimeProvider clock, IEnumerable<IGameEngine> engines)
+public sealed class GameSessionService(
+    RoomDbContext db, PresenceTracker presence, TimeProvider clock, IEnumerable<IGameEngine> engines, RoomSnapshotSequencer? sequencer = null)
 {
-    public async Task<RoomSnapshot> GetSnapshotAsync(Guid roomId, CancellationToken ct = default)
+    private readonly RoomSnapshotSequencer snapshotSequencer = sequencer ?? RoomSnapshotSequencer.Shared;
+
+    /// <summary>The public view of the room: no viewer, so games with hidden information return only what everyone may see.</summary>
+    public Task<RoomSnapshot> GetSnapshotAsync(Guid roomId, CancellationToken ct = default) =>
+        BuildSnapshotAsync(roomId, viewer: null, ct);
+
+    /// <summary>The room as one specific player may see it.</summary>
+    public Task<RoomSnapshot> GetSnapshotForAsync(Guid roomId, string viewer, CancellationToken ct = default) =>
+        BuildSnapshotAsync(roomId, viewer, ct);
+
+    private Task<RoomSnapshot> BuildSnapshotAsync(Guid roomId, string? viewer, CancellationToken ct) =>
+        snapshotSequencer.RunAsync(roomId, sequence => BuildSnapshotAsync(roomId, viewer, sequence, ct), ct);
+
+    private async Task<RoomSnapshot> BuildSnapshotAsync(Guid roomId, string? viewer, long sequence, CancellationToken ct)
     {
         var room = await RequireRoomAsync(roomId, ct);
-        var session = await CurrentSessionAsync(roomId, ct);
+        var session = await LatestSessionAsync(roomId, ct);
         var players = await db.RoomPlayers.AsNoTracking().Where(p => p.RoomId == roomId).ToListAsync(ct);
         var engine = EngineFor(room.GameType);
 
@@ -27,8 +41,11 @@ public sealed class GameSessionService(RoomDbContext db, PresenceTracker presenc
             room.HostPlayer,
             room.GameType,
             new SessionView(session.Id, session.Number, session.Status, session.StartedAt, session.EndedAt),
-            players.Select(p => new PlayerView(p.Name, presence.IsOnline(roomId, p.Name))).ToList(),
-            await engine.GetPayloadAsync(roomId, session.Id, ct));
+            players.Select(p => new PlayerView(p.Name, presence.IsOnline(roomId, p.Name), p.IsClaimed)).ToList(),
+            viewer is null
+                ? await engine.GetPayloadAsync(roomId, session.Id, ct)
+                : await engine.GetPayloadForAsync(roomId, session.Id, viewer, ct),
+            sequence);
     }
 
     public async Task<RoomSnapshot> PerformActionAsync(
@@ -41,7 +58,7 @@ public sealed class GameSessionService(RoomDbContext db, PresenceTracker presenc
 
         var session = await CurrentSessionAsync(roomId, ct);
         if (session.Status != SessionStatus.Active)
-            throw new RoomRuleException(RuleViolation.Conflict, "The session is not active.");
+            throw new RoomRuleException(RuleViolation.Conflict, "This game is not active.");
 
         var engine = EngineFor(room.GameType);
         await engine.HandleActionAsync(roomId, session.Id, actor, action, payload, ct);
@@ -52,29 +69,31 @@ public sealed class GameSessionService(RoomDbContext db, PresenceTracker presenc
             await db.SaveChangesAsync(ct);
         }
 
-        return await GetSnapshotAsync(roomId, ct);
+        return await GetSnapshotForAsync(roomId, actor, ct);
     }
 
     public async Task<RoomSnapshot> StartSessionAsync(Guid roomId, string actor, CancellationToken ct = default)
     {
+        var room = await RequireRoomAsync(roomId, ct);
         var session = await CurrentSessionForHostAsync(roomId, actor, ct);
         if (session.Status != SessionStatus.Waiting)
-            throw new RoomRuleException(RuleViolation.Conflict, "Only a waiting session can be started.");
+            throw new RoomRuleException(RuleViolation.Conflict, "Only a game that has not started can be started.");
 
         Activate(session);
         await db.SaveChangesAsync(ct);
-        return await GetSnapshotAsync(roomId, ct);
+        await EngineFor(room.GameType).OnSessionStartedAsync(roomId, session.Id, ct);
+        return await GetSnapshotForAsync(roomId, actor, ct);
     }
 
     public async Task<RoomSnapshot> EndSessionAsync(Guid roomId, string actor, CancellationToken ct = default)
     {
         var session = await CurrentSessionForHostAsync(roomId, actor, ct);
         if (session.Status != SessionStatus.Active)
-            throw new RoomRuleException(RuleViolation.Conflict, "Only an active session can be ended.");
+            throw new RoomRuleException(RuleViolation.Conflict, "Only a game in progress can be ended.");
 
         Complete(session);
         await db.SaveChangesAsync(ct);
-        return await GetSnapshotAsync(roomId, ct);
+        return await GetSnapshotForAsync(roomId, actor, ct);
     }
 
     public async Task<RoomSnapshot> StartNewSessionAsync(Guid roomId, string actor, CancellationToken ct = default)
@@ -82,7 +101,7 @@ public sealed class GameSessionService(RoomDbContext db, PresenceTracker presenc
         var room = await RequireRoomAsync(roomId, ct);
         var session = await CurrentSessionForHostAsync(roomId, actor, ct);
         if (session.Status != SessionStatus.Completed)
-            throw new RoomRuleException(RuleViolation.Conflict, "End the current session before starting a new one.");
+            throw new RoomRuleException(RuleViolation.Conflict, "End the current game before starting a new one.");
 
         var next = NewSession(roomId, session.Number + 1);
         db.GameSessions.Add(next);
@@ -95,10 +114,12 @@ public sealed class GameSessionService(RoomDbContext db, PresenceTracker presenc
             throw new RoomRuleException(RuleViolation.Conflict, "The room changed; please refresh.");
         }
 
-        await EngineFor(room.GameType).OnSessionCreatedAsync(roomId, next.Id, ct);
+        var engine = EngineFor(room.GameType);
+        await engine.OnSessionCreatedAsync(roomId, next.Id, ct);
         Activate(next);
         await db.SaveChangesAsync(ct);
-        return await GetSnapshotAsync(roomId, ct);
+        await engine.OnSessionStartedAsync(roomId, next.Id, ct);
+        return await GetSnapshotForAsync(roomId, actor, ct);
     }
 
     private IGameEngine EngineFor(string gameType) =>
@@ -130,6 +151,11 @@ public sealed class GameSessionService(RoomDbContext db, PresenceTracker presenc
         await db.Rooms.AsNoTracking().FirstOrDefaultAsync(r => r.Id == roomId, ct)
         ?? throw new RoomRuleException(RuleViolation.NotFound, "Room not found.");
 
+    // Untracked, so a snapshot always reflects the database and never a copy this request loaded before another
+    // request (such as the host ending the game) committed. The sequencer relies on a later build reading fresher state.
+    private async Task<GameSession> LatestSessionAsync(Guid roomId, CancellationToken ct) =>
+        await db.GameSessions.AsNoTracking().Where(s => s.RoomId == roomId).OrderByDescending(s => s.Number).FirstAsync(ct);
+
     private async Task<GameSession> CurrentSessionAsync(Guid roomId, CancellationToken ct) =>
         await db.GameSessions.Where(s => s.RoomId == roomId).OrderByDescending(s => s.Number).FirstAsync(ct);
 
@@ -137,7 +163,7 @@ public sealed class GameSessionService(RoomDbContext db, PresenceTracker presenc
     {
         var room = await RequireRoomAsync(roomId, ct);
         if (actor != room.HostPlayer)
-            throw new RoomRuleException(RuleViolation.Forbidden, "Only the host can control the session.");
+            throw new RoomRuleException(RuleViolation.Forbidden, "Only the host can control the game.");
         return await CurrentSessionAsync(roomId, ct);
     }
 }

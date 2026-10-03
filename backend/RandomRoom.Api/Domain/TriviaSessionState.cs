@@ -6,4 +6,7 @@ public sealed class TriviaSessionState
     public Guid Id { get; set; }
     public Guid SessionId { get; set; }
     public int CurrentQuestionIndex { get; set; }
+
+    /// <summary>When the current question closes, or null when the room has no time limit.</summary>
+    public DateTimeOffset? DeadlineAt { get; set; }
 }

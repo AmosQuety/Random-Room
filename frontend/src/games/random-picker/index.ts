@@ -1,15 +1,25 @@
+import { lazy } from "react";
 import type { GameModule } from "../types";
-import { RandomPickerGameScreen } from "./GameScreen";
-import { RandomPickerSetupForm } from "./SetupForm";
+import { RandomPickerGlyph } from "./Glyph";
 import type { RandomPickerPayload, RandomPickerSetup } from "./types";
+
+// The server keeps only distinct, non-empty choices and needs two of them, so count them the same way.
+const distinctChoices = (setup: RandomPickerSetup): number => new Set(setup.map((c) => c.trim()).filter(Boolean)).size;
 
 export const randomPickerModule: GameModule<RandomPickerSetup, RandomPickerPayload> = {
   key: "random-picker",
   name: "Random Picker",
   description: "Everyone triggers a server-random pick from a shared list. Nobody chooses for themselves.",
+  hook: "The server picks for you. No arguing.",
+  category: "reflex",
+  accent: "tomato",
+  Glyph: RandomPickerGlyph,
+  minPlayers: 2,
+  maxPlayers: 12,
   defaultSetup: ["", ""],
-  isSetupValid: (setup) => setup.map((c) => c.trim()).filter(Boolean).length >= 2,
+  isSetupValid: (setup) => distinctChoices(setup) >= 2,
+  setupIssue: (setup) => (distinctChoices(setup) >= 2 ? null : "Add at least two different choices."),
   toApiSetup: (setup) => ({ choices: setup.map((c) => c.trim()).filter(Boolean) }),
-  SetupForm: RandomPickerSetupForm,
-  GameScreen: RandomPickerGameScreen,
+  SetupForm: lazy(() => import("./SetupForm").then((m) => ({ default: m.RandomPickerSetupForm }))),
+  GameScreen: lazy(() => import("./GameScreen").then((m) => ({ default: m.RandomPickerGameScreen }))),
 };

@@ -4,6 +4,8 @@ export type SessionStatus = "Waiting" | "Active" | "Completed";
 export interface PlayerView {
   name: string;
   online: boolean;
+  /** False until the player has opened their invite link and set a PIN. */
+  claimed: boolean;
 }
 
 export interface SessionView {
@@ -24,6 +26,8 @@ export interface RoomSnapshot {
   players: PlayerView[];
   // Opaque here on purpose - each game module (see src/games) knows its own payload shape.
   gamePayload: unknown;
+  /** Orders snapshots of one room; see newerSnapshot. */
+  sequence: number;
 }
 
 export interface Session {

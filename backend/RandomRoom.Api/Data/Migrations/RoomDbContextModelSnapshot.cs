@@ -22,6 +22,54 @@ namespace RandomRoom.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("RandomRoom.Api.Domain.GameEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<long>("Ordinal")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Ordinal"));
+
+                    b.Property<string>("Player")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int>("Round")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Seq")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("ServerTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ValueJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId", "Kind", "Ordinal");
+
+                    b.HasIndex("SessionId", "Round", "Kind", "Player", "Seq")
+                        .IsUnique();
+
+                    b.ToTable("GameEntries");
+                });
+
             modelBuilder.Entity("RandomRoom.Api.Domain.GameSession", b =>
                 {
                     b.Property<Guid>("Id")
@@ -54,6 +102,46 @@ namespace RandomRoom.Api.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("GameSessions");
+                });
+
+            modelBuilder.Entity("RandomRoom.Api.Domain.GameSessionState", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Claimant")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("DataJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset?>("DeadlineAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Phase")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<int>("Round")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId")
+                        .IsUnique();
+
+                    b.ToTable("GameSessionStates");
                 });
 
             modelBuilder.Entity("RandomRoom.Api.Domain.RandomPickerEvent", b =>
@@ -125,6 +213,40 @@ namespace RandomRoom.Api.Data.Migrations
                     b.ToTable("Rooms");
                 });
 
+            modelBuilder.Entity("RandomRoom.Api.Domain.RoomAuditEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Actor")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Target")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoomId", "OccurredAt");
+
+                    b.ToTable("RoomAuditEvents");
+                });
+
             modelBuilder.Entity("RandomRoom.Api.Domain.RoomChoice", b =>
                 {
                     b.Property<Guid>("Id")
@@ -147,6 +269,27 @@ namespace RandomRoom.Api.Data.Migrations
                     b.HasIndex("RoomId");
 
                     b.ToTable("RoomChoices");
+                });
+
+            modelBuilder.Entity("RandomRoom.Api.Domain.RoomGameSetup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Json")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoomId")
+                        .IsUnique();
+
+                    b.ToTable("RoomGameSetups");
                 });
 
             modelBuilder.Entity("RandomRoom.Api.Domain.RoomPlayer", b =>
@@ -176,6 +319,9 @@ namespace RandomRoom.Api.Data.Migrations
 
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("TokenVersion")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -228,6 +374,10 @@ namespace RandomRoom.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Category")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
                     b.Property<int>("CorrectIndex")
                         .HasColumnType("integer");
 
@@ -262,6 +412,9 @@ namespace RandomRoom.Api.Data.Migrations
                     b.Property<int>("CurrentQuestionIndex")
                         .HasColumnType("integer");
 
+                    b.Property<DateTimeOffset?>("DeadlineAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uuid");
 
@@ -273,11 +426,29 @@ namespace RandomRoom.Api.Data.Migrations
                     b.ToTable("TriviaSessionStates");
                 });
 
+            modelBuilder.Entity("RandomRoom.Api.Domain.GameEntry", b =>
+                {
+                    b.HasOne("RandomRoom.Api.Domain.GameSession", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("RandomRoom.Api.Domain.GameSession", b =>
                 {
                     b.HasOne("RandomRoom.Api.Domain.Room", null)
                         .WithMany()
                         .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RandomRoom.Api.Domain.GameSessionState", b =>
+                {
+                    b.HasOne("RandomRoom.Api.Domain.GameSession", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -293,7 +464,25 @@ namespace RandomRoom.Api.Data.Migrations
                     b.Navigation("Session");
                 });
 
+            modelBuilder.Entity("RandomRoom.Api.Domain.RoomAuditEvent", b =>
+                {
+                    b.HasOne("RandomRoom.Api.Domain.Room", null)
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("RandomRoom.Api.Domain.RoomChoice", b =>
+                {
+                    b.HasOne("RandomRoom.Api.Domain.Room", null)
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RandomRoom.Api.Domain.RoomGameSetup", b =>
                 {
                     b.HasOne("RandomRoom.Api.Domain.Room", null)
                         .WithMany()

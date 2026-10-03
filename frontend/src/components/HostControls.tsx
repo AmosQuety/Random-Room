@@ -1,4 +1,7 @@
 import type { SessionStatus } from "../lib/types";
+import { FlagIcon, PlayIcon, PlusIcon } from "./icons";
+import { ConfirmButton } from "./ConfirmButton";
+import { Button, Eyebrow } from "./ui";
 
 interface Props {
   status: SessionStatus;
@@ -8,27 +11,34 @@ interface Props {
   onNewRound: () => void;
 }
 
-const base =
-  "min-h-12 rounded-lg border-2 border-ink px-5 font-black uppercase tracking-wide shadow-ticket-sm transition active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50";
-
 export function HostControls({ status, busy, onStart, onEnd, onNewRound }: Props) {
   return (
     <section aria-label="Host controls" className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-dashed border-ink px-4 py-3">
-      <p className="font-mono text-xs uppercase tracking-widest text-muted">Host controls</p>
+      <Eyebrow>Host controls</Eyebrow>
       {status === "Waiting" && (
-        <button type="button" disabled={busy} onClick={onStart} className={`${base} bg-leaf text-white`}>
-          Start round
-        </button>
+        <Button variant="accent" disabled={busy} onClick={onStart}>
+          <PlayIcon className="size-4" /> Start game
+        </Button>
       )}
       {status === "Active" && (
-        <button type="button" disabled={busy} onClick={onEnd} className={`${base} bg-ink text-paper`}>
-          🏁 End round
-        </button>
+        <ConfirmButton
+          variant="dark"
+          disabled={busy}
+          question="End the game for everyone?"
+          confirmLabel="Yes, end the game"
+          cancelLabel="Keep playing"
+          onConfirm={onEnd}
+        >
+          <FlagIcon className="size-4" /> End game
+        </ConfirmButton>
       )}
       {status === "Completed" && (
-        <button type="button" disabled={busy} onClick={onNewRound} className={`${base} bg-mustard text-ink`}>
-          Start new round
-        </button>
+        <>
+          <Button variant="secondary" disabled={busy} onClick={onNewRound}>
+            <PlusIcon className="size-4" /> Start new game
+          </Button>
+          <span className="text-sm text-muted">Scores start again from zero.</span>
+        </>
       )}
     </section>
   );

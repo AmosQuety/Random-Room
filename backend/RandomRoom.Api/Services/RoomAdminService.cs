@@ -28,6 +28,10 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
 {
     private const int MinPlayers = 2;
 
+    // Match the column sizes in RoomDbContext, so oversized input is a 400 and not a database error.
+    private const int MaxTitleLength = 80;
+    private const int MaxPlayerNameLength = 32;
+
     public async Task<CreateRoomResult> CreateRoomAsync(CreateRoomRequest request, CancellationToken ct = default)
     {
         var title = request.Title.Trim();
@@ -35,12 +39,20 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
 
         if (title.Length == 0)
             throw new RoomRuleException(RuleViolation.InvalidInput, "A room needs a title.");
+        if (title.Length > MaxTitleLength)
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"The room name is too long (at most {MaxTitleLength} characters).");
+        if (players.Any(p => p.Length > MaxPlayerNameLength))
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"Player names can be at most {MaxPlayerNameLength} characters.");
         if (players.Count < MinPlayers)
             throw new RoomRuleException(RuleViolation.InvalidInput, $"A room needs at least {MinPlayers} players.");
         if (!players.Contains(request.HostPlayer, StringComparer.Ordinal))
             throw new RoomRuleException(RuleViolation.InvalidInput, "The host must be one of the room's players.");
 
         var engine = EngineFor(request.GameType);
+        if (players.Count < engine.MinPlayers)
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"This game needs at least {engine.MinPlayers} players.");
+        if (players.Count > engine.MaxPlayers)
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"This game works with at most {engine.MaxPlayers} players.");
 
         var room = new Room
         {
@@ -111,6 +123,43 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
         player.ClaimedAt = clock.GetUtcNow();
         await db.SaveChangesAsync(ct);
         return player.Name;
+    }
+
+    /// <summary>
+    /// For a player who forgot their PIN or lost their device: empties the seat so its owner can claim it again with a
+    /// new one-time link, and signs out whatever device held it. Only the host may do this, never to their own seat
+    /// (nobody else could reset it), and never during a game, so the host cannot take over a seat and see its secrets.
+    /// </summary>
+    public async Task<PlayerInvite> ResetSeatAsync(Guid roomId, string actor, string target, CancellationToken ct = default)
+    {
+        var room = await db.Rooms.AsNoTracking().FirstOrDefaultAsync(r => r.Id == roomId, ct)
+            ?? throw new RoomRuleException(RuleViolation.NotFound, "Room not found.");
+        if (actor != room.HostPlayer)
+            throw new RoomRuleException(RuleViolation.Forbidden, "Only the host can reset a seat.");
+        if (target == room.HostPlayer)
+            throw new RoomRuleException(RuleViolation.InvalidInput, "The host's own seat cannot be reset. If the host forgot their PIN, start a new room.");
+
+        var seat = await db.RoomPlayers.FirstOrDefaultAsync(p => p.RoomId == roomId && p.Name == target, ct)
+            ?? throw new RoomRuleException(RuleViolation.NotFound, "There is no such player in this room.");
+        var latest = await db.GameSessions.AsNoTracking().Where(s => s.RoomId == roomId).OrderByDescending(s => s.Number).FirstAsync(ct);
+        if (latest.Status == SessionStatus.Active)
+            throw new RoomRuleException(RuleViolation.Conflict, "End the current game before resetting a seat.");
+
+        seat.PinHash = null;
+        seat.ClaimedAt = null;
+        seat.InviteToken = GenerateToken();
+        seat.TokenVersion++;
+        db.RoomAuditEvents.Add(new RoomAuditEvent
+        {
+            Id = Guid.NewGuid(),
+            RoomId = roomId,
+            Actor = actor,
+            Action = RoomAuditEvent.SeatReset,
+            Target = target,
+            OccurredAt = clock.GetUtcNow(),
+        });
+        await db.SaveChangesAsync(ct);
+        return new PlayerInvite(seat.Name, seat.InviteToken);
     }
 
     private IGameEngine EngineFor(string gameType) =>

@@ -1,0 +1,125 @@
+{
+ "version": 1,
+ "items": [
+  {
+   "title": "The Lost Umbrella",
+   "text": "On a {adjective} morning, a {animal} found a {adjective} umbrella near the {place}. It decided to {verb} all the way to {place} and shout, \"{exclamation}!\""
+  },
+  {
+   "title": "Picnic Panic",
+   "text": "We packed a {adjective} basket with {plural noun}, {food}, and a {noun}. Just as we sat down, a {animal} began to {verb} across our blanket."
+  },
+  {
+   "title": "The Robot Chef",
+   "text": "Chef {name} built a {adjective} robot to cook {food}. Instead it started to {verb} and threw {plural noun} at the {noun}."
+  },
+  {
+   "title": "Space Trip",
+   "text": "Captain {name} flew a {adjective} rocket to the planet {silly word}. There we met a {adjective} alien who loved to {verb} and eat {plural noun}."
+  },
+  {
+   "title": "The Tiny Dragon",
+   "text": "Once upon a time a {adjective} dragon the size of a {noun} lived in a {place}. Every day it would {verb} and breathe {color} bubbles."
+  },
+  {
+   "title": "Birthday Surprise",
+   "text": "For {name}'s birthday we hid a {noun} inside a giant {food}. When it opened, everyone began to {verb} and yell \"{exclamation}!\""
+  },
+  {
+   "title": "School Day Mix-up",
+   "text": "At school today the teacher wore a {adjective} hat and asked us to {verb} with a {noun}. The whole class laughed so hard we all started to {verb}."
+  },
+  {
+   "title": "Beach Adventure",
+   "text": "We ran to the {adjective} beach carrying a {noun} and {number} {plural noun}. A {animal} jumped out of the waves and began to {verb}."
+  },
+  {
+   "title": "The Wizard's Recipe",
+   "text": "To make a {adjective} potion, stir in {number} {plural noun}, one {noun}, and a pinch of {food}. Then {verb} three times and say \"{exclamation}!\""
+  },
+  {
+   "title": "Haunted Bakery",
+   "text": "The bakery on {place} Street is haunted by a {adjective} ghost who bakes {food} at midnight. It likes to {verb} and hide {plural noun} in the oven."
+  },
+  {
+   "title": "Zoo Day",
+   "text": "At the zoo, a {adjective} {animal} escaped and ran to the {place}. The keeper grabbed a {noun} and tried to {verb} after it."
+  },
+  {
+   "title": "Pirate Treasure",
+   "text": "Captain {name} sailed a {adjective} ship to find a chest of {plural noun}. The map said to {verb} past the {noun} and dig near the {place}."
+  },
+  {
+   "title": "The Big Race",
+   "text": "The {adjective} race began at the {place}. {name} rode a {animal} while the others had to {verb} on a giant {noun}."
+  },
+  {
+   "title": "Snow Day",
+   "text": "It snowed {number} feet, so we built a {adjective} snowman with a {noun} for a nose. It began to {verb} and asked for {food}."
+  },
+  {
+   "title": "Superhero Origin",
+   "text": "{name} was an ordinary kid until a {adjective} {animal} gave them the power to {verb}. Now they fight crime with a {noun} and a cape made of {plural noun}."
+  },
+  {
+   "title": "The Talking Garden",
+   "text": "In my garden, the {plural noun} started to talk. One {adjective} {noun} told me to {verb} at sunrise and bring it some {food}."
+  },
+  {
+   "title": "Camping Trip",
+   "text": "We pitched a {adjective} tent by the {place} and cooked {food} over the fire. In the night a {animal} came to {verb} with our {plural noun}."
+  },
+  {
+   "title": "Museum Mystery",
+   "text": "Someone took the {adjective} {noun} from the museum! The clues led {name} to the {place}, where a {animal} was trying to {verb}."
+  },
+  {
+   "title": "Grandma's Invention",
+   "text": "Grandma invented a {adjective} machine that turns {plural noun} into {food}. You just {verb} the {noun} and press the {color} button."
+  },
+  {
+   "title": "The Sleepy Giant",
+   "text": "A {adjective} giant lived on top of a {noun}. He slept all day, but at night he would {verb} and juggle {number} {plural noun}."
+  },
+  {
+   "title": "Talent Show",
+   "text": "At the talent show, {name} came out wearing a {color} costume and started to {verb}. Then a {animal} joined in playing a {noun}."
+  },
+  {
+   "title": "Rainy Day Plan",
+   "text": "When it rains, we make a fort out of {plural noun} and eat {food}. Then we {verb} until the {adjective} sun comes back."
+  },
+  {
+   "title": "Magic Backpack",
+   "text": "My backpack is {adjective}. Inside I found a {noun}, {number} {plural noun}, and a note that said to {verb} at the {place}."
+  },
+  {
+   "title": "The Great Bake-Off",
+   "text": "{name} entered a {adjective} {food} in the bake-off. The judges took one bite, began to {verb}, and gave it {number} stars."
+  },
+  {
+   "title": "City of Cats",
+   "text": "In the city of {silly word}, every {animal} wears a {adjective} hat. They meet at the {place} to {verb} and share {plural noun}."
+  },
+  {
+   "title": "Monster Under the Bed",
+   "text": "There is a {adjective} monster under my bed. It is scared of {plural noun} and loves to {verb} with a {noun}. Its name is {name}."
+  },
+  {
+   "title": "The Fast Turtle",
+   "text": "{name} the turtle wanted to be the fastest {animal} in the {place}. So it strapped on a {noun}, learned to {verb}, and shouted \"{exclamation}!\""
+  },
+  {
+   "title": "Farm Fun",
+   "text": "On the {adjective} farm, the {animal} learned to {verb}. The farmer gave it {number} {plural noun} and a {noun} as a reward."
+  },
+  {
+   "title": "Time Machine",
+   "text": "We built a time machine out of a {noun} and {plural noun}. It took us to a {adjective} land where people {verb} to say hello."
+  },
+  {
+   "title": "Winter Festival",
+   "text": "At the {adjective} winter festival we tasted {food}, watched a {animal} {verb}, and won a {color} {noun} in the game."
+  }
+ ]
+}
