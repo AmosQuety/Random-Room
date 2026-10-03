@@ -51,8 +51,8 @@ describe("Word Spies screen", () => {
 
   it("keeps the spymaster from guessing but shows them the key", () => {
     renderScreen(payload({ isSpymaster: true, key: KEY }), "Amos");
-    expect(screen.getByRole("button", { name: /word0, Assassin \(secret\)/ })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /word12, Blue \(secret\)/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /word0 Assassin, secret/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /word12 Blue, secret/ })).toBeInTheDocument();
   });
 
   it("shows an operative no owner for any unturned card", () => {
@@ -64,7 +64,7 @@ describe("Word Spies screen", () => {
   it("says who a turned card belongs to in words, not colour alone", () => {
     const board = payload().board.map((c, i) => (i === 3 ? { ...c, owner: "blue" as Owner } : c));
     renderScreen(payload({ board }), "Lydia");
-    expect(screen.getByRole("button", { name: /word3, turned over: Blue/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /word3 Blue, turned over/ })).toBeDisabled();
   });
 
   it("gives the spymaster of the team in play a clue form that sends a single word and a count", () => {
@@ -102,13 +102,17 @@ describe("Word Spies screen", () => {
     expect(screen.queryByRole("button", { name: /end and reveal/i })).not.toBeInTheDocument();
   });
 
-  // jsdom has no layout, so this guards the classes; sizes and wrapping were checked in a real browser at 390px.
-  it("keeps card words readable on a phone and lets a long word wrap inside its card", () => {
+  // jsdom has no layout, so this guards the classes; wrapping was checked in a real browser at 320, 390 and 480px.
+  it("uses fewer columns on a small phone and only breaks a word that cannot fit its card", () => {
     renderScreen(payload(), "Lydia");
+    const board = screen.getByRole("group", { name: "Word board" });
+    expect(board.className).toContain("grid-cols-3");
+    expect(board.className).toContain("min-[480px]:grid-cols-5");
+
     const card = screen.getByRole("button", { name: /word3/i });
-    expect(card.className).toContain("text-[0.8rem]");
     expect(card.className).toContain("min-w-0");
-    expect(card.className).toContain("[overflow-wrap:anywhere]");
+    expect(card.className).toContain("[overflow-wrap:break-word]");
+    expect(card.className).not.toContain("anywhere");
   });
 
   it("announces a team win as a team win, not a tie between its players", () => {
@@ -142,7 +146,7 @@ describe("Word Spies screen", () => {
     renderScreen(payload({ phase: "complete", board, key: KEY, winner: "blue", endReason: "assassin", turn: null, clue: null }), "Lydia");
     expect(screen.getByRole("heading", { name: /blue team wins/i })).toBeInTheDocument();
     expect(screen.getByText(/red team found the assassin/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /word0, turned over: Assassin/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /word0 Assassin, turned over/ })).toBeDisabled();
   });
 });
 

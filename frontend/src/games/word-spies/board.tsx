@@ -27,7 +27,7 @@ interface Props {
 
 export function Board({ board, key_, canGuess, onGuess }: Props) {
   return (
-    <div role="group" aria-label="Word board" className="grid grid-cols-5 gap-1 sm:gap-2">
+    <div role="group" aria-label="Word board" className="grid grid-cols-3 gap-2 min-[480px]:grid-cols-5 min-[480px]:gap-1 sm:gap-2">
       {board.map((card, i) => {
         const turned = card.owner !== null;
         const hint = !turned && key_ ? key_[i] : null;
@@ -38,8 +38,8 @@ export function Board({ board, key_, canGuess, onGuess }: Props) {
             type="button"
             disabled={!canGuess || turned}
             onClick={() => onGuess(i)}
-            aria-label={`${card.word}${turned ? `, turned over: ${OWNER_LABEL[card.owner!]}` : hint ? `, ${OWNER_LABEL[hint]} (secret)` : ""}`}
-            className={`grid min-h-14 place-items-center rounded-md border-2 border-ink min-w-0 p-1 text-center text-[0.8rem] font-bold leading-tight [overflow-wrap:anywhere] transition disabled:cursor-default sm:min-h-20 sm:text-sm ${
+            aria-label={`${card.word}${label ? ` ${OWNER_LABEL[label]}` : ""}${turned ? ", turned over" : hint ? ", secret" : ""}`}
+            className={`grid min-h-14 place-items-center rounded-md border-2 border-ink min-w-0 p-1 text-center text-[0.8rem] font-bold leading-tight [overflow-wrap:break-word] min-[360px]:text-sm min-[480px]:text-[0.7rem] sm:text-sm transition disabled:cursor-default sm:min-h-20 ${
               turned ? TONE[card.owner!] : "bg-card hover:bg-accent-soft"
             } ${hint ? HINT_RING[hint] : ""}`}
           >
