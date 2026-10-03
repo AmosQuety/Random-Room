@@ -77,7 +77,7 @@ it if wanted), per-choice permissions (`CLAUDE.md` "Things deliberately not here
 
 Plus two found by consumers (game-playground, game-hungario): the director self-advanced **and** was advanced by the
 module, so every vote clock ran at double speed; and `begin_on_apply` made one play count twice in the history,
-halving every cooldown (`game-playground/CLAUDE.md:925-934`; `game-hungario/game/hungry_maps.gd:282-287`).
+halving every cooldown (`game-playground/CLAUDE.md:925-934`; `game-hungario/game/hungry_maps.gd:283-288`).
 
 ## What transfers to a party-game web app
 

@@ -66,11 +66,11 @@ verifies it and writes it to `content/<repo>/game.yml` where an operator edits c
 (`game.yml:13-15`). That is a contract test between two copies of one description.
 
 The module (`game/playground_module.gd`) is the server-side entry point: `extends DotModule`, `_module_name/
-_version/_description/_author` (lines 111-124), `_module_load` refuses to load if no `Playground` service is
+_version/_description/_author` (lines 110-124), `_module_load` refuses to load if no `Playground` service is
 registered ("A module that loaded and did nothing would leave a server that accepts players into a game that does not
-exist", lines 127-138), then builds netcode, extras (services, arena, waves, mod tools, vote, progress), commands,
+exist", lines 126-138), then builds netcode, extras (services, arena, waves, mod tools, vote, progress), commands,
 cvars, hooks. Shutdown: a "module unloads cleanly" test exists (`examples/dedicated.gd:1956`). It is the only file
-that names dot-server (lines 19-27).
+that names dot-server (lines 22-27).
 
 ## 4. Console commands and permission classes (C7, F13)
 

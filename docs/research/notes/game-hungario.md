@@ -12,23 +12,23 @@
 
 An agar.io-shaped 2D arena game (`CLAUDE.md:3-4`). One repository, **six modes** (classic, frenzy, gauntlet, warrens,
 reef, shallows), each its own scene under `game/modes/` and each registered with dot-server as a separate
-`DotGameDescriptor` (`game/hungry_module.gd:1408-1430`).
+`DotGameDescriptor` (`game/hungry_module.gd:1408-1432`).
 
 ## Voting over games (B4, B5)
 
 - "The modes are the maps": the six modes are dot-server **games**; dot-map's catalogue describes them (kind, player
   range, description for a ballot) and its rotation picks the next with a cooldown; dot-vote lets players override the
-  rotation (`game/hungry_maps.gd:6-12`).
+  rotation (`game/hungry_maps.gd:8-12`).
 - The catalogue is **built from the game descriptors**, not beside them, because a second list is "this tree's most
   repeated bug" (it "has now happened to `setup.sh`, `tools/check.sh`, `tools/package_check.sh` and `bootstrap`")
-  (`hungry_maps.gd:117-127`).
+  (`hungry_maps.gd:118-124`).
 - The one fact the catalogue adds is `min_players`: `gauntlet` is off the ballot below three players, via
-  `available_for` (`hungry_maps.gd:110-115,147-152`). This is exactly our "only offer games that fit the room" rule.
+  `available_for` (`hungry_maps.gd:111-115,150`). This is exactly our "only offer games that fit the room" rule.
 - An empty catalogue is logged loudly, because "a vote with nothing on the ballot ... looked like a vote nobody wanted
-  to use" (`hungry_maps.gd:131-140`).
+  to use" (`hungry_maps.gd:133-140`).
 - The vote's source is `DotVoteGameSource.of(games)`; applying a result calls dot-server's `change_game`
-  (`hungry_maps.gd:276-281`). `auto_apply = true` here (game-playground uses `false`).
-  `begin_on_apply = false` so one play is recorded once in the history that cooldowns count (`hungry_maps.gd:282-287`).
+  (`hungry_maps.gd:277-281`). `auto_apply = true` here (game-playground uses `false`).
+  `begin_on_apply = false` so one play is recorded once in the history that cooldowns count (`hungry_maps.gd:283-288`).
 - dot-server's own `votemap`, `vote`, `vote_status` work against the descriptors "with no code here: registering them is
   all a game has to do" (`CLAUDE.md:628-629`).
 
