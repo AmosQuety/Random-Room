@@ -17,7 +17,7 @@ export function ActivityTimeline({ activity }: { activity: ActivityView[] }) {
               <DiceIcon className="mt-1 size-5 text-accent-ink" />
               <div>
                 <p className="font-mono text-xs text-muted">
-                  {formatTime(a.timestamp)} · round {a.sessionNumber}
+                  {formatTime(a.timestamp)} · game {a.sessionNumber}
                 </p>
                 <p>
                   <strong>{a.triggeredBy}</strong> triggered random selection

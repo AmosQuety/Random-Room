@@ -1,4 +1,5 @@
 import { CheckIcon, FlagIcon, PlayIcon } from "../../components/icons";
+import { ConfirmButton } from "../../components/ConfirmButton";
 import { Scoreboard } from "../../components/Scoreboard";
 import { Button, Eyebrow } from "../../components/ui";
 import { GameOver, HostBar } from "../rounds/parts";
@@ -82,16 +83,16 @@ export function BingoGameScreen({ me, isHost, session, payload, busy, onAction }
           <p id="called-heading" className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
             Called {payload.called.length} of {payload.poolSize}
           </p>
-          <p className="font-display text-4xl font-black leading-tight sm:text-5xl">{latest ?? "Waiting for the first call"}</p>
+          <p className="font-display text-3xl font-black leading-tight [overflow-wrap:anywhere] min-[390px]:text-4xl sm:text-5xl">{latest ?? "Waiting for the first call"}</p>
           {payload.called.length > 1 && <p className="text-sm text-muted">Earlier: {payload.called.slice(0, -1).reverse().join(", ")}</p>}
         </section>
       )}
 
       {payload.myCard && (
         <section aria-labelledby="card-heading" className="flex flex-col gap-4 rounded-xl border-2 border-ink bg-card p-4 shadow-ticket sm:p-6">
-          <h3 id="card-heading" className="font-display text-xl font-black">
+          <h2 id="card-heading" className="font-display text-xl font-black">
             Your card
-          </h3>
+          </h2>
           <Card payload={payload} live={live} busy={busy} onAction={onAction} />
           {payload.phase === "calling" && live && (
             <Button variant="accent" size="lg" disabled={busy} onClick={() => onAction("bingo")}>
@@ -106,9 +107,15 @@ export function BingoGameScreen({ me, isHost, session, payload, busy, onAction }
           <Button variant="accent" size="sm" disabled={busy || allCalled} onClick={() => onAction("call")}>
             <PlayIcon className="size-4" /> {allCalled ? "Everything called" : "Call next item"}
           </Button>
-          <Button variant="secondary" size="sm" disabled={busy} onClick={() => onAction("end")}>
-            <FlagIcon className="size-4" /> End game
-          </Button>
+          <ConfirmButton
+            disabled={busy}
+            question="End Bingo for everyone?"
+            confirmLabel="Yes, end Bingo"
+            cancelLabel="Keep playing"
+            onConfirm={() => onAction("end")}
+          >
+            <FlagIcon className="size-4" /> End Bingo
+          </ConfirmButton>
         </HostBar>
       )}
 

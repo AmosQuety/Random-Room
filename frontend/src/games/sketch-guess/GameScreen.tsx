@@ -4,7 +4,7 @@ import { Scoreboard } from "../../components/Scoreboard";
 import { fieldInputClass } from "../../components/styles";
 import { Button, Eyebrow } from "../../components/ui";
 import { Countdown } from "../rounds/Countdown";
-import { GameOver, HostBar } from "../rounds/parts";
+import { GameOver, HostBar, NotJoinedNote } from "../rounds/parts";
 import { useCountdown } from "../rounds/useCountdown";
 import type { GameScreenProps } from "../types";
 import { Board } from "./Board";
@@ -38,7 +38,7 @@ function GuessForm({ disabled, left, onGuess }: { disabled: boolean; left: numbe
   );
 }
 
-export function SketchGuessGameScreen({ me, isHost, session, payload, busy, onAction }: GameScreenProps<SketchPayload>) {
+export function SketchGuessGameScreen({ me, isHost, players, session, payload, busy, onAction }: GameScreenProps<SketchPayload>) {
   const live = session.status === "Active";
   const over = session.status === "Completed" || payload.phase === "complete";
   const drawing = live && payload.phase === "drawing";
@@ -74,6 +74,7 @@ export function SketchGuessGameScreen({ me, isHost, session, payload, busy, onAc
           </div>
 
           <p className="font-display text-2xl font-black sm:text-3xl">{isDrawer ? "You are drawing" : `${payload.drawer} is drawing`}</p>
+          <NotJoinedNote name={payload.drawer} players={players} />
 
           {isDrawer && payload.word && drawing && (
             <div className="rounded-lg border-2 border-ink bg-accent-soft p-4">

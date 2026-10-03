@@ -33,7 +33,7 @@ export function Shell({ children, width = "narrow", headerRight, accent }: Props
       </a>
       <header className="border-b-2 border-ink bg-paper">
         <div className="mx-auto flex min-h-16 max-w-5xl items-center justify-between gap-3 px-4">
-          <AppLink href="/" aria-label="The Playground home" className="-mx-1 rounded-lg px-1 py-2">
+          <AppLink href="/" className="-mx-1 rounded-lg px-1 py-2">
             <Wordmark />
           </AppLink>
           {headerRight && <div className="flex min-w-0 items-center gap-3 text-sm">{headerRight}</div>}

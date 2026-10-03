@@ -266,7 +266,7 @@ export function CreateRoomScreen() {
               addLabel="Add a player"
             />
 
-            <Field id="host" label="Who's hosting?" hint="The host starts and ends rounds. Defaults to the first player.">
+            <Field id="host" label="Who's hosting?" hint="The host starts and ends games. Defaults to the first player.">
               <select id="host" value={host} onChange={(e) => setHost(e.target.value)} aria-describedby="host-hint" className={inputClass}>
                 <option value="">{cleanPlayers[0] || "First player"}</option>
                 {cleanPlayers.map((p) => (

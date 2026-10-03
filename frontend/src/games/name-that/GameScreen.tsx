@@ -28,7 +28,7 @@ export type NameThatPayload = RoundPayload<PromptView, Result, Answer>;
 function Clue({ prompt }: { prompt: PromptView }) {
   return (
     <>
-      <h3 className="font-display text-2xl font-black leading-tight sm:text-3xl">{prompt.clue}</h3>
+      <h2 className="font-display text-2xl font-black leading-tight sm:text-3xl">{prompt.clue}</h2>
       {prompt.link && isHttpsLink(prompt.link) && (
         // Opened in a new tab and never embedded, so the host's link cannot run anything inside this page.
         <a

@@ -61,7 +61,20 @@ describe("Bingo screen", () => {
     const onAction = renderScreen(payload(), "Amos", true);
     fireEvent.click(screen.getByRole("button", { name: /call next item/i }));
     expect(onAction).toHaveBeenCalledWith("call");
-    expect(screen.getByRole("button", { name: /end game/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /end bingo/i })).toBeInTheDocument();
+  });
+
+  it("asks before ending Bingo for everyone, and ends it only on the second step", () => {
+    const onAction = renderScreen(payload(), "Amos", true);
+    fireEvent.click(screen.getByRole("button", { name: /end bingo/i }));
+    expect(onAction).not.toHaveBeenCalledWith("end");
+
+    fireEvent.click(screen.getByRole("button", { name: /keep playing/i }));
+    expect(onAction).not.toHaveBeenCalledWith("end");
+
+    fireEvent.click(screen.getByRole("button", { name: /end bingo/i }));
+    fireEvent.click(screen.getByRole("button", { name: /yes, end bingo/i }));
+    expect(onAction).toHaveBeenCalledWith("end");
   });
 
   it("hides host controls from players", () => {

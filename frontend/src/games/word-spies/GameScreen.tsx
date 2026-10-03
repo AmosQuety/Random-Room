@@ -124,9 +124,9 @@ export function WordSpiesGameScreen({ me, isHost, session, payload, busy, onActi
 
       {started && (
         <section aria-labelledby="spy-heading" className="flex flex-col gap-4 rounded-xl border-2 border-ink bg-card p-4 shadow-ticket sm:p-6">
-          <h3 id="spy-heading" className="font-display text-xl font-black">
+          <h2 id="spy-heading" className="font-display text-xl font-black">
             {over ? (payload.winner ? `${teamName(payload.winner)} team wins` : "Game ended") : turnLine(payload, me)}
-          </h3>
+          </h2>
           {over && payload.endReason && <p className="text-sm text-muted">{payload.winner ? endLine(payload.winner, payload.endReason) : ""}</p>}
           {!over && roleLine(payload) && <p className="text-sm text-muted">{roleLine(payload)}</p>}
 

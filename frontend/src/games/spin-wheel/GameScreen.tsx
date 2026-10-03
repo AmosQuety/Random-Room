@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { FlagIcon, PlayIcon } from "../../components/icons";
 import { Scoreboard } from "../../components/Scoreboard";
 import { Button, Eyebrow } from "../../components/ui";
-import { GameOver, HostBar } from "../rounds/parts";
+import { GameOver, HostBar, NotJoinedNote } from "../rounds/parts";
 import type { GameScreenProps } from "../types";
 import type { WheelPayload } from "./types";
 import { Wheel } from "./Wheel";
@@ -25,7 +25,7 @@ function useLanded(hasResult: boolean): boolean {
   return landed;
 }
 
-function Turn({ payload, me, isHost, live, busy, onAction }: { payload: WheelPayload; me: string; isHost: boolean; live: boolean; busy: boolean; onAction: GameScreenProps<WheelPayload>["onAction"] }) {
+function Turn({ payload, players, me, isHost, live, busy, onAction }: { payload: WheelPayload; players: GameScreenProps<WheelPayload>["players"]; me: string; isHost: boolean; live: boolean; busy: boolean; onAction: GameScreenProps<WheelPayload>["onAction"] }) {
   const landed = useLanded(payload.last !== null);
   const myTurn = payload.spinner === me;
   const lastSpin = payload.round >= payload.totalRounds;
@@ -38,6 +38,8 @@ function Turn({ payload, me, isHost, live, busy, onAction }: { payload: WheelPay
       <p className="font-display text-2xl font-black sm:text-3xl">{myTurn ? "Your turn to spin" : `${payload.spinner}'s turn to spin`}</p>
 
       <Wheel key={payload.round} segments={payload.segments} target={payload.last?.index ?? null} />
+
+      {payload.phase === "ready" && !myTurn && <NotJoinedNote name={payload.spinner} players={players} />}
 
       {payload.phase === "ready" && (
         <Button variant="accent" size="lg" disabled={!myTurn || !live || busy} onClick={() => onAction("spin")}>
@@ -75,7 +77,7 @@ function Turn({ payload, me, isHost, live, busy, onAction }: { payload: WheelPay
   );
 }
 
-export function SpinWheelGameScreen({ me, isHost, session, payload, busy, onAction }: GameScreenProps<WheelPayload>) {
+export function SpinWheelGameScreen({ me, isHost, players, session, payload, busy, onAction }: GameScreenProps<WheelPayload>) {
   const live = session.status === "Active";
   const over = session.status === "Completed" || payload.phase === "complete";
 
@@ -90,7 +92,7 @@ export function SpinWheelGameScreen({ me, isHost, session, payload, busy, onActi
       )}
 
       {(payload.phase === "ready" || payload.phase === "spun") && !over && (
-        <Turn key={payload.round} payload={payload} me={me} isHost={isHost} live={live} busy={busy} onAction={onAction} />
+        <Turn key={payload.round} payload={payload} players={players} me={me} isHost={isHost} live={live} busy={busy} onAction={onAction} />
       )}
 
       {over && <GameOver scoreboard={payload.scoreboard} />}

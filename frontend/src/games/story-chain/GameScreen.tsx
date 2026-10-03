@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { FlagIcon } from "../../components/icons";
+import { ConfirmButton } from "../../components/ConfirmButton";
 import { Scoreboard } from "../../components/Scoreboard";
 import { fieldInputClass } from "../../components/styles";
 import { Button, Eyebrow } from "../../components/ui";
-import { GameOver, HostBar } from "../rounds/parts";
+import { GameOver, HostBar, NotJoinedNote } from "../rounds/parts";
 import type { GameScreenProps } from "../types";
 import type { ChainConfig, ChainPayload } from "./types";
 
@@ -55,7 +56,7 @@ function TurnForm({ config, prefix, disabled, onAdd }: { config: ChainConfig; pr
   );
 }
 
-export function ChainGameScreen({ config, me, isHost, session, payload, busy, onAction }: Props) {
+export function ChainGameScreen({ config, me, isHost, players, session, payload, busy, onAction }: Props) {
   const live = session.status === "Active";
   const over = session.status === "Completed" || payload.phase === "complete";
   const myTurn = payload.currentPlayer === me;
@@ -95,9 +96,12 @@ export function ChainGameScreen({ config, me, isHost, session, payload, busy, on
             (myTurn ? (
               <TurnForm key={payload.turn} config={config} prefix={payload.prefix} disabled={busy} onAdd={(text) => onAction("add", { text })} />
             ) : (
-              <p className="rounded-lg border-2 border-dashed border-ink px-4 py-3">
-                Waiting for <strong>{payload.currentPlayer}</strong>...
-              </p>
+              <div className="rounded-lg border-2 border-dashed border-ink px-4 py-3">
+                <p>
+                  Waiting for <strong>{payload.currentPlayer}</strong>...
+                </p>
+                <NotJoinedNote name={payload.currentPlayer} players={players} />
+              </div>
             ))}
 
           {isHost && live && payload.phase === "writing" && (
@@ -105,9 +109,15 @@ export function ChainGameScreen({ config, me, isHost, session, payload, busy, on
               <Button variant="secondary" size="sm" disabled={busy} onClick={() => onAction("skip")}>
                 Skip {payload.currentPlayer}
               </Button>
-              <Button variant="secondary" size="sm" disabled={busy} onClick={() => onAction("end")}>
+              <ConfirmButton
+                disabled={busy}
+                question="End the story for everyone?"
+                confirmLabel="Yes, end the story"
+                cancelLabel="Keep writing"
+                onConfirm={() => onAction("end")}
+              >
                 <FlagIcon className="size-4" /> End the story
-              </Button>
+              </ConfirmButton>
             </HostBar>
           )}
         </section>

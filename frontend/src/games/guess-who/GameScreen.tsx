@@ -52,9 +52,9 @@ export function GuessWhoGameScreen({ me, isHost, players, session, payload, busy
 
       {payload.phase === "submitting" && live && (
         <section aria-labelledby="facts-heading" className="flex flex-col gap-5 rounded-xl border-2 border-ink bg-card p-5 shadow-ticket sm:p-6">
-          <h3 id="facts-heading" className="font-display text-2xl font-black sm:text-3xl">
+          <h2 id="facts-heading" className="font-display text-2xl font-black sm:text-3xl">
             Write your fact
-          </h3>
+          </h2>
           {payload.myFact === null ? (
             <FactForm disabled={busy} onSubmit={(text) => onAction("submit", { text })} />
           ) : (

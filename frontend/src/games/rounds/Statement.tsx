@@ -17,5 +17,5 @@ export function StatementEditor({ value, onChange, index, invalid, placeholder }
 }
 
 export function StatementText({ prompt }: { prompt: StatementPromptView }) {
-  return <h3 className="font-display text-2xl font-black leading-tight sm:text-3xl">{prompt.text}</h3>;
+  return <h2 className="font-display text-2xl font-black leading-tight sm:text-3xl">{prompt.text}</h2>;
 }

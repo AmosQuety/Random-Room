@@ -2,7 +2,7 @@ import { unjoinedNames } from "../../lib/players";
 import { CheckIcon, FlagIcon, PlayIcon } from "../../components/icons";
 import { Scoreboard } from "../../components/Scoreboard";
 import { Button, Eyebrow } from "../../components/ui";
-import { GameOver, HostBar, ProgressChips } from "../rounds/parts";
+import { GameOver, HostBar, NotJoinedNote, ProgressChips } from "../rounds/parts";
 import { choiceBadgeClass, choiceButtonClass } from "../rounds/styles";
 import type { GameScreenProps } from "../types";
 import { StatementForm } from "./StatementForm";
@@ -74,9 +74,10 @@ export function TwoTruthsGameScreen({ me, isHost, players, session, payload, bus
             (isStoryteller ? (
               <StatementForm disabled={busy || !live} onSubmit={(body) => onAction("submit", body)} />
             ) : (
-              <p className="rounded-lg border-2 border-dashed border-ink px-4 py-3">
-                Waiting for {payload.storyteller} to write two truths and a lie.
-              </p>
+              <div className="rounded-lg border-2 border-dashed border-ink px-4 py-3">
+                <p>Waiting for {payload.storyteller} to write two truths and a lie.</p>
+                <NotJoinedNote name={payload.storyteller} players={players} />
+              </div>
             ))}
 
           {payload.phase === "voting" && payload.statements && (

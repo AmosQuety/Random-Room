@@ -88,7 +88,7 @@ export function TriviaGameScreen({ me, players, session, payload, busy, onAction
           >
             <div className="h-full bg-accent transition-[width] duration-500" style={{ width: `${progress}%` }} />
           </div>
-          <h3 className="mt-4 font-display text-2xl font-black leading-tight sm:text-3xl">{payload.currentQuestion.text}</h3>
+          <h2 className="mt-4 font-display text-2xl font-black leading-tight sm:text-3xl">{payload.currentQuestion.text}</h2>
           <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {payload.currentQuestion.options.map((option, i) => (
               <button

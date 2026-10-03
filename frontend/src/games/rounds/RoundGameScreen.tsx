@@ -68,7 +68,7 @@ export function RoundGameScreen<TPrompt, TResult, TAnswer>({
           <Eyebrow>Ready when you are</Eyebrow>
           <p className="mt-2 font-display text-3xl font-black">{payload.totalRounds} rounds</p>
           <p className="mt-1 text-muted">
-            {isHost ? "Press Start round below when everyone is here." : "Waiting for the host to start."}
+            {isHost ? "Press Start game below when everyone is here." : "Waiting for the host to start."}
             {payload.timeLimitSeconds ? ` ${payload.timeLimitSeconds} seconds per round.` : ""}
           </p>
         </section>

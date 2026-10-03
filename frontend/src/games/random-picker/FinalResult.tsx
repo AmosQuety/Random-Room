@@ -17,7 +17,7 @@ export function FinalResult({ roundNumber, tally }: Props) {
       className="surface-dark animate-stamp rounded-xl border-2 border-ink bg-ink p-6 text-center text-paper shadow-ticket"
     >
       <p id="final-heading" className="font-mono text-xs uppercase tracking-[0.3em] text-mustard">
-        Final result · round {roundNumber}
+        Final result · game {roundNumber}
       </p>
       <p className="mt-3 flex items-center justify-center gap-3 font-display text-4xl font-black sm:text-5xl">
         <StarIcon className="size-7 shrink-0 text-mustard" />

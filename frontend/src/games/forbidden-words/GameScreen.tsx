@@ -4,7 +4,7 @@ import { Scoreboard } from "../../components/Scoreboard";
 import { fieldInputClass } from "../../components/styles";
 import { Button, Eyebrow } from "../../components/ui";
 import { Countdown } from "../rounds/Countdown";
-import { GameOver, HostBar } from "../rounds/parts";
+import { GameOver, HostBar, NotJoinedNote } from "../rounds/parts";
 import { useCountdown } from "../rounds/useCountdown";
 import type { GameScreenProps } from "../types";
 import { OUTCOME_TEXT, type ForbiddenPayload } from "./types";
@@ -58,7 +58,7 @@ function GuessForm({ disabled, left, onGuess }: { disabled: boolean; left: numbe
   );
 }
 
-export function ForbiddenGameScreen({ me, isHost, session, payload, busy, onAction }: GameScreenProps<ForbiddenPayload>) {
+export function ForbiddenGameScreen({ me, isHost, players, session, payload, busy, onAction }: GameScreenProps<ForbiddenPayload>) {
   const live = session.status === "Active";
   const over = session.status === "Completed" || payload.phase === "complete";
   const playing = live && payload.phase === "playing";
@@ -92,6 +92,7 @@ export function ForbiddenGameScreen({ me, isHost, session, payload, busy, onActi
           <p className="font-display text-2xl font-black sm:text-3xl">
             {payload.role === "describer" ? "You are describing" : `${payload.describer} is describing`}
           </p>
+          <NotJoinedNote name={payload.describer} players={players} />
           <p className="text-sm text-muted">
             {payload.role === "describer" && `${payload.judge} is the judge and can see your card. Do not say the word or any forbidden word.`}
             {payload.role === "judge" && `You are the judge. Flag ${payload.describer} if they say the word or a forbidden word.`}

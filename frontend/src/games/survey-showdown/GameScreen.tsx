@@ -61,7 +61,7 @@ export function SurveyShowdownGameScreen(props: GameScreenProps<SurveyShowdownPa
       scoreUnit="points"
       renderPrompt={(prompt) => (
         <>
-          <h3 className="font-display text-2xl font-black leading-tight sm:text-3xl">{prompt.text}</h3>
+          <h2 className="font-display text-2xl font-black leading-tight sm:text-3xl">{prompt.text}</h2>
           <p className="mt-1 text-sm text-muted">{prompt.boardSize} answers are on the board.</p>
         </>
       )}

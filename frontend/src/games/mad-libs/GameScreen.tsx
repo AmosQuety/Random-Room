@@ -69,7 +69,7 @@ export function MadLibsGameScreen(props: GameScreenProps<MadLibsPayload>) {
       scoreUnit="points"
       renderPrompt={(prompt) => (
         <div>
-          <h3 className="font-display text-2xl font-black leading-tight sm:text-3xl">A story is waiting</h3>
+          <h2 className="font-display text-2xl font-black leading-tight sm:text-3xl">A story is waiting</h2>
           <p className="mt-1 text-muted">{prompt.labels.length} gaps to fill, shared between the players.</p>
         </div>
       )}

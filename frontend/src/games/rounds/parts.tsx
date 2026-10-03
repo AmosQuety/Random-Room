@@ -1,8 +1,15 @@
 import type { ReactNode } from "react";
 import { CheckIcon } from "../../components/icons";
 import { Eyebrow } from "../../components/ui";
+import { unjoinedNames } from "../../lib/players";
 import { winnersOf } from "./winners";
 import type { RoundScore } from "./types";
+
+/** Said under a "waiting for X" line when X has not opened their invite link, so the group knows why nothing happens. */
+export function NotJoinedNote({ name, players }: { name: string | null; players: readonly { name: string; claimed: boolean }[] }) {
+  if (name === null || !unjoinedNames(players).includes(name)) return null;
+  return <p className="text-sm font-semibold">{name} has not opened their invite link yet.</p>;
+}
 
 /** Who has acted this round (never what they did), in words as well as icons. */
 export function ProgressChips({ done, verb = "answered", notJoined = [] }: { done: Record<string, boolean>; verb?: string; notJoined?: readonly string[] }) {

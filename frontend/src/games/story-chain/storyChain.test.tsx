@@ -84,8 +84,22 @@ describe("Story screen", () => {
   it("gives only the host skip and end controls", () => {
     const onAction = renderScreen(oneWordConfig, payload(), "Amos", true);
     fireEvent.click(screen.getByRole("button", { name: /skip amos/i }));
+    expect(onAction.mock.calls).toEqual([["skip"]]);
+  });
+
+  it("asks before ending the story for everyone", () => {
+    const onAction = renderScreen(oneWordConfig, payload(), "Amos", true);
     fireEvent.click(screen.getByRole("button", { name: /end the story/i }));
-    expect(onAction.mock.calls).toEqual([["skip"], ["end"]]);
+    expect(onAction).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: /yes, end the story/i }));
+    expect(onAction).toHaveBeenCalledWith("end");
+  });
+
+  it("says when the player whose turn it is has not opened their invite link", () => {
+    const players = PLAYERS.map((p) => (p.name === "Lydia" ? { ...p, claimed: false } : p));
+    render(<ChainGameScreen config={oneWordConfig} me="Amos" isHost={false} players={players} session={ACTIVE} payload={payload({ currentPlayer: "Lydia" })} busy={false} onAction={vi.fn()} />);
+    expect(screen.getByText("Lydia has not opened their invite link yet.")).toBeInTheDocument();
   });
 
   it("hides host controls from players", () => {
