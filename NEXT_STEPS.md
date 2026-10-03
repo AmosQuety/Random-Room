@@ -25,6 +25,25 @@ Done so far in this round (also: the migration guard `Database__AutoMigrate`, an
 ### 1. Review the East Africa trivia pack
 It is wired in (Trivia setup > "Question set" > East Africa, 20 questions), but nobody has checked the questions yet. Test it in a game, check every answer, and swap in questions your players know. The source is `backend/RandomRoom.Api/Games/Content/trivia-east-africa.json`; the notes are in `docs/trivia-east-africa-draft.md`. If you change how many questions it holds, update `STARTER_PACKS` in `frontend/src/games/trivia/setup.ts` too.
 
+## Planned for later (not started)
+
+Ideas from reading the `game-playground` repo (Godot 4, MIT licence, a 3D physics sandbox, not a party-game platform) and from the owner's own experience of getting bored with one game. Nothing here is built; each needs a go-ahead before work starts.
+
+| # | Idea | What it means for us | Size |
+|---|---|---|---|
+| 1 | **Switch games inside one room.** A "pick the next game" step chosen by the host (later by vote). | Today a room is locked to one game, so a game night means a new room, new invites and new PINs for every game. Owner's note: players get bored of one game and want to change. It changes how setup is stored (currently one per room), so it needs approval first. **Full plan: `docs/plan-switch-games-in-a-room.md`**, with a cheaper alternative (linked rooms) if the main plan proves too large. | Large |
+| 2 | **One source for each number.** The repo's rule: a second copy of a number is a second number that can disagree, and tests fail when two copies drift. | Trivia caps, pack sizes, player ranges and setup rules are written once on the server and once in the frontend. The cheap fix is a contract test that fails if they differ; later one server endpoint listing game limits. Also the prerequisite for item 1. | Small |
+| 3 | **Reuse a past setup.** | A host who builds a 50-question trivia set cannot reuse it in the next room. Save the last setup per game in the browser (no server change). | Small |
+| 4 | **"Tonight's scoreboard"** across several games in one room, with no accounts. | Best done together with item 1. Needs a decision on how to compare games that score differently (placings, not raw points). | Medium |
+| 5 | **Spectating.** | We already build a viewer-less public view of every game, so a read-only watcher is mostly an access-control question: a spectator link that never sees hidden information. | Medium |
+| 6 | **Host leaving: hand the host role to another player.** | The recovery code would have to move with the role, so the design needs care. | Medium |
+| 7 | **Test through the whole game with bots**, including a test that fails if a check is weakened. | Matches "browser tests in CI" below. A bot that plays all 19 games end to end over the API would catch seam bugs like the stale-screen race we fixed. | Medium |
+| 8 | **Add a player to a room later.** | Needed so any game can be switched to (Word Spies needs 4 or more players). Also fixes "someone forgot to add a friend". | Small to medium |
+
+**Research step before deciding on any of these:** `docs/agent-prompts/explore-game-platform-repos.md` is a prompt for an unattended agent that studies the `game-playground` repository and its sibling repositories in depth and writes `docs/research/game-platform-report.md`. Use that report to confirm, refine or drop the ideas above, and to choose the order.
+
+Order I would take them in: 2, 3, then 7; decide on 1 with the plan in hand (it then pulls in 8 and 4).
+
 ## Decisions waiting for you
 
 | Item | Why it matters | Options |
