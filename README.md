@@ -7,16 +7,21 @@ Nobody votes; nobody can choose or change a result. Spec: `random-room-mvp-spec.
 
 ## Auth model
 
-There are no accounts. Each of the four players has a secret PIN kept in `backend/RandomRoom.Api/.env`
-(locally) or in the host's environment variables (production). Entering name + PIN once gives the browser
-a signed 12-hour token, so the PIN is not re-sent with every action.
+There are no accounts and no shared secrets in configuration. The host creates a room and names the players. Each
+player gets a private invite link, opens it once and chooses their own PIN, which signs them straight in. Only a salted
+hash of the PIN is stored, and nobody else (including the host) ever sees it. On a later visit a player picks their
+name on the room's join page and types their PIN. Either way the browser gets a signed 12-hour token, so the PIN is
+not re-sent with every action.
+
+A forgotten PIN cannot be recovered yet (see `Gaps_Bugs.md`, G2). The deployment itself needs only a token-signing
+key and a database connection string.
 
 ## Run locally
 
     # one-time: a Postgres for local development (port 5433 avoids clashing with another Postgres)
     docker run -d --name randomroom-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=randomroom -p 5433:5432 postgres:16
 
-    # one-time: create your secrets file, then fill in PINs and a signing key (openssl rand -base64 48)
+    # one-time: create your secrets file, then fill in a signing key (openssl rand -base64 48)
     cp backend/RandomRoom.Api/.env.example backend/RandomRoom.Api/.env
 
     # terminal 1 - API on :5184 (creates/updates the database schema on start)
@@ -25,7 +30,11 @@ a signed 12-hour token, so the PIN is not re-sent with every action.
     # terminal 2 - UI on :5173 with hot reload (proxies /api and /hubs to the API)
     cd frontend && npm install && npm run dev
 
-Open http://localhost:5173/room/who-do-we-choose in several browsers/profiles.
+Open http://localhost:5173, create a room, and open each player's invite link in a separate browser or profile.
+
+To check a production build, run `npm run build` in `frontend/`. It writes the UI into
+`backend/RandomRoom.Api/wwwroot` (git-ignored; the API serves it, and the Docker build relies on this path) and empties
+that folder first. To build somewhere else without touching it: `npm run build -- --outDir /some/other/folder`.
 
 ## Test
 
@@ -40,14 +49,11 @@ The repo root `Dockerfile` builds the UI and API into one container.
 2. Create a **Web Service** from this repo, runtime **Docker**.
 3. Add these environment variables to the web service:
 
-       Room__PlayerPins__Amos=...   Room__PlayerPins__Lydia=...
-       Room__PlayerPins__James=...  Room__PlayerPins__Jacob=...   (4+ characters each)
        Room__JwtSigningKey=...                                     (32+ random characters)
        ConnectionStrings__Default=<the Internal Database URL>      (postgres:// URLs are accepted as-is)
-       Room__HostPlayer=Amos                                       (optional)
 
-   The app refuses to start if the PINs or signing key are missing.
-4. Share `https://<your-service>.onrender.com/room/who-do-we-choose`, and send each player their PIN privately.
+   The app refuses to start if the signing key is missing or too short.
+4. Open `https://<your-service>.onrender.com`, create a room, and send each player their own invite link privately. They choose their own PINs.
 
 Notes:
 - Run a **single instance**: online/offline presence is kept in memory.
