@@ -106,3 +106,4 @@ short quotes with paths, never fabricate.
   were tested with `git ls-remote` under both owners.
 - game-simple-lobby deep read done: notes/game-simple-lobby.md.
 - 21:38 game-hungario notes done.
+- 21:39 dot-vote notes done (docs fully, code partly).
