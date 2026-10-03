@@ -39,12 +39,12 @@ export function Board({ board, key_, canGuess, onGuess }: Props) {
             disabled={!canGuess || turned}
             onClick={() => onGuess(i)}
             aria-label={`${card.word}${turned ? `, turned over: ${OWNER_LABEL[card.owner!]}` : hint ? `, ${OWNER_LABEL[hint]} (secret)` : ""}`}
-            className={`grid min-h-14 place-items-center rounded-md border-2 border-ink p-1 text-center text-[0.7rem] font-bold leading-tight break-words transition disabled:cursor-default sm:min-h-20 sm:text-sm ${
+            className={`grid min-h-14 place-items-center rounded-md border-2 border-ink min-w-0 p-1 text-center text-[0.8rem] font-bold leading-tight [overflow-wrap:anywhere] transition disabled:cursor-default sm:min-h-20 sm:text-sm ${
               turned ? TONE[card.owner!] : "bg-card hover:bg-accent-soft"
             } ${hint ? HINT_RING[hint] : ""}`}
           >
             <span>{card.word}</span>
-            {label && <span className="font-mono text-[0.6rem] uppercase tracking-wider opacity-90">{OWNER_LABEL[label]}</span>}
+            {label && <span className="font-mono text-[0.6rem] uppercase tracking-tighter opacity-90 min-[390px]:text-[0.7rem]">{OWNER_LABEL[label]}</span>}
           </button>
         );
       })}

@@ -102,6 +102,15 @@ describe("Word Spies screen", () => {
     expect(screen.queryByRole("button", { name: /end and reveal/i })).not.toBeInTheDocument();
   });
 
+  // jsdom has no layout, so this guards the classes; sizes and wrapping were checked in a real browser at 390px.
+  it("keeps card words readable on a phone and lets a long word wrap inside its card", () => {
+    renderScreen(payload(), "Lydia");
+    const card = screen.getByRole("button", { name: /word3/i });
+    expect(card.className).toContain("text-[0.8rem]");
+    expect(card.className).toContain("min-w-0");
+    expect(card.className).toContain("[overflow-wrap:anywhere]");
+  });
+
   it("names the winning team as the one that found every word", () => {
     const board = KEY.map((owner, i) => ({ word: `word${i}`, owner }));
     renderScreen(payload({ phase: "complete", board, key: KEY, winner: "blue", endReason: "all-found", turn: null, clue: null }), "Lydia");
