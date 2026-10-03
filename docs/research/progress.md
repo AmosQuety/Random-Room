@@ -109,3 +109,4 @@ short quotes with paths, never fabricate.
 - 21:39 dot-vote notes done (docs fully, code partly).
 - 21:39 dot-server notes done.
 - 21:41 dot-server-deploy notes done (the multi-game server and game vote live here).
+- 21:41 dot-core, dot-game notes done.
