@@ -4,6 +4,7 @@ import { ApiError, getRoomPreview, join } from "../lib/api";
 import type { RoomPreview, Session } from "../lib/types";
 import { Avatar } from "./Avatar";
 import { ArrowRightIcon, CheckIcon } from "./icons";
+import { RetentionNotice } from "./RetentionNotice";
 import { Shell } from "./Shell";
 import { Alert, AppLink, Button, EmptyState, Eyebrow, Field, Skeleton } from "./ui";
 import { buttonClass, inputClass, sectionHeadingClass } from "./styles";
@@ -81,6 +82,11 @@ export function JoinScreen({ slug, onJoined, notice }: Props) {
   if (load.status === "missing") {
     return (
       <Shell>
+        {notice && (
+          <p role="status" className="mb-6 rounded-lg border-2 border-ink bg-mustard-soft px-4 py-3 font-semibold">
+            {notice}
+          </p>
+        )}
         <EmptyState
           tone="error"
           title={`No room at "${slug}"`}
@@ -140,6 +146,7 @@ export function JoinScreen({ slug, onJoined, notice }: Props) {
               {claimedCount} of {preview.players.length} players ready
             </span>
           </p>
+          <RetentionNotice days={preview.retentionDays} />
         </header>
 
         <form onSubmit={submit} className="flex flex-col gap-6">
@@ -163,8 +170,8 @@ export function JoinScreen({ slug, onJoined, notice }: Props) {
                     className="sr-only"
                   />
                   <Avatar name={name} />
-                  <span className="min-w-0 flex-1 truncate">
-                    {name}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{name}</span>
                     {!claimed && <span className="block font-mono text-xs font-normal uppercase text-muted">Not joined yet</span>}
                   </span>
                   {player === name && <CheckIcon className="absolute right-1.5 top-1.5 size-4 text-mustard" />}
@@ -190,6 +197,10 @@ export function JoinScreen({ slug, onJoined, notice }: Props) {
           </Field>
 
           {error && <Alert>{error}</Alert>}
+
+          <p className="text-sm text-muted">
+            Host and forgot your PIN? <AppLink href={`/room/${slug}/recover`} className="font-semibold underline">Use your recovery code</AppLink>.
+          </p>
 
           <Button type="submit" variant="accent" size="lg" disabled={!player || pin.length < 4 || pending}>
             {pending ? "Joining..." : "Enter the room"} <ArrowRightIcon />

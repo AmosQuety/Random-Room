@@ -20,6 +20,12 @@ public sealed class PresenceTracker
         return ids;
     }
 
+    public void RemoveRoom(Guid roomId)
+    {
+        foreach (var id in connections.Where(c => c.Value.RoomId == roomId).Select(c => c.Key).ToList())
+            connections.TryRemove(id, out _);
+    }
+
     public IReadOnlyList<string> OnlinePlayers(Guid roomId) =>
         connections.Values.Where(c => c.RoomId == roomId).Select(c => c.Player).Distinct().ToList();
 

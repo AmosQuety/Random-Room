@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { ClaimInviteScreen } from "./components/ClaimInviteScreen";
 import { HomeScreen } from "./components/HomeScreen";
 import { JoinScreen } from "./components/JoinScreen";
+import { RecoverHostScreen } from "./components/RecoverHostScreen";
 import { RoomScreen } from "./components/RoomScreen";
 import { usePath } from "./lib/router";
 import { clearSession, loadSession, saveSession } from "./lib/session";
@@ -10,6 +11,7 @@ import type { Session } from "./lib/types";
 
 const SESSION_END_NOTICE: Record<SessionEnd, string> = {
   expired: "Your sign-in has ended, so you were signed out. Pick your name and enter your PIN to get back in.",
+  deleted: "The host deleted this room, so it is gone for everyone.",
   reset: "The host reset your seat, so you were signed out. Ask them for your new invite link, open it, and choose a new PIN.",
 };
 
@@ -39,6 +41,9 @@ export default function App() {
 
   const claimMatch = path.match(/^\/room\/([^/]+)\/claim\/([^/]+)\/?$/);
   if (claimMatch) return <ClaimInviteScreen slug={claimMatch[1]} token={claimMatch[2]} onJoined={handleJoined} />;
+
+  const recoverMatch = path.match(/^\/room\/([^/]+)\/recover\/?$/);
+  if (recoverMatch) return <RecoverHostScreen slug={recoverMatch[1]} />;
 
   const roomMatch = path.match(/^\/room\/([^/]+)(?:\/join)?\/?$/);
   if (roomMatch) {

@@ -47,7 +47,7 @@ Low-bandwidth note: keep whatever is added small (no image assets, no heavy libr
 
 - **Fix:** The host can reset any other seat between games ("Someone locked out? Reset a seat"). The reset empties the seat, signs the old device out at once (a per-seat token version is checked on every request, and live connections are cut), and returns a fresh one-time link. It is recorded in `RoomAuditEvents`. The host's own seat cannot be reset: if the host forgets their PIN, they start a new room.
 - **Why between games only:** a mid-game reset would let the host claim the seat and see that player's secrets (their cards, the spymaster key).
-- **Still open:** a recovery path for the host's own seat (for example a code shown once at room creation).
+- **The host's own seat** is covered by a recovery code shown once when the room is made (and replaceable from inside the room). On the join page, "Use your recovery code" signs out the old device and lets the host choose a new PIN. Rooms made before recovery codes existed have none until the host makes one.
 
 ## Findings from the QA audit
 

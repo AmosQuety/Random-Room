@@ -13,5 +13,11 @@ public sealed class Room
     /// <summary>The RoomPlayer.Name who controls session lifecycle. Defaults to the room's creator.</summary>
     public required string HostPlayer { get; set; }
 
+    /// <summary>
+    /// Hash of the host's recovery code, which lets them back in if they forget their PIN. Null for rooms made before
+    /// recovery codes existed, until the host makes one.
+    /// </summary>
+    public string? RecoveryCodeHash { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
 }

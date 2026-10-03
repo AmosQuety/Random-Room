@@ -29,6 +29,7 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
             room.Property(r => r.Title).HasMaxLength(80);
             room.Property(r => r.GameType).HasMaxLength(32);
             room.Property(r => r.HostPlayer).HasMaxLength(32);
+            room.Property(r => r.RecoveryCodeHash).HasMaxLength(256);
         });
 
         modelBuilder.Entity<RoomChoice>(choice =>

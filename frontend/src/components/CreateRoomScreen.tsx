@@ -4,11 +4,14 @@ import { ApiError, createRoom } from "../lib/api";
 import { claimPath, claimUrl } from "../lib/invites";
 import { navigate } from "../lib/router";
 import { playerCountIssue } from "../lib/players";
+import { useRetentionDays } from "../lib/useRetentionDays";
 import type { CreateRoomResult } from "../lib/types";
 import { GamePicker } from "./GamePicker";
 import { InviteActions } from "./InviteActions";
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, CopyIcon, PlayIcon } from "./icons";
 import { ListEditor } from "./ListEditor";
+import { RecoveryCodeCard } from "./RecoveryCodeCard";
+import { RetentionNotice } from "./RetentionNotice";
 import { Alert, Button, Card, Eyebrow, Field, Skeleton } from "./ui";
 import { inputClass } from "./styles";
 
@@ -55,6 +58,7 @@ function Stepper({ step, onGoTo }: { step: number; onGoTo: (step: number) => voi
 
 function RoomCreatedCard({ result, hostPlayer, roomTitle }: { result: CreateRoomResult; hostPlayer: string; roomTitle: string }) {
   const [copied, setCopied] = useState<string | null>(null);
+  const retentionDays = useRetentionDays();
   const urlFor = (token: string) => claimUrl(result.slug, token);
 
   async function copy(label: string, text: string) {
@@ -110,6 +114,7 @@ function RoomCreatedCard({ result, hostPlayer, roomTitle }: { result: CreateRoom
             </li>
           ))}
         </ul>
+        <RecoveryCodeCard code={result.recoveryCode} />
         <div className="flex flex-wrap gap-3">
           <Button variant="secondary" onClick={() => navigate(`/room/${result.slug}/join`)}>
             Already set a PIN? Go to the room <ArrowRightIcon />
@@ -119,6 +124,7 @@ function RoomCreatedCard({ result, hostPlayer, roomTitle }: { result: CreateRoom
             {copied === "everyone" ? "Copied all" : "Copy all links"}
           </Button>
         </div>
+        <RetentionNotice days={retentionDays} hostCanDelete />
       </div>
     </Card>
   );
@@ -130,6 +136,7 @@ function hasDuplicates(names: string[]): boolean {
 }
 
 export function CreateRoomScreen() {
+  const retentionDays = useRetentionDays();
   const [step, setStep] = useState(0);
   const [gameKey, setGameKey] = useState<string | null>(null);
   // Registry-driven setup state is necessarily loosely typed here; each module's own toApiSetup/isSetupValid recovers the real type.
@@ -247,6 +254,7 @@ export function CreateRoomScreen() {
                 Who's playing?
               </h3>
               <p className="mt-1 text-muted">Each person gets their own private invite link.</p>
+              <RetentionNotice days={retentionDays} hostCanDelete className="mt-2" />
             </div>
 
             <ListEditor

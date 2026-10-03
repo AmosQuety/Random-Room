@@ -25,7 +25,7 @@ public sealed class RoomRetentionService(RoomDbContext db, TimeProvider clock, I
         {
             var batch = await InactiveRoomIdsAsync(cutoff, ct);
             if (batch.Count == 0) break;
-            await DeleteRoomsAsync(batch, ct);
+            await RoomDeletion.DeleteAsync(db, batch, ct);
             deleted += batch.Count;
         }
 
@@ -45,22 +45,6 @@ public sealed class RoomRetentionService(RoomDbContext db, TimeProvider clock, I
             .Select(r => r.Id)
             .Take(BatchSize)
             .ToListAsync(ct);
-
-    private async Task DeleteRoomsAsync(List<Guid> roomIds, CancellationToken ct)
-    {
-        await using var transaction = await db.Database.BeginTransactionAsync(ct);
-
-        // Recorded answers and picks refuse to be deleted along with their game (they are append-only while the room
-        // lives), so they go first. ExecuteDelete bypasses the context's immutability guard on purpose: this is the
-        // one place that is allowed to remove them, and only for whole rooms past retention.
-        await db.TriviaAnswers.Where(a => db.GameSessions.Any(s => s.Id == a.SessionId && roomIds.Contains(s.RoomId))).ExecuteDeleteAsync(ct);
-        await db.RandomPickerEvents.Where(e => db.GameSessions.Any(s => s.Id == e.SessionId && roomIds.Contains(s.RoomId))).ExecuteDeleteAsync(ct);
-
-        // Everything else hangs off the room with cascading deletes.
-        await db.Rooms.Where(r => roomIds.Contains(r.Id)).ExecuteDeleteAsync(ct);
-
-        await transaction.CommitAsync(ct);
-    }
 }
 
 /// <summary>Runs the retention clean-up shortly after start and then once a day. A failure is logged and retried next time.</summary>

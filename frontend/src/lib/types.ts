@@ -47,6 +47,12 @@ export interface RoomPreview {
   gameType: string;
   gamePreview: unknown;
   players: RoomPreviewPlayer[];
+  /** After how many days without play the room is deleted; 0 when it never is. */
+  retentionDays: number;
+}
+
+export interface AppConfig {
+  retentionDays: number;
 }
 
 export interface PlayerInvite {
@@ -57,4 +63,14 @@ export interface PlayerInvite {
 export interface CreateRoomResult {
   slug: string;
   invites: PlayerInvite[];
+  /** The host's way back in if they forget their PIN. Shown once; the server keeps only a hash. */
+  recoveryCode: string;
+}
+
+export interface HostRecovery {
+  player: string;
+  /** One-time link path token for choosing a new PIN. */
+  inviteToken: string;
+  /** Replaces the code just used. */
+  recoveryCode: string;
 }
