@@ -13,7 +13,11 @@
   </head>
   <body>
     <!-- Painted before the script arrives, so a slow connection sees something at once. React replaces it on mount. -->
-    <div id="root"><p role="status" style="margin: 0; padding: 2rem 1rem; text-align: center">Loading The Playground...</p></div>
+    <div id="root">
+      <p id="boot-status" role="status" style="margin: 0; padding: 2rem 1rem; text-align: center">Loading The Playground...</p>
+      <noscript><p style="margin: 0; padding: 0 1rem 2rem; text-align: center">The Playground needs JavaScript. Turn it on in your browser and reload the page.</p></noscript>
+    </div>
+    <script defer src="/boot-hint.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
