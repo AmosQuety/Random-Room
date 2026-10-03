@@ -1,13 +1,16 @@
 # Draft: East Africa trivia pack (not shipped)
 
-Status: **draft for your review. Nothing here is wired into the app.** I wrote these from general knowledge and I am
-confident of each answer, but please check every one and replace anything you would not stand behind in front of a
-room. Add or swap questions for places and things your players actually know (towns, food, music, local history).
+Status: **wired in as the "East Africa" question set on the Trivia setup, but not yet reviewed by you.** I wrote these
+from general knowledge and I am confident of each answer, but please check every one before relying on them, and
+replace anything you would not stand behind in front of a room. Add or swap questions for places and things your
+players actually know (towns, food, music, local history).
 
-To ship it: copy the approved questions into `backend/RandomRoom.Api/Games/Content/` as a new bank (same shape as
-`trivia-starter.json`), then add a "pack" choice to the Trivia setup. See `NEXT_STEPS.md`.
+The questions live in `backend/RandomRoom.Api/Games/Content/trivia-east-africa.json` (same shape as
+`trivia-starter.json`; in the shipped file the right answer's position is shuffled so it is not always in the same
+place, so the table below lists them in reading order only). To change the pack, edit that file; the setup form shows
+the pack's size from `STARTER_PACKS` in `frontend/src/games/trivia/setup.ts`, so keep the two in step.
 
-The correct answer is marked with a star.
+The correct answer is marked with a star in the table below.
 
 | # | Category | Question | Options |
 |---|---|---|---|

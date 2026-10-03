@@ -21,6 +21,16 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
 {
     public const string Key = "trivia";
     public const string StarterBank = "trivia-starter";
+    public const string EastAfricaBank = "trivia-east-africa";
+
+    /// <summary>The ready-made question sets a host can add, by the name the setup form sends.</summary>
+    public static readonly IReadOnlyDictionary<string, string> StarterPacks = new Dictionary<string, string>
+    {
+        ["general"] = StarterBank,
+        ["east-africa"] = EastAfricaBank,
+    };
+
+    private const string DefaultPack = "general";
 
     private const int MaxCategoryLength = 40;
     public const int MaxQuestionLength = 300;
@@ -102,7 +112,12 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
 
     private IEnumerable<TriviaQuestion> PickStarterQuestions(JsonElement setup)
     {
-        var bank = ContentBank.Load<StarterQuestion>(StarterBank);
+        var pack = SetupJson.OptionalText(setup, "starterPack", 32, "The question pack");
+        if (pack.Length == 0) pack = DefaultPack;
+        if (!StarterPacks.TryGetValue(pack, out var bankName))
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"'{pack}' is not a known question pack.");
+
+        var bank = ContentBank.Load<StarterQuestion>(bankName);
         var count = SetupJson.OptionalInt(setup, "builtInCount", 1, bank.Count, "The number of built-in questions") ?? Math.Min(DefaultBuiltInCount, bank.Count);
         return choices.Shuffle(bank).Take(count)
             .Select(b => new TriviaQuestion { Text = b.Text, Options = b.Options.ToList(), CorrectIndex = b.CorrectIndex, Category = b.Category });

@@ -19,17 +19,17 @@ Written 2026-10-03 at the end of the second QA round. Read this first when you c
 
 ## To build (remove each when done)
 
-Done so far in this round (also: the migration guard, `Database__AutoMigrate`): PIN recovery (host-only seat reset, `Gaps_Bugs.md` G2), better invites (Share, Copy, QR code; G1 items 1, 2 and 6), trivia size limits and deleting inactive rooms (`Room__RetentionDays`, default 30). Still open from them: a recovery path for the host's own seat, a host lobby view (G1 item 4), and a shared "pick your name" link, which I decided against because anyone with it could claim any unclaimed seat.
+Done so far in this round (also: the migration guard, `Database__AutoMigrate`): PIN recovery (host-only seat reset, `Gaps_Bugs.md` G2), better invites (Share, Copy, QR code; G1 items 1, 2 and 6), trivia size limits, a selectable East Africa trivia pack, and deleting inactive rooms (`Room__RetentionDays`, default 30). Still open from them: a recovery path for the host's own seat, a host lobby view (G1 item 4), and a shared "pick your name" link, which I decided against because anyone with it could claim any unclaimed seat.
 
-### 1. Local trivia content
-A draft of 20 East Africa questions is in `docs/trivia-east-africa-draft.md`, **not shipped**. Review every answer, swap in questions your players know, then add it as a second bank and a "pack" choice on the Trivia setup. (The caps part is done: 6 options, 100 characters per option, 50 questions per room.)
+### 1. Review the East Africa trivia pack
+It is wired in (Trivia setup > "Question set" > East Africa, 20 questions), but nobody has checked the questions yet. Test it in a game, check every answer, and swap in questions your players know. The source is `backend/RandomRoom.Api/Games/Content/trivia-east-africa.json`; the notes are in `docs/trivia-east-africa-draft.md`. If you change how many questions it holds, update `STARTER_PACKS` in `frontend/src/games/trivia/setup.ts` too.
 
 ## Decisions waiting for you
 
 | Item | Why it matters | Options |
 |---|---|---|
 | **Which database service** | The README says Render's free Postgres expires after 30 days. | Render Postgres paid (simplest next to the API), Neon free (cheapest, sleeps when idle), Supabase. Put the API and database in the same region. Change `SslMode.Prefer` to `Require` for any database over the internet. Check current prices first. |
-| **Built-in content review** (POLL-09) | English only; the audit flagged tone for some prompts. | Review and localise, or leave. See also the draft trivia pack above. |
+| **Built-in content review** (POLL-09) | English only; the audit flagged tone for some prompts. | Review and localise, or leave. |
 
 ## Known weaknesses (not bugs, but worth knowing)
 

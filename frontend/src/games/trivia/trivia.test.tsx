@@ -24,10 +24,11 @@ describe("trivia setup", () => {
     const plain = toApiSetup({ ...defaultSetup, questions: [q("What?")] });
     expect(plain).toEqual({ questions: [{ text: "What?", options: ["a", "b"], correctIndex: 0 }] });
 
-    const full = toApiSetup({ questions: [q(" What? ", 1, " Science ")], useBuiltIn: true, builtInCount: 5, timeLimit: 30 });
+    const full = toApiSetup({ questions: [q(" What? ", 1, " Science ")], useBuiltIn: true, starterPack: "general", builtInCount: 5, timeLimit: 30 });
     expect(full).toEqual({
       questions: [{ text: "What?", options: ["a", "b"], correctIndex: 1, category: "Science" }],
       useBuiltIn: true,
+      starterPack: "general",
       builtInCount: 5,
       timeLimitSeconds: 30,
     });
@@ -42,6 +43,44 @@ describe("trivia setup", () => {
 
     fireEvent.change(screen.getByLabelText("Time per question"), { target: { value: "30" } });
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ timeLimit: 30 }));
+  });
+
+  it("lets the host pick the East Africa set, and sends that choice to the server", () => {
+    const onChange = vi.fn();
+    render(<TriviaSetupForm value={{ ...defaultSetup, useBuiltIn: true }} onChange={onChange} />);
+
+    expect(screen.getByLabelText("Question set")).toHaveValue("general");
+    expect(screen.getByText(/30 questions across science/i)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Question set"), { target: { value: "east-africa" } });
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ starterPack: "east-africa" }));
+
+    expect(toApiSetup({ ...defaultSetup, useBuiltIn: true, starterPack: "east-africa" })).toEqual(
+      expect.objectContaining({ starterPack: "east-africa", builtInCount: 10 }),
+    );
+  });
+
+  it("describes the chosen set and only offers counts that fit it", () => {
+    render(<TriviaSetupForm value={{ ...defaultSetup, useBuiltIn: true, starterPack: "east-africa" }} onChange={vi.fn()} />);
+
+    expect(screen.getByText(/Uganda, Kenya, Tanzania, Rwanda/i)).toBeInTheDocument();
+    const counts = Array.from(screen.getByLabelText("Starter questions").querySelectorAll("option")).map((o) => o.textContent);
+    expect(counts).toEqual(["5", "10", "15", "20 (all)"]);
+  });
+
+  it("brings the question count down to fit when switching to a smaller set", () => {
+    const onChange = vi.fn();
+    render(<TriviaSetupForm value={{ ...defaultSetup, useBuiltIn: true, builtInCount: 30 }} onChange={onChange} />);
+
+    fireEvent.change(screen.getByLabelText("Question set"), { target: { value: "east-africa" } });
+
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ starterPack: "east-africa", builtInCount: 20 }));
+  });
+
+  it("never sends more starter questions than the chosen set holds", () => {
+    expect(toApiSetup({ ...defaultSetup, useBuiltIn: true, starterPack: "east-africa", builtInCount: 30 })).toEqual(
+      expect.objectContaining({ builtInCount: 20 }),
+    );
   });
 
   it("offers a category field on every question", () => {

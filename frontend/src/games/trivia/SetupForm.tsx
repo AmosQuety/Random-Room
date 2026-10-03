@@ -9,11 +9,12 @@ import {
   MAX_QUESTION_LENGTH,
   MAX_QUESTIONS,
   questionCount,
-  STARTER_COUNT,
-  STARTER_COUNT_CHOICES,
+  packOf,
+  starterCountChoices,
+  STARTER_PACKS,
   TIME_LIMIT_CHOICES,
 } from "./setup";
-import type { TriviaQuestionInput, TriviaSetup } from "./types";
+import type { StarterPackKey, TriviaQuestionInput, TriviaSetup } from "./types";
 
 function QuestionEditor({
   question,
@@ -102,28 +103,54 @@ export function TriviaSetupForm({ value, onChange }: SetupFormProps<TriviaSetup>
         />
         <span>
           <span className="block font-bold">Add questions from the starter set</span>
-          <span className="block text-sm text-muted">{STARTER_COUNT} general-knowledge questions across science, geography, history, nature and food. Yours come first.</span>
+          <span className="block text-sm text-muted">Ready-made questions you can mix in. Yours come first.</span>
         </span>
       </label>
 
       {value.useBuiltIn && (
-        <div>
-          <label htmlFor="starter-count" className="mb-2 block font-mono text-sm font-bold uppercase tracking-widest">
-            Starter questions
-          </label>
-          <select
-            id="starter-count"
-            value={value.builtInCount}
-            onChange={(e) => update({ builtInCount: Number(e.target.value) })}
-            className={fieldInputClass}
-          >
-            {STARTER_COUNT_CHOICES.map((n) => (
-              <option key={n} value={n}>
-                {n}
-                {n === STARTER_COUNT ? " (all)" : ""}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-col gap-4">
+          <div>
+            <label htmlFor="starter-pack" className="mb-2 block font-mono text-sm font-bold uppercase tracking-widest">
+              Question set
+            </label>
+            <select
+              id="starter-pack"
+              value={value.starterPack}
+              onChange={(e) => {
+                const starterPack = e.target.value as StarterPackKey;
+                update({ starterPack, builtInCount: Math.min(value.builtInCount, packOf(starterPack).size) });
+              }}
+              aria-describedby="starter-pack-blurb"
+              className={fieldInputClass}
+            >
+              {STARTER_PACKS.map((pack) => (
+                <option key={pack.key} value={pack.key}>
+                  {pack.label}
+                </option>
+              ))}
+            </select>
+            <p id="starter-pack-blurb" className="mt-2 text-sm text-muted">
+              {packOf(value.starterPack).blurb}
+            </p>
+          </div>
+          <div>
+            <label htmlFor="starter-count" className="mb-2 block font-mono text-sm font-bold uppercase tracking-widest">
+              Starter questions
+            </label>
+            <select
+              id="starter-count"
+              value={value.builtInCount}
+              onChange={(e) => update({ builtInCount: Number(e.target.value) })}
+              className={fieldInputClass}
+            >
+              {starterCountChoices(value.starterPack).map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                  {n === packOf(value.starterPack).size ? " (all)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       )}
 

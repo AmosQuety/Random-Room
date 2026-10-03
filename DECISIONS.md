@@ -71,3 +71,9 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **When not allowed and the database is behind, the app refuses to start** with a message that says how to fix it, rather than running against a missing column. When the schema is current it starts normally.
 - **Production sets `Database__AutoMigrate=true`.** One instance, additive migrations, so applying them at startup is simple and safe. If you ever run several instances or want a review step, turn it off and run `dotnet ef database update` from the deploy pipeline.
 - **Retention stays at 30 days** (`Room__RetentionDays`), the default, confirmed.
+
+## Trivia packs
+
+- **Starter questions come in named packs** (`starterPack` in the setup: `general`, the default, or `east-africa`). The server maps the name to an embedded bank (`TriviaEngine.StarterPacks`), rejects unknown names with a 400, and takes the question count from the chosen bank. A setup with no pack behaves as before.
+- **The pack's size is also written in the frontend** (`STARTER_PACKS`), the same way the general set's size always was, so the form can offer sensible counts. Both places must change together.
+- **East Africa is unreviewed content.** Written from general knowledge, shipped on request so it can be tested; review it before relying on it (`docs/trivia-east-africa-draft.md`).
