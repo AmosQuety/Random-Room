@@ -170,8 +170,8 @@ export function JoinScreen({ slug, onJoined, notice }: Props) {
                     className="sr-only"
                   />
                   <Avatar name={name} />
-                  <span className="min-w-0 flex-1 truncate">
-                    {name}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{name}</span>
                     {!claimed && <span className="block font-mono text-xs font-normal uppercase text-muted">Not joined yet</span>}
                   </span>
                   {player === name && <CheckIcon className="absolute right-1.5 top-1.5 size-4 text-mustard" />}
@@ -197,6 +197,10 @@ export function JoinScreen({ slug, onJoined, notice }: Props) {
           </Field>
 
           {error && <Alert>{error}</Alert>}
+
+          <p className="text-sm text-muted">
+            Host and forgot your PIN? <AppLink href={`/room/${slug}/recover`} className="font-semibold underline">Use your recovery code</AppLink>.
+          </p>
 
           <Button type="submit" variant="accent" size="lg" disabled={!player || pin.length < 4 || pending}>
             {pending ? "Joining..." : "Enter the room"} <ArrowRightIcon />

@@ -63,4 +63,11 @@ describe("App sign-in expiry", () => {
     await screen.findByRole("button", { name: /enter the room/i });
     expect(screen.queryByText(/your sign-in has ended/i)).not.toBeInTheDocument();
   });
+
+  it("shows the host recovery page at /room/<slug>/recover, signed in or not", () => {
+    window.history.replaceState({}, "", "/room/abc/recover");
+    render(<App />);
+
+    expect(screen.getByRole("heading", { name: /forgot your host pin/i })).toBeInTheDocument();
+  });
 });

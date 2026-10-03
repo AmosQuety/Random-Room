@@ -15,7 +15,10 @@ not re-sent with every action.
 
 If a player forgets their PIN or changes phone, the host opens "Someone locked out? Reset a seat" in the room, which
 signs the old device out and gives the host a fresh one-time link to send. This is only allowed between games, and the
-host's own seat cannot be reset (the host would start a new room). Each reset is recorded in the room's audit table.
+host's own seat cannot be reset by anyone else. Instead the host is shown a **recovery code** when the room is made (only a
+hash is kept). If the host forgets their PIN, "Use your recovery code" on the join page spends the code, signs out the old
+device, and lets the host choose a new PIN; a fresh code is issued in the same step. The host can also make a new code
+from inside the room (the old one stops working). Each reset and recovery is recorded in the room's audit table.
 The deployment itself needs only a token-signing
 key and a database connection string.
 

@@ -89,3 +89,12 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **The retention period is said where people decide to take part**: on the create screen's Players step, on the room-created card, and on a room's join page ("Rooms are deleted after N days without play"). The create screen reads it from `GET /api/config` and the join page from the room preview. If the server cannot say (or it is 0), nothing is shown rather than something wrong.
 - **The host can delete the room at any time** (`DELETE /api/room`, host only, behind a confirm). It uses the same deletion as the retention job (`RoomDeletion`), so there is one meaning of "delete a room". Everyone connected is told (`roomDeleted`) and returned to the join page with "The host deleted this room"; their tokens stop working at once because their seats no longer exist.
 - **A deleted room leaves nothing behind**, including its audit rows, which are removed with it. This is deliberate: deleting is the privacy option.
+
+## Host recovery code
+
+- **The host's seat is recovered with a code, not by anyone else.** Another player resetting the host's seat would make the host's power depend on someone else, so the host keeps their own key: a 16-character code (80 bits, an alphabet without look-alike letters, typed case- and dash-insensitively) shown once when the room is made. Only a PBKDF2 hash is stored, like a PIN.
+- **Using it spends it.** Recovery empties the host's seat, signs out the old device (token version), cuts its live connection, and returns a one-time link for a new PIN plus a replacement code, so a host is never left without one. Spending is a conditional update, so two uses at once cannot both succeed.
+- **The recovery page makes the host confirm they saved the new code** before it lets them carry on, because the old one is gone.
+- **Guessing is throttled like PINs** (`/recover` shares the join limiter, 20 a minute per address), a wrong code and an unknown room get the same answer, and a room with no code still pays for a hash check.
+- **The host can replace their code from inside the room**, which is also how rooms made before codes existed get one. Making and using a code are recorded in the audit table (the code itself never is).
+- **Whoever holds the code is the host.** That is its purpose; the screen says not to share it.

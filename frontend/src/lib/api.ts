@@ -1,4 +1,4 @@
-import type { AppConfig, CreateRoomResult, PlayerInvite, RoomPreview, RoomSnapshot, Session } from "./types";
+import type { AppConfig, CreateRoomResult, HostRecovery, PlayerInvite, RoomPreview, RoomSnapshot, Session } from "./types";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -34,6 +34,13 @@ export const createRoom = (title: string, gameType: string, setup: unknown, play
   });
 
 export const getRoomPreview = (slug: string) => request<RoomPreview>(`/api/rooms/${slug}`, { method: "GET" });
+
+/** For a host who forgot their PIN: spends the recovery code and returns a link to choose a new PIN. */
+export const recoverHost = (slug: string, code: string) =>
+  request<HostRecovery>(`/api/rooms/${slug}/recover`, { method: "POST", body: JSON.stringify({ code }) });
+
+/** Host only. Replaces the room's recovery code; the old one stops working. */
+export const makeRecoveryCode = (token: string) => request<{ recoveryCode: string }>("/api/room/recovery-code", { method: "POST" }, token);
 
 export const claimInvite = (slug: string, token: string, pin: string) =>
   request<{ player: string }>(`/api/rooms/${slug}/claim/${token}`, {

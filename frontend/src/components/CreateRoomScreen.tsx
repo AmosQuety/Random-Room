@@ -10,6 +10,7 @@ import { GamePicker } from "./GamePicker";
 import { InviteActions } from "./InviteActions";
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, CopyIcon, PlayIcon } from "./icons";
 import { ListEditor } from "./ListEditor";
+import { RecoveryCodeCard } from "./RecoveryCodeCard";
 import { RetentionNotice } from "./RetentionNotice";
 import { Alert, Button, Card, Eyebrow, Field, Skeleton } from "./ui";
 import { inputClass } from "./styles";
@@ -113,6 +114,7 @@ function RoomCreatedCard({ result, hostPlayer, roomTitle }: { result: CreateRoom
             </li>
           ))}
         </ul>
+        <RecoveryCodeCard code={result.recoveryCode} />
         <div className="flex flex-wrap gap-3">
           <Button variant="secondary" onClick={() => navigate(`/room/${result.slug}/join`)}>
             Already set a PIN? Go to the room <ArrowRightIcon />

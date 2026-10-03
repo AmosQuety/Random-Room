@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { GAMES } from "../games/registry";
-import { ApiError, deleteRoom, endSession, performAction, resetPin, startNewSession, startSession } from "../lib/api";
+import { ApiError, deleteRoom, endSession, makeRecoveryCode, performAction, resetPin, startNewSession, startSession } from "../lib/api";
 import type { RoomSnapshot, Session, SessionStatus } from "../lib/types";
 import { currentError, type RoomError } from "../lib/snapshots";
 import { useRoom, type ConnectionStatus, type SessionEnd } from "../lib/useRoom";
@@ -105,6 +105,15 @@ export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
   async function resetSeat(player: string) {
     try {
       return await resetPin(session.token, player);
+    } catch (e) {
+      if (isUnauthorized(e)) onSessionExpired("expired");
+      throw e;
+    }
+  }
+
+  async function newRecoveryCode() {
+    try {
+      return (await makeRecoveryCode(session.token)).recoveryCode;
     } catch (e) {
       if (isUnauthorized(e)) onSessionExpired("expired");
       throw e;
@@ -252,6 +261,7 @@ export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
             players={snapshot.players}
             status={status}
             onReset={resetSeat}
+            onNewRecoveryCode={newRecoveryCode}
           />
         )}
 

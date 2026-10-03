@@ -12,7 +12,7 @@ const players: PlayerView[] = [
 
 function renderControls(overrides: Partial<Parameters<typeof SeatControls>[0]> = {}) {
   const onReset = vi.fn().mockResolvedValue({ player: "Lydia", inviteToken: "fresh-token" });
-  const view = render(<SeatControls slug="abc" roomTitle="Friday" hostPlayer="Amos" players={players} status="Completed" onReset={onReset} {...overrides} />);
+  const view = render(<SeatControls slug="abc" roomTitle="Friday" hostPlayer="Amos" players={players} status="Completed" onReset={onReset} onNewRecoveryCode={vi.fn().mockResolvedValue("NEW1-CODE-0000-AAAA")} {...overrides} />);
   return { onReset, ...view };
 }
 
@@ -50,7 +50,7 @@ describe("SeatControls", () => {
 
     // The server pushes the emptied seat to everyone after a reset.
     const emptied = players.map((p) => (p.name === "Lydia" ? { ...p, claimed: false } : p));
-    rerender(<SeatControls slug="abc" roomTitle="Friday" hostPlayer="Amos" players={emptied} status="Completed" onReset={onReset} />);
+    rerender(<SeatControls slug="abc" roomTitle="Friday" hostPlayer="Amos" players={emptied} status="Completed" onReset={onReset} onNewRecoveryCode={vi.fn()} />);
 
     expect(await screen.findByText(/\/room\/abc\/claim\/fresh-token/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /copy link for lydia/i })).toBeInTheDocument();
@@ -88,8 +88,43 @@ describe("SeatControls", () => {
     fireEvent.click(screen.getByRole("button", { name: /yes, reset/i }));
     await screen.findByText(/claim\/fresh-token/);
 
-    rerender(<SeatControls slug="abc" roomTitle="Friday" hostPlayer="Amos" players={players} status="Completed" onReset={onReset} />);
+    rerender(<SeatControls slug="abc" roomTitle="Friday" hostPlayer="Amos" players={players} status="Completed" onReset={onReset} onNewRecoveryCode={vi.fn()} />);
 
     await waitFor(() => expect(screen.queryByText(/claim\/fresh-token/)).not.toBeInTheDocument());
+  });
+
+  it("lets the host make a new recovery code, after asking, and shows it once", async () => {
+    const onNewRecoveryCode = vi.fn().mockResolvedValue("NEW1-CODE-ABCD-EFGH");
+    renderControls({ onNewRecoveryCode });
+    open();
+
+    fireEvent.click(screen.getByRole("button", { name: /make a new recovery code/i }));
+    expect(onNewRecoveryCode).not.toHaveBeenCalled();
+    expect(screen.getByText(/the old one stops working/i, { selector: "span" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /yes, make a new code/i }));
+
+    expect(await screen.findByText("NEW1-CODE-ABCD-EFGH")).toBeInTheDocument();
+    expect(onNewRecoveryCode).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the old recovery code when the host backs out", () => {
+    const onNewRecoveryCode = vi.fn();
+    renderControls({ onNewRecoveryCode });
+    open();
+
+    fireEvent.click(screen.getByRole("button", { name: /make a new recovery code/i }));
+    fireEvent.click(screen.getByRole("button", { name: /keep the old one/i }));
+
+    expect(onNewRecoveryCode).not.toHaveBeenCalled();
+  });
+
+  it("shows the reason when a new code cannot be made", async () => {
+    renderControls({ onNewRecoveryCode: vi.fn().mockRejectedValue(new ApiError("Only the host can make a recovery code.", 403)) });
+    open();
+    fireEvent.click(screen.getByRole("button", { name: /make a new recovery code/i }));
+    fireEvent.click(screen.getByRole("button", { name: /yes, make a new code/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Only the host can make a recovery code.");
   });
 });

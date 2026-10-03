@@ -63,4 +63,11 @@ describe("JoinScreen", () => {
     expect(await screen.findByText("The host deleted this room.")).toBeInTheDocument();
     expect(screen.getByText(/no room at/i)).toBeInTheDocument();
   });
+
+  it("points a host who forgot their PIN to the recovery page", async () => {
+    render(<JoinScreen slug="abc123" onJoined={vi.fn()} />);
+
+    const link = await screen.findByRole("link", { name: /use your recovery code/i });
+    expect(link).toHaveAttribute("href", "/room/abc123/recover");
+  });
 });

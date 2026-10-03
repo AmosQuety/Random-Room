@@ -4,6 +4,7 @@ import { claimUrl } from "../lib/invites";
 import type { PlayerInvite, PlayerView, SessionStatus } from "../lib/types";
 import { ConfirmButton } from "./ConfirmButton";
 import { InviteActions } from "./InviteActions";
+import { RecoveryCodeCard } from "./RecoveryCodeCard";
 import { Alert, Eyebrow } from "./ui";
 
 interface Props {
@@ -13,15 +14,18 @@ interface Props {
   players: PlayerView[];
   status: SessionStatus;
   onReset: (player: string) => Promise<PlayerInvite>;
+  /** Replaces the host's recovery code and returns the new one. */
+  onNewRecoveryCode: () => Promise<string>;
 }
 
 /**
  * For a player who forgot their PIN, changed phone, or lost their link: the host empties the seat and sends a fresh
  * one-time link. Hidden inside a details element because most games never need it.
  */
-export function SeatControls({ slug, roomTitle, hostPlayer, players, status, onReset }: Props) {
+export function SeatControls({ slug, roomTitle, hostPlayer, players, status, onReset, onNewRecoveryCode }: Props) {
   const [links, setLinks] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [newCode, setNewCode] = useState<string | null>(null);
   const gameRunning = status === "Active";
   const seats = players.filter((p) => p.name !== hostPlayer);
 
@@ -38,9 +42,18 @@ export function SeatControls({ slug, roomTitle, hostPlayer, players, status, onR
     }
   }
 
+  async function makeCode() {
+    setError(null);
+    try {
+      setNewCode(await onNewRecoveryCode());
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not reach the server. Check your connection and try again.");
+    }
+  }
+
   return (
     <details className="rounded-xl border-2 border-dashed border-ink px-4 py-3">
-      <summary className="min-h-11 cursor-pointer py-2 font-bold">Someone locked out? Reset a seat</summary>
+      <summary className="min-h-11 cursor-pointer py-2 font-bold">Someone locked out? Reset a seat or your recovery code</summary>
       <div className="mt-2 flex flex-col gap-4">
         <p className="text-sm text-muted">
           A reset signs the player out of their old device and gives you a new one-time link to send them. They choose a
@@ -81,7 +94,24 @@ export function SeatControls({ slug, roomTitle, hostPlayer, players, status, onR
             </li>
           ))}
         </ul>
-        <p className="text-sm text-muted">Your own seat cannot be reset. If you forget your PIN, start a new room.</p>
+        <div className="flex flex-col gap-3 rounded-lg border-2 border-ink bg-paper px-4 py-3">
+          <p className="font-display text-lg font-bold">Your own recovery code</p>
+          <p className="text-sm text-muted">
+            Your own seat cannot be reset by anyone else. If you forget your PIN, your recovery code gets you back in as
+            host from the join page. Lost it, or never saved it? Make a new one; the old one stops working.
+          </p>
+          <div>
+            <ConfirmButton
+              question="Replace your recovery code? The old one stops working."
+              confirmLabel="Yes, make a new code"
+              cancelLabel="Keep the old one"
+              onConfirm={() => void makeCode()}
+            >
+              Make a new recovery code
+            </ConfirmButton>
+          </div>
+          {newCode && <RecoveryCodeCard code={newCode} heading="Your new recovery code" />}
+        </div>
       </div>
     </details>
   );

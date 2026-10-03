@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { ClaimInviteScreen } from "./components/ClaimInviteScreen";
 import { HomeScreen } from "./components/HomeScreen";
 import { JoinScreen } from "./components/JoinScreen";
+import { RecoverHostScreen } from "./components/RecoverHostScreen";
 import { RoomScreen } from "./components/RoomScreen";
 import { usePath } from "./lib/router";
 import { clearSession, loadSession, saveSession } from "./lib/session";
@@ -40,6 +41,9 @@ export default function App() {
 
   const claimMatch = path.match(/^\/room\/([^/]+)\/claim\/([^/]+)\/?$/);
   if (claimMatch) return <ClaimInviteScreen slug={claimMatch[1]} token={claimMatch[2]} onJoined={handleJoined} />;
+
+  const recoverMatch = path.match(/^\/room\/([^/]+)\/recover\/?$/);
+  if (recoverMatch) return <RecoverHostScreen slug={recoverMatch[1]} />;
 
   const roomMatch = path.match(/^\/room\/([^/]+)(?:\/join)?\/?$/);
   if (roomMatch) {
