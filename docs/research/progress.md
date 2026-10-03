@@ -105,3 +105,4 @@ short quotes with paths, never fabricate.
   first paragraph. Extra names found in game-playground (`project.godot` plugins, `CLAUDE.md`) and game-simple-lobby
   were tested with `git ls-remote` under both owners.
 - game-simple-lobby deep read done: notes/game-simple-lobby.md.
+- 21:38 game-hungario notes done.
