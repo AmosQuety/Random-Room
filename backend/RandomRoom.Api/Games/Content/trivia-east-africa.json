@@ -212,14 +212,14 @@
   },
   {
    "category": "Region",
-   "text": "Which country has the largest population in East Africa, by most counts?",
+   "text": "Which of these countries has the most people?",
    "options": [
     "Uganda",
+    "Ethiopia",
     "Kenya",
-    "Tanzania",
-    "Rwanda"
+    "Tanzania"
    ],
-   "correctIndex": 2
+   "correctIndex": 1
   }
  ]
 }

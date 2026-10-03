@@ -13,13 +13,14 @@ Written 2026-10-03 at the end of the second QA round. Read this first when you c
 
 ## First things to do (small, in this order)
 
-1. **Check CI on PR #1** (the pull request is open; its description is out of date and should be replaced). CI (`.github/workflows/ci.yml`) runs on pull requests only. Fix anything it finds.
-2. **Commit or discard `QA_REPORT_2.md`.**
-3. **Pick the database** (see Decisions below) and, when you deploy, set `Database__AutoMigrate=true` so the first deploy applies the migrations. Retention stays at the default 30 days (`Room__RetentionDays`).
+1. **Reminder for deploy day:** set `Database__AutoMigrate=true` and use the host's connection URL; TLS is required automatically for a remote database, but test the first connection and read the README's "Database encryption" section if it is refused.
+2. **Check CI on PR #1** (the pull request is open; its description is out of date and should be replaced). CI (`.github/workflows/ci.yml`) runs on pull requests only. Fix anything it finds.
+3. **Commit or discard `QA_REPORT_2.md`.**
+4. **Pick the database** (see Decisions below) and, when you deploy, set `Database__AutoMigrate=true` so the first deploy applies the migrations. Retention stays at the default 30 days (`Room__RetentionDays`).
 
 ## To build (remove each when done)
 
-Done so far in this round (also: the migration guard, `Database__AutoMigrate`): PIN recovery (host-only seat reset, `Gaps_Bugs.md` G2), better invites (Share, Copy, QR code; G1 items 1, 2 and 6), trivia size limits, a selectable East Africa trivia pack, and deleting inactive rooms (`Room__RetentionDays`, default 30). Still open from them: a recovery path for the host's own seat, a host lobby view (G1 item 4), and a shared "pick your name" link, which I decided against because anyone with it could claim any unclaimed seat.
+Done so far in this round (also: the migration guard `Database__AutoMigrate`, and TLS required for any remote database): PIN recovery (host-only seat reset, `Gaps_Bugs.md` G2), better invites (Share, Copy, QR code; G1 items 1, 2 and 6), trivia size limits, a selectable East Africa trivia pack, and deleting inactive rooms (`Room__RetentionDays`, default 30). Still open from them: a recovery path for the host's own seat, a host lobby view (G1 item 4), and a shared "pick your name" link, which I decided against because anyone with it could claim any unclaimed seat.
 
 ### 1. Review the East Africa trivia pack
 It is wired in (Trivia setup > "Question set" > East Africa, 20 questions), but nobody has checked the questions yet. Test it in a game, check every answer, and swap in questions your players know. The source is `backend/RandomRoom.Api/Games/Content/trivia-east-africa.json`; the notes are in `docs/trivia-east-africa-draft.md`. If you change how many questions it holds, update `STARTER_PACKS` in `frontend/src/games/trivia/setup.ts` too.
@@ -28,7 +29,7 @@ It is wired in (Trivia setup > "Question set" > East Africa, 20 questions), but 
 
 | Item | Why it matters | Options |
 |---|---|---|
-| **Which database service** | The README says Render's free Postgres expires after 30 days. | Render Postgres paid (simplest next to the API), Neon free (cheapest, sleeps when idle), Supabase. Put the API and database in the same region. Change `SslMode.Prefer` to `Require` for any database over the internet. Check current prices first. |
+| **Which database service** | The README says Render's free Postgres expires after 30 days. | Render Postgres paid (simplest next to the API), Neon free (cheapest, sleeps when idle), Supabase. Put the API and database in the same region. Check current prices first. (TLS is already required for any database that is not on this machine; if a host's certificate is rejected or it offers no TLS on its private network, add `?sslmode=prefer` or `Trust Server Certificate=true`, see the README.) |
 | **Built-in content review** (POLL-09) | English only; the audit flagged tone for some prompts. | Review and localise, or leave. |
 
 ## Known weaknesses (not bugs, but worth knowing)

@@ -77,3 +77,9 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **Starter questions come in named packs** (`starterPack` in the setup: `general`, the default, or `east-africa`). The server maps the name to an embedded bank (`TriviaEngine.StarterPacks`), rejects unknown names with a 400, and takes the question count from the chosen bank. A setup with no pack behaves as before.
 - **The pack's size is also written in the frontend** (`STARTER_PACKS`), the same way the general set's size always was, so the form can offer sensible counts. Both places must change together.
 - **East Africa is unreviewed content.** Written from general knowledge, shipped on request so it can be tested; review it before relying on it (`docs/trivia-east-africa-draft.md`).
+
+## Database encryption
+
+- **TLS is required for any database that is not on this machine.** Npgsql's default (`Prefer`) falls back to plain text if encryption is blocked, which on the open internet lets someone on the path read the password and every room's data. The same "local" test as the migration guard decides (`localhost`, loopback, a unix socket), so local development is unchanged.
+- **An explicit choice always wins**: `?sslmode=...` on a URL or `SSL Mode=...` in a key=value string. A value that is not recognised never weakens the default.
+- **Not verified against a real hosted database.** The rule is covered by tests and local startup only; the first connection to Render, Neon or Supabase should be checked by hand. Whether a host's certificate validates under `Require` depends on the host; `Trust Server Certificate=true` is the escape hatch.

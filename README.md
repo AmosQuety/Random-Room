@@ -44,6 +44,14 @@ that folder first. To build somewhere else without touching it: `npm run build -
     cd backend && dotnet test          # needs the Postgres container above; each test uses a throwaway database
     cd frontend && npx vitest run && npx tsc -b
 
+## Database encryption
+
+A database on another machine is connected to with TLS required: if encryption is not available the app refuses to
+connect rather than quietly falling back to plain text. A database on this machine (`localhost`, loopback) is left as
+it was, so local development is unchanged. To choose otherwise for a remote database, say so in the connection: add
+`?sslmode=prefer` to a `postgres://` URL, or `SSL Mode=Prefer` to a key=value string (for example for a private network
+whose database does not offer TLS). `verify-full` and `verify-ca` are also accepted.
+
 ## Database migrations
 
 The app changes the database schema at startup only when it is allowed to. If `Database__AutoMigrate` is not set it

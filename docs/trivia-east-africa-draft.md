@@ -33,11 +33,13 @@ The correct answer is marked with a star in the table below.
 | 17 | Region | Which language is widely spoken as a common language across East Africa? | Amharic, Zulu, ★ Swahili, Hausa |
 | 18 | Region | The Serengeti is famous for the yearly migration of which animal? | Zebra only, ★ Wildebeest, Elephants, Giraffes |
 | 19 | Region | In which year did Kenya become independent? | 1960, 1961, ★ 1963, 1964 |
-| 20 | Region | Which country has the largest population in East Africa, by most counts? | Uganda, Kenya, ★ Tanzania, Rwanda |
+| 20 | Region | Which of these countries has the most people? | Uganda, ★ Ethiopia, Kenya, Tanzania |
 
 Notes for the reviewer:
 - #4: the Nile's source is a matter of convention; "Jinja" is the usual answer in Ugandan school and tourism material.
   Rephrase if you want to avoid the debate.
-- #20: check it against a current source before using it, since population figures change; it is the one I am least sure
-  of for your purposes. Remove it if in doubt.
+- #20: Ethiopia has by far the most people of the four (well over 100 million; Tanzania, Kenya and Uganda are each
+  roughly 50 to 70 million). I worded it "of these countries" on purpose: "East Africa" can mean the East African
+  Community, which does not include Ethiopia, or the wider region, which does. No figure is in the question, so it
+  stays true as populations change.
 - All 20 are written to be fair to Ugandan and wider East African players. Tone is family-friendly.
