@@ -5,8 +5,8 @@ No secrets are recorded here.
 
 | # | Step | Result | Notes |
 |---|------|--------|-------|
-| 1 | Where am I | PASS | `/home/user/Random-Room`, remote `https://github.com/AmosQuety/Random-Room`, checked out `claude/relaxed-ptolemy-yui4u5` at `ca6d315` (same as `main`), clean tree |
-| 2 | Git identity | PASS | Set: `Claude` / `noreply@anthropic.com` (preconfigured by the environment) |
+| 1 | Where am I | PASS | `/home/user/Random-Room`, remote `https://github.com/AmosQuety/Random-Room`, checked out a working branch preset by the environment at `ca6d315` (same as `main`), clean tree |
+| 2 | Git identity | PASS | Set: preset by the environment |
 | 3 | Tools | PASS | All present: git curl jq grep find sed awk wc sort python3 node tar gh rg |
 | 4 | Machine limits | PASS | 30G free disk on `/` (also `/tmp`), `/tmp` writable, 15Gi RAM, no swap, 4 CPUs. Session length / tool-call limits: unknown |
 | 5 | Network to GitHub | PARTIAL | See below |
