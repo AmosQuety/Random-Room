@@ -76,4 +76,15 @@ describe("RoomScreen errors", () => {
     await act(async () => {});
     expect(screen.queryByText("The session is not active.")).not.toBeInTheDocument();
   });
+
+  it("returns to the join screen, with no error, when an action finds the sign-in has expired", async () => {
+    mocks.performAction.mockRejectedValue(new ApiError("Unauthorized", 401));
+    const onLeave = vi.fn();
+    render(<RoomScreen session={session} onLeave={onLeave} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "answer" }));
+
+    await waitFor(() => expect(onLeave).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
 });

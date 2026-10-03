@@ -35,6 +35,8 @@ interface Props {
   onLeave: () => void;
 }
 
+const isUnauthorized = (e: unknown) => e instanceof ApiError && e.status === 401;
+
 function ConnectionPill({ connection }: { connection: ConnectionStatus }) {
   const live = connection === "live";
   return (
@@ -76,6 +78,8 @@ export function RoomScreen({ session, onLeave }: Props) {
     try {
       applySnapshot(await action(session.token));
     } catch (e) {
+      // An expired token ends the session the same way it does when the room is loaded: back to the join screen.
+      if (isUnauthorized(e)) return onLeave();
       const message = e instanceof ApiError ? e.message : "Could not reach the server. Check your connection and try again.";
       setError({ message, sequence: latestSequence.current });
     } finally {
@@ -88,8 +92,9 @@ export function RoomScreen({ session, onLeave }: Props) {
   async function nudge(action: (token: string) => Promise<RoomSnapshot>) {
     try {
       applySnapshot(await action(session.token));
-    } catch {
-      // Deliberately ignored, see above.
+    } catch (e) {
+      if (isUnauthorized(e)) onLeave();
+      // Anything else is deliberately ignored, see above.
     }
   }
 
