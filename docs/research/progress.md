@@ -114,3 +114,4 @@ short quotes with paths, never fabricate.
 - 21:43 dot-ci, dot-cloud notes done.
 - 21:44 dot-map/dot-match notes and skimmed list done. Verified the five-game host-migration table against each game's party file (all five match). Phase 4 complete.
 - 21:44 Corrected line numbers for our own files (an earlier multi-file `cat -n` had numbered them continuously).
+- 21:49 Phases 5-6: full report written (sections 1-12, appendices A-D).

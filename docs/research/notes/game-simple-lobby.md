@@ -68,7 +68,7 @@ or it picks the person who just left (`CLAUDE.md:745-767`).
 
 Six suites; the list "lives in `.github/workflows/ci.yml` and nowhere else"; `tools/check.sh` reads it and fails if
 `release.yml`'s differs. Before that, CI auto-detected `examples/headless_*` so the two real-server suites never ran in
-CI (`CLAUDE.md:577`; `ci.yml` comment). `sandbox` runs **a real server and two real clients over real sockets in one
+CI (`CLAUDE.md:576`; `ci.yml` comment). `sandbox` runs **a real server and two real clients over real sockets in one
 process** ("the one that matters"); three of the bugs below are its (`CLAUDE.md:581-588`). Counts in CLAUDE.md table:
 152, 24, 105, 89, 143, 83; README says 84, 24, 88, 88, 143, 82, total 484 (**doc drift** between `README.md`
 "Validating" and `CLAUDE.md:565-574`).
