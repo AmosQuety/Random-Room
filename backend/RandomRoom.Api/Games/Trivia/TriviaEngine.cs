@@ -23,7 +23,12 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
     public const string StarterBank = "trivia-starter";
 
     private const int MaxCategoryLength = 40;
-    private const int MaxQuestionLength = 300;
+    public const int MaxQuestionLength = 300;
+    public const int MaxOptionLength = 100;
+    public const int MaxOptionsPerQuestion = 6;
+
+    /// <summary>The most questions one room can hold, your own and the starter ones together.</summary>
+    public const int MaxQuestions = 50;
     private const int MinTimeLimit = 5;
     private const int MaxTimeLimit = 120;
     private const int DefaultBuiltInCount = 10;
@@ -41,9 +46,14 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
         if (!hasList && !useBuiltIn)
             throw new RoomRuleException(RuleViolation.InvalidInput, "Trivia needs a 'questions' list.");
 
+        if (hasList && questionsElement.GetArrayLength() > MaxQuestions)
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"A trivia game can have at most {MaxQuestions} questions.");
+
         var questions = hasList ? questionsElement.EnumerateArray().Select(ParseQuestion).ToList() : [];
         if (useBuiltIn)
             questions.AddRange(PickStarterQuestions(setup));
+        if (questions.Count > MaxQuestions)
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"A trivia game can have at most {MaxQuestions} questions, your own and the starter ones together.");
 
         if (questions.Count == 0)
             throw new RoomRuleException(RuleViolation.InvalidInput, "Trivia needs at least 1 question.");
@@ -66,8 +76,12 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
     private static TriviaQuestion ParseQuestion(JsonElement q)
     {
         var text = q.TryGetProperty("text", out var textEl) ? textEl.GetString()?.Trim() ?? "" : "";
-        var options = q.TryGetProperty("options", out var optionsEl) && optionsEl.ValueKind == JsonValueKind.Array
-            ? optionsEl.EnumerateArray().Select(o => o.GetString()?.Trim() ?? "").Where(o => o.Length > 0).ToList()
+        var rawOptions = q.TryGetProperty("options", out var optionsEl) && optionsEl.ValueKind == JsonValueKind.Array ? optionsEl : default;
+        if (rawOptions.ValueKind == JsonValueKind.Array && rawOptions.GetArrayLength() > MaxOptionsPerQuestion)
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"A trivia question can have at most {MaxOptionsPerQuestion} options.");
+
+        var options = rawOptions.ValueKind == JsonValueKind.Array
+            ? rawOptions.EnumerateArray().Select(o => o.GetString()?.Trim() ?? "").Where(o => o.Length > 0).ToList()
             : [];
         var correctIndex = q.TryGetProperty("correctIndex", out var idxEl) && idxEl.ValueKind == JsonValueKind.Number && idxEl.TryGetInt32(out var idx) ? idx : -1;
 
@@ -77,6 +91,8 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
             throw new RoomRuleException(RuleViolation.InvalidInput, $"A trivia question can be at most {MaxQuestionLength} characters.");
         if (options.Count < 2)
             throw new RoomRuleException(RuleViolation.InvalidInput, $"'{text}' needs at least 2 options.");
+        if (options.Any(o => o.Length > MaxOptionLength))
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"An option can be at most {MaxOptionLength} characters.");
         if (correctIndex < 0 || correctIndex >= options.Count)
             throw new RoomRuleException(RuleViolation.InvalidInput, $"'{text}' needs a valid correct option.");
 

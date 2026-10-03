@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { GameModule } from "../types";
 import { TriviaGlyph } from "./Glyph";
-import { defaultSetup, isSetupValid, toApiSetup } from "./setup";
+import { defaultSetup, isSetupValid, setupIssue, toApiSetup } from "./setup";
 import type { TriviaPayload, TriviaSetup } from "./types";
 
 export const triviaModule: GameModule<TriviaSetup, TriviaPayload> = {
@@ -16,6 +16,7 @@ export const triviaModule: GameModule<TriviaSetup, TriviaPayload> = {
   maxPlayers: 12,
   defaultSetup,
   isSetupValid,
+  setupIssue,
   toApiSetup,
   SetupForm: lazy(() => import("./SetupForm").then((m) => ({ default: m.TriviaSetupForm }))),
   GameScreen: lazy(() => import("./GameScreen").then((m) => ({ default: m.TriviaGameScreen }))),

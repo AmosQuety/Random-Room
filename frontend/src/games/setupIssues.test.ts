@@ -5,6 +5,7 @@ import { fortunatelyModule } from "./fortunately";
 import { oneWordStoryModule } from "./one-word-story";
 import { randomPickerModule } from "./random-picker";
 import { spinWheelModule } from "./spin-wheel";
+import { triviaModule } from "./trivia";
 import { sketchGuessModule } from "./sketch-guess";
 import { wordSpiesModule } from "./word-spies";
 import { wouldYouRatherModule } from "./would-you-rather";
@@ -110,6 +111,39 @@ describe("setup issues", () => {
 
     it("Spin the Wheel asks for more segments when the built-ins are off", () => {
       expect(spinWheelModule.setupIssue?.({ ...spinWheelModule.defaultSetup, useBuiltIn: false, segments: ["One"] })).toMatch(/at least 2 segments/);
+    });
+  });
+
+  describe("Trivia limits", () => {
+    const { defaultSetup, setupIssue, isSetupValid } = triviaModule;
+    const q = (text: string, options = ["Yes", "No"]) => ({ text, options, correctIndex: 0, category: "" });
+    const many = (n: number) => Array.from({ length: n }, (_, i) => q(`Question ${i + 1}?`));
+
+    it("is silent for a ready setup", () => {
+      expect(setupIssue?.({ ...defaultSetup, questions: [q("One?")] })).toBeNull();
+    });
+
+    it("names the first unfinished question", () => {
+      expect(setupIssue?.({ ...defaultSetup, questions: [q("One?"), q("Two?", ["Only one", ""])] })).toBe(
+        "Question 2 needs a question, at least two options and a correct answer.",
+      );
+    });
+
+    it("refuses more than 6 options or an option over 100 characters", () => {
+      const seven = Array.from({ length: 7 }, (_, i) => `Option ${i}`);
+      expect(isSetupValid({ ...defaultSetup, questions: [q("Many?", seven)] })).toBe(false);
+      expect(isSetupValid({ ...defaultSetup, questions: [q("Long?", ["x".repeat(101), "No"])] })).toBe(false);
+      expect(isSetupValid({ ...defaultSetup, questions: [q("Max?", Array.from({ length: 6 }, () => "x".repeat(100)))] })).toBe(true);
+    });
+
+    it("counts the starter questions towards the limit of 50", () => {
+      expect(setupIssue?.({ ...defaultSetup, questions: many(50) })).toBeNull();
+      expect(setupIssue?.({ ...defaultSetup, questions: many(51) })).toMatch(/at most 50/);
+      expect(setupIssue?.({ ...defaultSetup, questions: many(40), useBuiltIn: true, builtInCount: 11 })).toMatch(/starter/);
+    });
+
+    it("asks for something to play when there are no questions and no starter set", () => {
+      expect(setupIssue?.({ ...defaultSetup, questions: [q("", ["", ""])], useBuiltIn: false })).toBe("Add at least one question, or turn on the starter set.");
     });
   });
 });

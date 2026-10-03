@@ -21,11 +21,10 @@ Written 2026-10-03 at the end of the second QA round. Read this first when you c
 
 ## To build (in this order; remove each when done)
 
-Done so far in this round: PIN recovery (host-only seat reset, `Gaps_Bugs.md` G2) and better invites (Share, Copy, QR code; G1 items 1, 2 and 6). Still open from them: a recovery path for the host's own seat, a host lobby view (G1 item 4), and a shared "pick your name" link, which I decided against because anyone with it could claim any unclaimed seat.
+Done so far in this round: PIN recovery (host-only seat reset, `Gaps_Bugs.md` G2) better invites (Share, Copy, QR code; G1 items 1, 2 and 6) and trivia size limits. Still open from them: a recovery path for the host's own seat, a host lobby view (G1 item 4), and a shared "pick your name" link, which I decided against because anyone with it could claim any unclaimed seat.
 
-### 1. Trivia caps and content
-- Caps: 2 to 6 options, 100 characters per option, 300 per question, 50 questions per room. Shared constants, server enforces with a 400 naming the limit, form mirrors them, tested at the limits.
-- Content: optional local pack (for example East African topics). Needs someone with local knowledge to write or review it.
+### 1. Local trivia content
+A draft of 20 East Africa questions is in `docs/trivia-east-africa-draft.md`, **not shipped**. Review every answer, swap in questions your players know, then add it as a second bank and a "pack" choice on the Trivia setup. (The caps part is done: 6 options, 100 characters per option, 50 questions per room.)
 
 ### 2. Delete inactive rooms
 Daily background job removes rooms with no activity for `Room:RetentionDays` (default 30, 0 turns it off). Keeps free-tier databases from filling.
@@ -36,7 +35,7 @@ Daily background job removes rooms with no activity for `Room:RetentionDays` (de
 |---|---|---|
 | **Migrations run on every startup** (`Program.cs`) | A `.env` pointing at a production database gets migrated just by running the app locally. Not disruptive to the schema (all migrations are additive); the risk is the wrong database. | Auto-migrate only when an explicit setting is on (set it in production). |
 | **Which database service** | The README says Render's free Postgres expires after 30 days. | Render Postgres paid (simplest next to the API), Neon free (cheapest, sleeps when idle), Supabase. Put the API and database in the same region. Change `SslMode.Prefer` to `Require` for any database over the internet. Check current prices first. |
-| **Built-in content review** (POLL-09) | English only; the audit flagged tone for some prompts. | Review and localise, or leave. |
+| **Built-in content review** (POLL-09) | English only; the audit flagged tone for some prompts. | Review and localise, or leave. See also the draft trivia pack above. |
 
 ## Known weaknesses (not bugs, but worth knowing)
 

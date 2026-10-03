@@ -1,7 +1,18 @@
 import { ListEditor } from "../../components/ListEditor";
 import { addButtonClass, fieldInputClass, removeButtonClass } from "../../components/styles";
 import type { SetupFormProps } from "../types";
-import { emptyQuestion, STARTER_COUNT, STARTER_COUNT_CHOICES, TIME_LIMIT_CHOICES } from "./setup";
+import {
+  emptyQuestion,
+  MAX_CATEGORY_LENGTH,
+  MAX_OPTION_LENGTH,
+  MAX_OPTIONS,
+  MAX_QUESTION_LENGTH,
+  MAX_QUESTIONS,
+  questionCount,
+  STARTER_COUNT,
+  STARTER_COUNT_CHOICES,
+  TIME_LIMIT_CHOICES,
+} from "./setup";
 import type { TriviaQuestionInput, TriviaSetup } from "./types";
 
 function QuestionEditor({
@@ -30,7 +41,7 @@ function QuestionEditor({
 
       <input
         value={question.text}
-        maxLength={300}
+        maxLength={MAX_QUESTION_LENGTH}
         onChange={(e) => onChange({ ...question, text: e.target.value })}
         placeholder="What's the question?"
         aria-label={`Question ${index + 1} text`}
@@ -38,7 +49,7 @@ function QuestionEditor({
       />
       <input
         value={question.category}
-        maxLength={40}
+        maxLength={MAX_CATEGORY_LENGTH}
         onChange={(e) => onChange({ ...question, category: e.target.value })}
         placeholder="Category (optional), e.g. Science"
         aria-label={`Question ${index + 1} category`}
@@ -51,6 +62,8 @@ function QuestionEditor({
         items={question.options}
         onChange={(options) => onChange({ ...question, options, correctIndex: Math.min(question.correctIndex, options.length - 1) })}
         placeholder={(i) => `Option ${i + 1}`}
+        maxItems={MAX_OPTIONS}
+        maxLength={MAX_OPTION_LENGTH}
       />
 
       <div>
@@ -129,9 +142,17 @@ export function TriviaSetupForm({ value, onChange }: SetupFormProps<TriviaSetup>
           />
         ))}
 
-        <button type="button" onClick={() => setQuestions([...value.questions, emptyQuestion()])} className={addButtonClass}>
+        <button
+          type="button"
+          disabled={questionCount(value) >= MAX_QUESTIONS}
+          onClick={() => setQuestions([...value.questions, emptyQuestion()])}
+          className={addButtonClass}
+        >
           + Add another question
         </button>
+        <p className="-mt-2 text-sm text-muted">
+          {questionCount(value)} of {MAX_QUESTIONS} questions, yours and the starter ones together.
+        </p>
       </fieldset>
 
       <div>

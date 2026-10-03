@@ -53,3 +53,7 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **QR codes use `qrcode-generator` (MIT, no dependencies), loaded only when a host presses "Show code".** Error correction and mask selection are easy to get subtly wrong, so a mature library beats a hand-written encoder. It adds about 7.6 kB gzipped as its own chunk and nothing to the main bundle. The code is drawn in the browser as inline SVG, so a private link never reaches a third party. It is always black on white with the standard 4-module quiet zone, whatever the theme.
 - **Share uses the Web Share API only where the browser has it.** Closing the sheet is not an error; any other failure falls back to copying the link.
 - **No shared "pick your name" link.** Anyone holding it could claim any unclaimed seat, which weakens one-link-per-seat.
+
+## Trivia limits
+
+- **6 options per question, 100 characters per option, 300 per question, 50 questions per room (your own and the starter ones together).** Chosen to fit a phone screen and a round that stays fun; the server enforces them with a 400 that names the limit, and the setup form mirrors them so a problem shows on the setup step. The constants live in `TriviaEngine` and `games/trivia/setup.ts`; change both together.

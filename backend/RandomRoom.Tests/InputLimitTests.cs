@@ -85,4 +85,63 @@ public class InputLimitTests
 
         Assert.NotEqual(Guid.Empty, h.RoomId);
     }
+
+    // ---- trivia size limits (QUIZ-06) ----
+
+    private static GameHarness Trivia(object setup) =>
+        new(d => new RandomRoom.Api.Games.Trivia.TriviaEngine(d.Db, d.Clock), "trivia", setup);
+
+    private static object Question(string text = "Q?", string[]? options = null) =>
+        new { text, options = options ?? ["Yes", "No"], correctIndex = 0 };
+
+    [Fact]
+    public void Trivia_question_with_more_than_6_options_is_rejected()
+    {
+        var options = Enumerable.Range(1, 7).Select(i => $"Option {i}").ToArray();
+
+        AssertRejected(() => Trivia(new { questions = new[] { Question(options: options) } }), "6 options");
+    }
+
+    [Fact]
+    public void Trivia_option_longer_than_100_characters_is_rejected()
+    {
+        AssertRejected(() => Trivia(new { questions = new[] { Question(options: [new string('o', 101), "No"]) } }), "100");
+    }
+
+    [Fact]
+    public void Trivia_with_more_than_50_questions_is_rejected()
+    {
+        var questions = Enumerable.Range(1, 51).Select(i => Question($"Question {i}?")).ToArray();
+
+        AssertRejected(() => Trivia(new { questions }), "50 questions");
+    }
+
+    [Fact]
+    public void Trivia_counts_the_starter_questions_towards_the_limit_of_50()
+    {
+        var questions = Enumerable.Range(1, 40).Select(i => Question($"Question {i}?")).ToArray();
+
+        AssertRejected(() => Trivia(new { questions, useBuiltIn = true, builtInCount = 11 }), "starter");
+    }
+
+    [Fact]
+    public void Trivia_values_exactly_at_the_new_limits_are_accepted()
+    {
+        var sixOptionsOfMaxLength = Enumerable.Range(0, 6).Select(i => new string((char)('a' + i), 100)).ToArray();
+        var questions = Enumerable.Range(1, 49).Select(i => Question($"Question {i}?")).Append(Question(new string('q', 300), sixOptionsOfMaxLength)).ToArray();
+
+        using var h = Trivia(new { questions });
+
+        Assert.NotEqual(Guid.Empty, h.RoomId);
+    }
+
+    [Fact]
+    public void Trivia_with_your_questions_and_the_starter_set_up_to_50_is_accepted()
+    {
+        var questions = Enumerable.Range(1, 30).Select(i => Question($"Question {i}?")).ToArray();
+
+        using var h = Trivia(new { questions, useBuiltIn = true, builtInCount = 20 });
+
+        Assert.NotEqual(Guid.Empty, h.RoomId);
+    }
 }
