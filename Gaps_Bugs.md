@@ -5,16 +5,12 @@ Nothing here is fixed yet. Each entry says what was seen, what is not yet known,
 
 ## Bugs
 
-### B1. Cannot get from the join screen into the game
+### B1. Cannot get past the join screen into the game (fixed)
 
-- **Seen:** On `/room/<code>/join` (Most Likely To room, 3 players) the header badge reads "3 OF 3 PLAYERS READY", but the player cannot proceed to the actual game. No player is selected, the PIN field is empty, and "Enter the room" is greyed out.
-- **Expected:** Once everyone is ready, each player can pick their name, enter their PIN and reach the game screen, and the host can start the game.
-- **Not yet known:**
-  - Whether the join flow is meant to be entered here at all, or whether players should arrive through their private invite link and set a PIN first.
-  - Which PIN a player is expected to type on this screen, and whether it is explained anywhere.
-  - Whether a "ready" state is meant to trigger something (auto-advance, host "Start" button) that never happens.
-- **To investigate:** Reproduce from room creation through invite claim to join, watching the network calls. Check what "ready" means in `JoinScreen`, `ClaimInviteScreen` and the room snapshot, and what unlocks the button.
-- **Done when:** A fresh room can be created, all players can join, and the game screen is reachable, with a test covering the path.
+- **Cause:** Not a backend fault. The join form is working as designed (pick a name, type the PIN you set), but the flow gave no guidance. After setting a PIN the player landed on a blank join form with a disabled button and no explanation, and the host's own seat was unclaimed with nothing pointing them to their link. "3 of 3 players ready" only meant the seats were claimed, not that this browser was signed in.
+- **Fix:** Claiming an invite now signs the player straight in with the PIN they just set and opens the room (the manual join form remains as a fallback). The join screen says what is still missing while the button is disabled. The room-created card marks the host's row "You, host" with a "Set my PIN" button.
+- **Verified:** Component tests for both screens, plus a real Chrome run at 390px wide: create room, open invite, set PIN, land in the room.
+- **Still open:** Forgotten-PIN recovery, tracked as G2.
 
 ### B2. Search icon renders huge in the game picker (fixed)
 
@@ -42,6 +38,18 @@ Security notes to keep in mind:
 - QR codes for per-player links need to be visible only on the host's device.
 
 Low-bandwidth note: keep whatever is added small (no image assets, no heavy libraries), since many players will be on slow connections.
+
+### G2. No way to recover a forgotten PIN
+
+- **Seen:** A player's PIN is set once, through their invite link, and only a hash is stored. The invite token is cleared on claim, so the link cannot be reused. If a player forgets their PIN, or opens the room on a new device without remembering it, they are locked out of that seat. The host cannot see or reset it, by design.
+- **Why it matters:** Players are casual users (reunions, cell groups) and a four-digit PIN set once is easy to forget. Today the only recovery is to create a new room.
+- **Not yet known:** Whether the host should be allowed to re-open a seat, and how that is kept safe from a host impersonating a player.
+- **Proposed direction (needs a decision):** A host-only "Reset this seat" action that clears the seat's PIN hash and issues a fresh one-time invite link. The player opens it and sets a new PIN, exactly as at first join. Options to weigh:
+  1. Host resets any non-host seat (simplest; the host could then claim that seat, so the reset should be visible to everyone in the room and recorded in an audit entry).
+  2. Allow it only while no session is running, to avoid mid-round takeovers.
+  3. Keep the PIN unrecoverable and just document it, accepting new-room as the recovery path.
+- **Security notes:** Rate-limit the reset endpoint, expire the new invite, never return the old PIN hash, and make sure resetting the host's own seat is handled (probably not allowed).
+- **Done when:** A host can issue a replacement link for a locked-out player, the old PIN stops working, the event is visible in the room and audited, and a test covers the reset and the lockout of the old PIN.
 
 ## Other known gaps
 
