@@ -64,3 +64,10 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **Activity** is a room created, a game created, started or ended, or a recorded action in a game. An old room that is played again is kept.
 - **The job is the one place allowed to delete recorded answers and picks.** They are append-only while their room lives, and their foreign keys refuse a cascade, so the job deletes them first with `ExecuteDelete` (which bypasses the context's immutability guard on purpose) and then the room, in one transaction, 100 rooms at a time.
 - **A failed run is logged and retried at the next run.** Deleting is idempotent, so two instances running it at once is harmless.
+
+## Migrations at startup
+
+- **The app migrates only when allowed.** `Database__AutoMigrate=true` always migrates; `false` never does; unset migrates only a database on this machine (`localhost`, loopback addresses, a unix socket). A local `.env` pointing at a shared or production database therefore cannot change its schema by accident.
+- **When not allowed and the database is behind, the app refuses to start** with a message that says how to fix it, rather than running against a missing column. When the schema is current it starts normally.
+- **Production sets `Database__AutoMigrate=true`.** One instance, additive migrations, so applying them at startup is simple and safe. If you ever run several instances or want a review step, turn it off and run `dotnet ef database update` from the deploy pipeline.
+- **Retention stays at 30 days** (`Room__RetentionDays`), the default, confirmed.

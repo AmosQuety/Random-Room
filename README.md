@@ -44,6 +44,15 @@ that folder first. To build somewhere else without touching it: `npm run build -
     cd backend && dotnet test          # needs the Postgres container above; each test uses a throwaway database
     cd frontend && npx vitest run && npx tsc -b
 
+## Database migrations
+
+The app changes the database schema at startup only when it is allowed to. If `Database__AutoMigrate` is not set it
+migrates a database on this machine (`localhost`, `127.x.x.x`, `::1`) and nothing else, so a local `.env` that points at
+a shared or production database cannot migrate it by accident. Set `Database__AutoMigrate=true` in production so a
+deploy applies new migrations, or leave it off and run `dotnet ef database update` yourself. If the database is behind
+and the app is not allowed to migrate it, it stops at startup and says so, instead of failing later on a missing column.
+Keep `Database__AutoMigrate=true` out of any `.env` you use locally.
+
 ## Data retention
 
 A background job runs a minute after the API starts and then daily. It deletes every room with no activity for
@@ -61,8 +70,10 @@ The repo root `Dockerfile` builds the UI and API into one container.
 
        Room__JwtSigningKey=...                                     (32+ random characters)
        ConnectionStrings__Default=<the Internal Database URL>      (postgres:// URLs are accepted as-is)
+       Database__AutoMigrate=true                                  (lets the app apply new migrations at startup)
 
-   The app refuses to start if the signing key is missing or too short.
+   The app refuses to start if the signing key is missing or too short. It also refuses to start against a database
+   that needs migrations unless `Database__AutoMigrate=true` (see "Database migrations" below).
 4. Open `https://<your-service>.onrender.com`, create a room, and send each player their own invite link privately. They choose their own PINs.
 
 Notes:

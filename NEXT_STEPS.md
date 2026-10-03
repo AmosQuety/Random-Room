@@ -13,13 +13,13 @@ Written 2026-10-03 at the end of the second QA round. Read this first when you c
 
 ## First things to do (small, in this order)
 
-1. **Push the branch** (`git push`) and open a PR into `main`. CI (`.github/workflows/ci.yml`) runs on pull requests only, so the PR is the first time it runs. Fix anything it finds.
+1. **Check CI on PR #1** (the pull request is open; its description is out of date and should be replaced). CI (`.github/workflows/ci.yml`) runs on pull requests only. Fix anything it finds.
 2. **Commit or discard `QA_REPORT_2.md`.**
-3. **Pick the database and set `Room__RetentionDays`** before deploying (see Decisions below). The first deploy will run the new migration.
+3. **Pick the database** (see Decisions below) and, when you deploy, set `Database__AutoMigrate=true` so the first deploy applies the migrations. Retention stays at the default 30 days (`Room__RetentionDays`).
 
 ## To build (remove each when done)
 
-Done so far in this round: PIN recovery (host-only seat reset, `Gaps_Bugs.md` G2), better invites (Share, Copy, QR code; G1 items 1, 2 and 6), trivia size limits and deleting inactive rooms (`Room__RetentionDays`, default 30). Still open from them: a recovery path for the host's own seat, a host lobby view (G1 item 4), and a shared "pick your name" link, which I decided against because anyone with it could claim any unclaimed seat.
+Done so far in this round (also: the migration guard, `Database__AutoMigrate`): PIN recovery (host-only seat reset, `Gaps_Bugs.md` G2), better invites (Share, Copy, QR code; G1 items 1, 2 and 6), trivia size limits and deleting inactive rooms (`Room__RetentionDays`, default 30). Still open from them: a recovery path for the host's own seat, a host lobby view (G1 item 4), and a shared "pick your name" link, which I decided against because anyone with it could claim any unclaimed seat.
 
 ### 1. Local trivia content
 A draft of 20 East Africa questions is in `docs/trivia-east-africa-draft.md`, **not shipped**. Review every answer, swap in questions your players know, then add it as a second bank and a "pack" choice on the Trivia setup. (The caps part is done: 6 options, 100 characters per option, 50 questions per room.)
@@ -28,7 +28,6 @@ A draft of 20 East Africa questions is in `docs/trivia-east-africa-draft.md`, **
 
 | Item | Why it matters | Options |
 |---|---|---|
-| **Migrations run on every startup** (`Program.cs`) | A `.env` pointing at a production database gets migrated just by running the app locally. Not disruptive to the schema (all migrations are additive); the risk is the wrong database. | Auto-migrate only when an explicit setting is on (set it in production). |
 | **Which database service** | The README says Render's free Postgres expires after 30 days. | Render Postgres paid (simplest next to the API), Neon free (cheapest, sleeps when idle), Supabase. Put the API and database in the same region. Change `SslMode.Prefer` to `Require` for any database over the internet. Check current prices first. |
 | **Built-in content review** (POLL-09) | English only; the audit flagged tone for some prompts. | Review and localise, or leave. See also the draft trivia pack above. |
 
