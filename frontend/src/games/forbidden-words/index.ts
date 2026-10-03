@@ -1,4 +1,5 @@
 import { lazy } from "react";
+import { normalizeAnswer } from "../../lib/text";
 import { roundSetupFor, type RoundSetupState } from "../rounds/setup";
 import type { GameModule } from "../types";
 import { ForbiddenGlyph } from "./Glyph";
@@ -6,6 +7,14 @@ import { kit, type CardInput } from "./kit";
 import type { ForbiddenPayload } from "./types";
 
 const base = roundSetupFor(kit);
+
+/** The server refuses two cards for the same word, ignoring case and punctuation. */
+function duplicateWordIssue(setup: RoundSetupState<CardInput>): string | null {
+  const words = setup.custom.filter(kit.isFilled).map((c) => normalizeAnswer(c.word));
+  return new Set(words).size === words.length ? null : "Each card needs a different word.";
+}
+
+const setupIssue = (setup: RoundSetupState<CardInput>) => base.setupIssue(setup) ?? duplicateWordIssue(setup);
 
 export const forbiddenWordsModule: GameModule<RoundSetupState<CardInput>, ForbiddenPayload> = {
   key: "forbidden-words",
@@ -18,6 +27,8 @@ export const forbiddenWordsModule: GameModule<RoundSetupState<CardInput>, Forbid
   minPlayers: 3,
   maxPlayers: 12,
   ...base,
+  isSetupValid: (setup) => setupIssue(setup) === null,
+  setupIssue,
   // The server calls the host's prompts "cards" for this game.
   toApiSetup: (setup) => {
     const { prompts, ...rest } = base.toApiSetup(setup) as { prompts: unknown[] } & Record<string, unknown>;

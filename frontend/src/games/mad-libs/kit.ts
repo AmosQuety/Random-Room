@@ -28,5 +28,6 @@ export const kit: PromptKit<StoryInput> = {
   empty: () => ({ title: "", text: "" }),
   isFilled: (s) => s.title.trim() !== "" || s.text.trim() !== "",
   isValid: (s) => storyProblem(s) === null,
+  problem: storyProblem,
   toApi: (s) => ({ title: s.title.trim(), text: s.text.trim() }),
 };

@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { GameModule } from "../types";
 import { SketchGuessGlyph } from "./Glyph";
-import { isSketchSetupValid, toApiSketchSetup } from "./setup";
+import { isSketchSetupValid, sketchSetupIssue, toApiSketchSetup } from "./setup";
 import type { SketchPayload, SketchSetup } from "./types";
 
 export const sketchGuessModule: GameModule<SketchSetup, SketchPayload> = {
@@ -16,6 +16,7 @@ export const sketchGuessModule: GameModule<SketchSetup, SketchPayload> = {
   maxPlayers: 12,
   defaultSetup: { words: [""], useBuiltIn: true, rounds: 6, timeLimitSeconds: 90 },
   isSetupValid: isSketchSetupValid,
+  setupIssue: sketchSetupIssue,
   toApiSetup: toApiSketchSetup,
   SetupForm: lazy(() => import("./SetupForm").then((m) => ({ default: m.SketchGuessSetupForm }))),
   GameScreen: lazy(() => import("./GameScreen").then((m) => ({ default: m.SketchGuessGameScreen }))),

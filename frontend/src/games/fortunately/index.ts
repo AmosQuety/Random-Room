@@ -1,7 +1,7 @@
 import { lazy, createElement } from "react";
 import type { GameModule, GameScreenProps, SetupFormProps } from "../types";
 import { FortunatelyGlyph } from "../story-chain/glyphs";
-import { defaultChainSetup, isChainSetupValid, toApiChainSetup } from "../story-chain/setup";
+import { defaultChainSetup, chainSetupIssue, isChainSetupValid, toApiChainSetup } from "../story-chain/setup";
 import type { ChainConfig, ChainPayload, ChainSetup } from "../story-chain/types";
 
 export const fortunatelyConfig: ChainConfig = {
@@ -27,6 +27,7 @@ export const fortunatelyModule: GameModule<ChainSetup, ChainPayload> = {
   maxPlayers: 12,
   defaultSetup: defaultChainSetup(fortunatelyConfig),
   isSetupValid: isChainSetupValid,
+  setupIssue: chainSetupIssue,
   toApiSetup: toApiChainSetup,
   SetupForm: lazy(() => import("../story-chain/SetupForm").then((m) => ({ default: (p: SetupFormProps<ChainSetup>) => createElement(m.ChainSetupForm, { ...p, config: fortunatelyConfig }) }))),
   GameScreen: lazy(() => import("../story-chain/GameScreen").then((m) => ({ default: (p: GameScreenProps<ChainPayload>) => createElement(m.ChainGameScreen, { ...p, config: fortunatelyConfig }) }))),

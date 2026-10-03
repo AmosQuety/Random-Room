@@ -30,6 +30,7 @@ export function twoWayKit(builtInCount: number): PromptKit<TwoWayInput> {
     empty: () => ({ a: "", b: "" }),
     isFilled: (p) => p.a.trim() !== "" || p.b.trim() !== "",
     isValid: (p) => p.a.trim() !== "" && p.b.trim() !== "",
+    problem: () => "Fill in both options of the dilemma you started, or clear it.",
     toApi: (p) => ({ a: p.a.trim(), b: p.b.trim() }),
   };
 }

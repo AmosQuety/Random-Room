@@ -15,6 +15,7 @@ export function statementKit(builtInCount: number): PromptKit<StatementInput> {
     empty: () => ({ text: "" }),
     isFilled: (p) => p.text.trim() !== "",
     isValid: (p) => p.text.trim() !== "" && p.text.trim().length <= 140,
+    problem: () => "Write the statement you started (at most 140 characters), or clear it.",
     toApi: (p) => ({ text: p.text.trim() }),
   };
 }

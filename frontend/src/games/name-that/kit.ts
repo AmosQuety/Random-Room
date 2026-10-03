@@ -26,6 +26,11 @@ export const kit: PromptKit<IntroInput> = {
   isFilled: (p) => p.clue.trim() !== "" || p.link.trim() !== "" || filledAnswers(p).length > 0,
   isValid: (p) =>
     p.clue.trim() !== "" && filledAnswers(p).length >= 1 && (p.link.trim() === "" || isHttpsLink(p.link)),
+  problem: (p) => {
+    if (p.clue.trim() === "") return "Give the clue some text.";
+    if (filledAnswers(p).length < 1) return "Add at least one accepted answer.";
+    return "The link must start with https://.";
+  },
   toApi: (p) => ({
     clue: p.clue.trim(),
     ...(p.link.trim() ? { link: p.link.trim() } : {}),

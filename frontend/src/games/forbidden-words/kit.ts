@@ -28,5 +28,6 @@ export const kit: PromptKit<CardInput> = {
   empty: () => ({ word: "", forbidden: "" }),
   isFilled: (c) => c.word.trim() !== "" || c.forbidden.trim() !== "",
   isValid: (c) => cardProblem(c) === null,
+  problem: cardProblem,
   toApi: (c) => ({ word: c.word.trim(), forbidden: splitForbidden(c.forbidden) }),
 };

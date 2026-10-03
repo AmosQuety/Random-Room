@@ -15,6 +15,8 @@ export interface PromptKit<TInput> {
   /** Anything typed at all. Untouched rows are ignored rather than treated as mistakes. */
   isFilled: (prompt: TInput) => boolean;
   isValid: (prompt: TInput) => boolean;
+  /** What is wrong with a prompt the host started but did not finish. A generic line is used when absent. */
+  problem?: (prompt: TInput) => string | null;
   toApi: (prompt: TInput) => unknown;
 }
 
@@ -39,6 +41,13 @@ export function roundOptions(total: number, selected: number): number[] {
   return [...new Set([...fitting, total, selected])].filter((n) => n >= 1).sort((a, b) => a - b);
 }
 
+export function roundSetupIssue<TInput>(setup: RoundSetupState<TInput>, kit: PromptKit<TInput>): string | null {
+  const unfinished = setup.custom.filter(kit.isFilled).find((p) => !kit.isValid(p));
+  if (unfinished) return kit.problem?.(unfinished) ?? "Finish the prompt you started, or clear it.";
+  if (availablePromptCount(setup, kit) < 1) return "Add at least one prompt, or turn on the built-in ones.";
+  return null;
+}
+
 export function roundSetupFor<TInput>(kit: PromptKit<TInput>) {
   return {
     defaultSetup: {
@@ -50,6 +59,8 @@ export function roundSetupFor<TInput>(kit: PromptKit<TInput>) {
 
     isSetupValid: (setup: RoundSetupState<TInput>) =>
       availablePromptCount(setup, kit) >= 1 && setup.custom.filter(kit.isFilled).every(kit.isValid),
+
+    setupIssue: (setup: RoundSetupState<TInput>) => roundSetupIssue(setup, kit),
 
     toApiSetup: (setup: RoundSetupState<TInput>) => ({
       useBuiltIn: setup.useBuiltIn,

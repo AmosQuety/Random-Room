@@ -55,4 +55,17 @@ describe("CreateRoomScreen", () => {
 
     expect(screen.getByLabelText("Player 1")).toHaveAttribute("maxlength", "32");
   });
+
+  it("says what is wrong with the setup instead of a generic message", async () => {
+    render(<CreateRoomScreen />);
+    fireEvent.click(screen.getByRole("radio", { name: /random picker/i }));
+    fireEvent.click(screen.getByRole("button", { name: /continue with random picker/i }));
+
+    fireEvent.change(await screen.findByLabelText("Choice 1"), { target: { value: "Same" } });
+    fireEvent.change(screen.getByLabelText("Choice 2"), { target: { value: "Same" } });
+
+    expect(screen.getByText("Add at least two different choices.")).toBeInTheDocument();
+    expect(screen.queryByText("Finish the setup to continue.")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /next/i })).toBeDisabled();
+  });
 });

@@ -193,7 +193,8 @@ export function CreateRoomScreen() {
   if (result) return <RoomCreatedCard result={result} hostPlayer={createdHost} />;
 
   const stepReady = step === 0 ? game !== null : step === 1 ? setupReady : !playersIssue;
-  const blocker = step === 0 ? "Pick a game to continue." : step === 1 ? "Finish the setup to continue." : playersIssue;
+  const setupBlocker = game?.setupIssue?.(setup) ?? "Finish the setup to continue.";
+  const blocker = step === 0 ? "Pick a game to continue." : step === 1 ? setupBlocker : playersIssue;
   const isLast = step === STEPS.length - 1;
 
   return (

@@ -42,6 +42,8 @@ export interface GameModule<TSetup, TPayload> {
   maxPlayers: number;
   defaultSetup: TSetup;
   isSetupValid: (setup: TSetup) => boolean;
+  /** Why the setup is not ready, in words for the host, or null when it is. Shown in place of a generic message. */
+  setupIssue?: (setup: TSetup) => string | null;
   /** Converts the form's local state into the JSON body the room-creation setup expects. */
   toApiSetup: (setup: TSetup) => unknown;
   /** These two may be React.lazy components so each game ships as its own chunk. */
