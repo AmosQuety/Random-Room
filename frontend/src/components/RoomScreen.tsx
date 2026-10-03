@@ -1,7 +1,8 @@
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { GAMES } from "../games/registry";
 import { ApiError, endSession, performAction, startNewSession, startSession } from "../lib/api";
 import type { RoomSnapshot, Session, SessionStatus } from "../lib/types";
+import { currentError, type RoomError } from "../lib/snapshots";
 import { useRoom, type ConnectionStatus } from "../lib/useRoom";
 import { Avatar } from "./Avatar";
 import { HostControls } from "./HostControls";
@@ -25,6 +26,9 @@ const STATUS_STYLE: Record<SessionStatus, string> = {
   Active: "bg-accent text-on-accent",
   Completed: "bg-ink text-paper",
 };
+
+/** Sent by game screens as their countdown reaches zero. A background nudge, not something the player did. */
+const TIMER_TICK = "tick";
 
 interface Props {
   session: Session;
@@ -58,7 +62,13 @@ function RoomSkeleton() {
 export function RoomScreen({ session, onLeave }: Props) {
   const { snapshot, connection, loadFailed, retry, applySnapshot } = useRoom(session.token, onLeave);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<RoomError | null>(null);
+
+  // The failure is tied to the snapshot it happened on; see currentError.
+  const latestSequence = useRef(0);
+  useEffect(() => {
+    latestSequence.current = snapshot?.sequence ?? 0;
+  }, [snapshot]);
 
   async function run(action: (token: string) => Promise<RoomSnapshot>) {
     setBusy(true);
@@ -66,9 +76,20 @@ export function RoomScreen({ session, onLeave }: Props) {
     try {
       applySnapshot(await action(session.token));
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Could not reach the server. Check your connection and try again.");
+      const message = e instanceof ApiError ? e.message : "Could not reach the server. Check your connection and try again.";
+      setError({ message, sequence: latestSequence.current });
     } finally {
       setBusy(false);
+    }
+  }
+
+  // Timer ticks must not lock the buttons or show errors: one that arrives after the round has already ended is
+  // expected, and the next push or refetch corrects the screen anyway.
+  async function nudge(action: (token: string) => Promise<RoomSnapshot>) {
+    try {
+      applySnapshot(await action(session.token));
+    } catch {
+      // Deliberately ignored, see above.
     }
   }
 
@@ -109,6 +130,7 @@ export function RoomScreen({ session, onLeave }: Props) {
     );
   }
 
+  const errorMessage = currentError(error, snapshot);
   const game = GAMES[snapshot.gameType];
   if (!game) {
     return (
@@ -170,7 +192,7 @@ export function RoomScreen({ session, onLeave }: Props) {
           </p>
         )}
 
-        {error && <Alert>{error}</Alert>}
+        {errorMessage && <Alert>{errorMessage}</Alert>}
 
         <Suspense fallback={<RoomSkeleton />}>
           <GameScreen
@@ -180,7 +202,7 @@ export function RoomScreen({ session, onLeave }: Props) {
             session={snapshot.session}
             payload={snapshot.gamePayload}
             busy={busy}
-            onAction={(action, payload) => run((token) => performAction(token, action, payload))}
+            onAction={(action, payload) => (action === TIMER_TICK ? nudge : run)((token) => performAction(token, action, payload))}
           />
         </Suspense>
 
