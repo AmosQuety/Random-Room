@@ -75,11 +75,14 @@ describe("Spin the Wheel screen", () => {
       show(spun(2));
 
       expect(screen.getByRole("status")).toHaveClass("sr-only");
+      // Not announced early to screen readers either.
+      expect(screen.getByRole("status")).toBeEmptyDOMElement();
       expect(screen.getByRole("button", { name: /next spin/i })).toBeDisabled();
       expect(screen.getByRole("button", { name: /award a point/i })).toBeDisabled();
 
       act(() => void vi.advanceTimersByTime(4000));
       expect(screen.getByRole("status")).not.toHaveClass("sr-only");
+      expect(screen.getByRole("status")).toHaveTextContent("Amos landed on: Dance");
       expect(screen.getByRole("button", { name: /next spin/i })).toBeEnabled();
     });
   });

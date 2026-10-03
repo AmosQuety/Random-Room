@@ -46,7 +46,7 @@ function Turn({ payload, me, isHost, live, busy, onAction }: { payload: WheelPay
       )}
 
       <p role="status" aria-live="polite" className={landed && payload.last ? "rounded-lg border-2 border-ink bg-accent-soft px-4 py-3 font-display text-xl font-black motion-safe:animate-stamp" : "sr-only"}>
-        {payload.last ? `${payload.last.player} landed on: ${payload.last.label}` : ""}
+        {landed && payload.last ? `${payload.last.player} landed on: ${payload.last.label}` : ""}
       </p>
 
       {payload.phase === "spun" && landed && payload.awarded && <p className="font-bold">Point awarded to {payload.last?.player}.</p>}
