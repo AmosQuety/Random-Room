@@ -30,7 +30,7 @@ public sealed class GameSessionService(
     private async Task<RoomSnapshot> BuildSnapshotAsync(Guid roomId, string? viewer, long sequence, CancellationToken ct)
     {
         var room = await RequireRoomAsync(roomId, ct);
-        var session = await CurrentSessionAsync(roomId, ct);
+        var session = await LatestSessionAsync(roomId, ct);
         var players = await db.RoomPlayers.AsNoTracking().Where(p => p.RoomId == roomId).ToListAsync(ct);
         var engine = EngineFor(room.GameType);
 
@@ -58,7 +58,7 @@ public sealed class GameSessionService(
 
         var session = await CurrentSessionAsync(roomId, ct);
         if (session.Status != SessionStatus.Active)
-            throw new RoomRuleException(RuleViolation.Conflict, "The session is not active.");
+            throw new RoomRuleException(RuleViolation.Conflict, "This game is not active.");
 
         var engine = EngineFor(room.GameType);
         await engine.HandleActionAsync(roomId, session.Id, actor, action, payload, ct);
@@ -77,7 +77,7 @@ public sealed class GameSessionService(
         var room = await RequireRoomAsync(roomId, ct);
         var session = await CurrentSessionForHostAsync(roomId, actor, ct);
         if (session.Status != SessionStatus.Waiting)
-            throw new RoomRuleException(RuleViolation.Conflict, "Only a waiting session can be started.");
+            throw new RoomRuleException(RuleViolation.Conflict, "Only a game that has not started can be started.");
 
         Activate(session);
         await db.SaveChangesAsync(ct);
@@ -89,7 +89,7 @@ public sealed class GameSessionService(
     {
         var session = await CurrentSessionForHostAsync(roomId, actor, ct);
         if (session.Status != SessionStatus.Active)
-            throw new RoomRuleException(RuleViolation.Conflict, "Only an active session can be ended.");
+            throw new RoomRuleException(RuleViolation.Conflict, "Only a game in progress can be ended.");
 
         Complete(session);
         await db.SaveChangesAsync(ct);
@@ -101,7 +101,7 @@ public sealed class GameSessionService(
         var room = await RequireRoomAsync(roomId, ct);
         var session = await CurrentSessionForHostAsync(roomId, actor, ct);
         if (session.Status != SessionStatus.Completed)
-            throw new RoomRuleException(RuleViolation.Conflict, "End the current session before starting a new one.");
+            throw new RoomRuleException(RuleViolation.Conflict, "End the current game before starting a new one.");
 
         var next = NewSession(roomId, session.Number + 1);
         db.GameSessions.Add(next);
@@ -151,6 +151,11 @@ public sealed class GameSessionService(
         await db.Rooms.AsNoTracking().FirstOrDefaultAsync(r => r.Id == roomId, ct)
         ?? throw new RoomRuleException(RuleViolation.NotFound, "Room not found.");
 
+    // Untracked, so a snapshot always reflects the database and never a copy this request loaded before another
+    // request (such as the host ending the game) committed. The sequencer relies on a later build reading fresher state.
+    private async Task<GameSession> LatestSessionAsync(Guid roomId, CancellationToken ct) =>
+        await db.GameSessions.AsNoTracking().Where(s => s.RoomId == roomId).OrderByDescending(s => s.Number).FirstAsync(ct);
+
     private async Task<GameSession> CurrentSessionAsync(Guid roomId, CancellationToken ct) =>
         await db.GameSessions.Where(s => s.RoomId == roomId).OrderByDescending(s => s.Number).FirstAsync(ct);
 
@@ -158,7 +163,7 @@ public sealed class GameSessionService(
     {
         var room = await RequireRoomAsync(roomId, ct);
         if (actor != room.HostPlayer)
-            throw new RoomRuleException(RuleViolation.Forbidden, "Only the host can control the session.");
+            throw new RoomRuleException(RuleViolation.Forbidden, "Only the host can control the game.");
         return await CurrentSessionAsync(roomId, ct);
     }
 }

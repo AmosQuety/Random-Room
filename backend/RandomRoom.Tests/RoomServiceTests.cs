@@ -37,6 +37,23 @@ public class RoomServiceTests
     }
 
     [Fact]
+    public async Task Snapshot_shows_a_game_the_host_ended_even_when_this_request_loaded_it_earlier()
+    {
+        using var h = new RoomTestHarness();
+        await StartedRoom(h);
+        var staleCopy = h.Db.GameSessions.Single(s => s.RoomId == h.RoomId);
+        Assert.Equal(SessionStatus.Active, staleCopy.Status);
+
+        // The host's End game commits through a different request, so a different context.
+        using var hostRequest = h.NewRequestScope();
+        await hostRequest.Room.EndRoundAsync(RoomTestHarness.HostPlayer);
+
+        var snapshot = await h.Room.GetSnapshotAsync();
+
+        Assert.Equal(SessionStatus.Completed, snapshot.Session.Status);
+    }
+
+    [Fact]
     public async Task Trigger_uses_the_server_random_source_and_publishes_result()
     {
         using var h = new RoomTestHarness(1);

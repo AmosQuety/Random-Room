@@ -78,8 +78,11 @@ public sealed class RoomTestHarness : IDisposable
     public Guid RoomId { get; }
     public RoomFacade Room { get; }
 
+    private readonly int[] randomIndexes;
+
     public RoomTestHarness(params int[] randomIndexes)
     {
+        this.randomIndexes = randomIndexes;
         Db = new RoomDbContext(new DbContextOptionsBuilder<RoomDbContext>().UseNpgsql(database.ConnectionString).Options);
         Db.Database.Migrate();
 
@@ -99,9 +102,32 @@ public sealed class RoomTestHarness : IDisposable
         Room = new RoomFacade(service, RoomId);
     }
 
+    /// <summary>A second service on its own DbContext over the same database: what a concurrent HTTP request gets.</summary>
+    public RequestScope NewRequestScope() => new(database.ConnectionString, Presence, RoomId, randomIndexes);
+
     public void Dispose()
     {
         Db.Dispose();
         database.Dispose();
     }
+}
+
+public sealed class RequestScope : IDisposable
+{
+    private readonly RoomDbContext db;
+
+    public RoomFacade Room { get; }
+
+    public RequestScope(string connectionString, PresenceTracker presence, Guid roomId, int[] randomIndexes)
+    {
+        db = new RoomDbContext(new DbContextOptionsBuilder<RoomDbContext>().UseNpgsql(connectionString).Options);
+        IGameEngine[] engines =
+        [
+            new RandomPickerEngine(db, new FakeRandomSource(randomIndexes), TimeProvider.System),
+            new TriviaEngine(db, TimeProvider.System),
+        ];
+        Room = new RoomFacade(new GameSessionService(db, presence, TimeProvider.System, engines), roomId);
+    }
+
+    public void Dispose() => db.Dispose();
 }
