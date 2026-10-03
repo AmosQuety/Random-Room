@@ -79,6 +79,7 @@ export function SurveyShowdownGameScreen(props: GameScreenProps<SurveyShowdownPa
                   count={row.points}
                   total={top}
                   unit="point"
+                  measure="relative"
                   highlight={row.points === top ? "Top answer" : undefined}
                   people={row.guessedBy}
                   mine={row.guessedBy.includes(me)}

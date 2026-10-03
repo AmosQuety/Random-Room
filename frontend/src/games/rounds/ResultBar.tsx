@@ -11,9 +11,14 @@ interface Props {
   highlight?: string;
   people?: string[];
   mine?: boolean;
+  /**
+   * "share": the bar and the percentage are a share of everyone (polls).
+   * "relative": the bar is only relative to the best answer, so no percentage is shown (Survey Showdown points).
+   */
+  measure?: "share" | "relative";
 }
 
-export function ResultBar({ label, count, total, unit, highlight, people = [], mine = false }: Props) {
+export function ResultBar({ label, count, total, unit, highlight, people = [], mine = false, measure = "share" }: Props) {
   const percent = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
     <li className={`rounded-lg border-2 border-ink bg-card p-3 ${mine ? "ring-4 ring-mustard/60" : ""}`}>
@@ -21,7 +26,8 @@ export function ResultBar({ label, count, total, unit, highlight, people = [], m
         <p className="min-w-0 flex-1 font-display text-lg font-bold leading-snug">{label}</p>
         <p className="shrink-0 font-mono text-sm font-bold">
           {count} {unit}
-          {count === 1 ? "" : "s"} · {percent}%
+          {count === 1 ? "" : "s"}
+          {measure === "share" && ` · ${percent}%`}
         </p>
       </div>
       <div aria-hidden="true" className="mt-2 h-3 overflow-hidden rounded-full border-2 border-ink bg-paper">
