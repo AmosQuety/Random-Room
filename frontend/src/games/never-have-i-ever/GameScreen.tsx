@@ -1,4 +1,5 @@
 import { ResultBar } from "../rounds/ResultBar";
+import { withoutLead } from "./lead";
 import { RoundGameScreen } from "../rounds/RoundGameScreen";
 import { StatementText } from "../rounds/Statement";
 import type { StatementPromptView } from "../rounds/statement";
@@ -24,7 +25,7 @@ export function NeverHaveIEverGameScreen(props: GameScreenProps<NeverHaveIEverPa
       {...props}
       lead="Never have I ever..."
       scoreUnit="still standing"
-      renderPrompt={(prompt) => <StatementText prompt={prompt} />}
+      renderPrompt={(prompt) => <StatementText prompt={{ ...prompt, text: withoutLead(prompt.text) }} />}
       renderInput={({ disabled, submit }) => (
         <div className="grid gap-3 sm:grid-cols-2">
           <button type="button" disabled={disabled} onClick={() => submit({ have: true })} className={choiceButtonClass}>
