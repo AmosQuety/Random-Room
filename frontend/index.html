@@ -12,7 +12,8 @@
     <title>The Playground</title>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Painted before the script arrives, so a slow connection sees something at once. React replaces it on mount. -->
+    <div id="root"><p role="status" style="margin: 0; padding: 2rem 1rem; text-align: center">Loading The Playground...</p></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
