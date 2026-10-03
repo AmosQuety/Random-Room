@@ -111,6 +111,20 @@ describe("Word Spies screen", () => {
     expect(card.className).toContain("[overflow-wrap:anywhere]");
   });
 
+  it("announces a team win as a team win, not a tie between its players", () => {
+    const board = KEY.map((owner, i) => ({ word: `word${i}`, owner }));
+    const scoreboard = [
+      { player: "Amos", score: 1 },
+      { player: "Lydia", score: 1 },
+      { player: "James", score: 0 },
+      { player: "Jacob", score: 0 },
+    ];
+    renderScreen(payload({ phase: "complete", board, key: KEY, winner: "red", endReason: "all-found", turn: null, clue: null, scoreboard }), "Lydia");
+
+    expect(screen.getByText("Red team wins: Amos & Lydia")).toBeInTheDocument();
+    expect(screen.queryByText(/tie/i)).not.toBeInTheDocument();
+  });
+
   it("names the winning team as the one that found every word", () => {
     const board = KEY.map((owner, i) => ({ word: `word${i}`, owner }));
     renderScreen(payload({ phase: "complete", board, key: KEY, winner: "blue", endReason: "all-found", turn: null, clue: null }), "Lydia");

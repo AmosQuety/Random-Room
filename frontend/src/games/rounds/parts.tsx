@@ -33,13 +33,20 @@ export function ProgressChips({ done, verb = "answered", notJoined = [] }: { don
   );
 }
 
-export function GameOver({ scoreboard }: { scoreboard: RoundScore[] }) {
+/** teamName lets a team game announce its winning team; without it the banner names the top player or players. */
+export function GameOver({ scoreboard, teamName }: { scoreboard: RoundScore[]; teamName?: string }) {
   const winners = winnersOf(scoreboard);
   return (
     <section className="surface-dark rounded-xl border-2 border-ink bg-ink p-6 text-center text-paper shadow-ticket motion-safe:animate-stamp">
       <p className="font-mono text-xs uppercase tracking-[0.3em] text-mustard">Game over</p>
       <p className="mt-2 font-display text-3xl font-black sm:text-4xl">
-        {winners.length === 0 ? "Nobody scored" : winners.length === 1 ? `${winners[0]} wins` : `${winners.join(" & ")} tie`}
+        {teamName && winners.length > 0
+          ? `${teamName} team wins: ${winners.join(" & ")}`
+          : winners.length === 0
+            ? "Nobody scored"
+            : winners.length === 1
+              ? `${winners[0]} wins`
+              : `${winners.join(" & ")} tie`}
       </p>
     </section>
   );

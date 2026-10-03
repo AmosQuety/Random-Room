@@ -178,7 +178,7 @@ export function WordSpiesGameScreen({ me, isHost, session, payload, busy, onActi
         </section>
       )}
 
-      {over && <GameOver scoreboard={payload.scoreboard} />}
+      {over && <GameOver scoreboard={payload.scoreboard} teamName={payload.winner ? teamName(payload.winner) : undefined} />}
 
       <Scoreboard rows={payload.scoreboard.map((s) => ({ name: s.player, score: s.score }))} me={me} unit="wins" />
     </>
