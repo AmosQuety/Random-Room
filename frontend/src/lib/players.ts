@@ -21,3 +21,8 @@ export function describePlayerRange(game: PlayerRange): string {
   const max = Math.min(game.maxPlayers, ROOM_MAX_PLAYERS);
   return min === max ? `${min} players` : `${min}-${max} players`;
 }
+
+/** Names of players who have not opened their invite link yet; a round waiting on one of them will not finish by itself. */
+export function unjoinedNames(players: readonly { name: string; claimed: boolean }[]): string[] {
+  return players.filter((p) => !p.claimed).map((p) => p.name);
+}

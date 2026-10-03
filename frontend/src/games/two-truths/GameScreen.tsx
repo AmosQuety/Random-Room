@@ -1,3 +1,4 @@
+import { unjoinedNames } from "../../lib/players";
 import { CheckIcon, FlagIcon, PlayIcon } from "../../components/icons";
 import { Scoreboard } from "../../components/Scoreboard";
 import { Button, Eyebrow } from "../../components/ui";
@@ -38,7 +39,7 @@ function Reveal({ result, me }: { result: TwoTruthsResult; me: string }) {
   );
 }
 
-export function TwoTruthsGameScreen({ me, isHost, session, payload, busy, onAction }: GameScreenProps<TwoTruthsPayload>) {
+export function TwoTruthsGameScreen({ me, isHost, players, session, payload, busy, onAction }: GameScreenProps<TwoTruthsPayload>) {
   const live = session.status === "Active";
   const over = session.status === "Completed" || payload.phase === "complete";
   const isStoryteller = payload.storyteller === me;
@@ -117,7 +118,7 @@ export function TwoTruthsGameScreen({ me, isHost, session, payload, busy, onActi
                   )}
                 </div>
               )}
-              <ProgressChips done={payload.voted} verb="voted" />
+              <ProgressChips done={payload.voted} verb="voted" notJoined={unjoinedNames(players)} />
             </>
           )}
 

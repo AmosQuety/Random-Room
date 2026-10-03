@@ -6,7 +6,7 @@ import { isWheelSetupValid, toApiWheelSetup } from "./setup";
 import type { WheelPayload, WheelSetup } from "./types";
 import { rotationFor } from "./wheelMath";
 
-const PLAYERS: PlayerView[] = ["Amos", "Lydia"].map((name) => ({ name, online: true }));
+const PLAYERS: PlayerView[] = ["Amos", "Lydia"].map((name) => ({ name, online: true, claimed: true }));
 const ACTIVE: SessionView = { id: "s", number: 1, status: "Active", startedAt: null, endedAt: null };
 
 function payload(overrides: Partial<WheelPayload> = {}): WheelPayload {

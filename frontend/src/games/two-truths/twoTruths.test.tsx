@@ -4,7 +4,7 @@ import type { PlayerView, SessionView } from "../../lib/types";
 import { TwoTruthsGameScreen } from "./GameScreen";
 import type { TwoTruthsPayload } from "./types";
 
-const PLAYERS: PlayerView[] = ["Amos", "Lydia", "James"].map((name) => ({ name, online: true }));
+const PLAYERS: PlayerView[] = ["Amos", "Lydia", "James"].map((name) => ({ name, online: true, claimed: true }));
 const ACTIVE: SessionView = { id: "s", number: 1, status: "Active", startedAt: null, endedAt: null };
 const STATEMENTS = ["I met a president", "I can juggle", "I ate a whole pie"];
 

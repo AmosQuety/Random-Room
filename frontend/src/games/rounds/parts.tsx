@@ -5,7 +5,7 @@ import { winnersOf } from "./winners";
 import type { RoundScore } from "./types";
 
 /** Who has acted this round (never what they did), in words as well as icons. */
-export function ProgressChips({ done, verb = "answered" }: { done: Record<string, boolean>; verb?: string }) {
+export function ProgressChips({ done, verb = "answered", notJoined = [] }: { done: Record<string, boolean>; verb?: string; notJoined?: readonly string[] }) {
   const names = Object.keys(done);
   const count = names.filter((n) => done[n]).length;
   return (
@@ -13,6 +13,9 @@ export function ProgressChips({ done, verb = "answered" }: { done: Record<string
       <p aria-live="polite" className="text-sm text-muted">
         {count} of {names.length} {verb}
       </p>
+      {notJoined.length > 0 && (
+        <p className="mt-1 text-sm font-semibold">Waiting for {notJoined.join(", ")} to open their invite link.</p>
+      )}
       <ul aria-label="Answer progress" className="mt-2 flex flex-wrap gap-2">
         {names.map((name) => (
           <li
@@ -21,7 +24,8 @@ export function ProgressChips({ done, verb = "answered" }: { done: Record<string
           >
             {done[name] ? <CheckIcon className="size-3.5" /> : <span aria-hidden="true" className="size-2 rounded-full bg-muted" />}
             {name}
-            <span className="sr-only">{done[name] ? ` has ${verb}` : ` has not ${verb} yet`}</span>
+            {notJoined.includes(name) && <span className="font-mono text-xs uppercase text-muted">not joined</span>}
+            <span className="sr-only">{notJoined.includes(name) ? " has not joined yet" : done[name] ? ` has ${verb}` : ` has not ${verb} yet`}</span>
           </li>
         ))}
       </ul>

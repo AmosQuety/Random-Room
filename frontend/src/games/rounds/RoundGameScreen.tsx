@@ -1,3 +1,4 @@
+import { unjoinedNames } from "../../lib/players";
 import type { ReactNode } from "react";
 import { CheckIcon, FlagIcon, PlayIcon } from "../../components/icons";
 import { Scoreboard } from "../../components/Scoreboard";
@@ -105,7 +106,7 @@ export function RoundGameScreen<TPrompt, TResult, TAnswer>({
               })
             ))}
 
-          {collecting && <ProgressChips done={payload.answered} />}
+          {collecting && <ProgressChips done={payload.answered} notJoined={unjoinedNames(players)} />}
 
           {revealed && payload.result !== null && (
             <div className="motion-safe:animate-stamp">{renderResult(payload.result, payload.prompt, me)}</div>

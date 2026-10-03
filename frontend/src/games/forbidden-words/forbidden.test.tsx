@@ -7,7 +7,7 @@ import { forbiddenWordsModule } from "./index";
 import type { ForbiddenPayload } from "./types";
 
 const NAMES = ["Amos", "Lydia", "James", "Jacob"];
-const PLAYERS: PlayerView[] = NAMES.map((name) => ({ name, online: true }));
+const PLAYERS: PlayerView[] = NAMES.map((name) => ({ name, online: true, claimed: true }));
 const ACTIVE: SessionView = { id: "s", number: 1, status: "Active", startedAt: null, endedAt: null };
 
 function payload(overrides: Partial<ForbiddenPayload> = {}): ForbiddenPayload {

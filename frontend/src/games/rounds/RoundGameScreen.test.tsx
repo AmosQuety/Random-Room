@@ -4,7 +4,7 @@ import type { PlayerView, SessionView } from "../../lib/types";
 import { TwoWayGameScreen } from "./TwoWay";
 import type { TwoWayPayload } from "./twoWay";
 
-const PLAYERS: PlayerView[] = ["Amos", "Lydia", "James"].map((name) => ({ name, online: true }));
+const PLAYERS: PlayerView[] = ["Amos", "Lydia", "James"].map((name) => ({ name, online: true, claimed: true }));
 
 const session = (status: SessionView["status"]): SessionView => ({ id: "s", number: 1, status, startedAt: null, endedAt: null });
 
@@ -74,6 +74,29 @@ describe("RoundGameScreen (through Would You Rather)", () => {
     expect(screen.queryByRole("button", { name: /pizza/i })).not.toBeInTheDocument();
     expect(screen.queryByText("Majority")).not.toBeInTheDocument();
     expect(screen.getByText("2 of 3 answered")).toBeInTheDocument();
+  });
+
+  it("tells the group when the round is waiting on someone who has not joined yet", () => {
+    const players: PlayerView[] = [
+      { name: "Amos", online: true, claimed: true },
+      { name: "Lydia", online: true, claimed: true },
+      { name: "James", online: false, claimed: false },
+    ];
+    render(
+      <TwoWayGameScreen lead="Would you rather..." me="Amos" isHost players={players} session={session("Active")} payload={payload()} busy={false} onAction={vi.fn()} />,
+    );
+
+    expect(screen.getByText(/waiting for james to open their invite link/i)).toBeInTheDocument();
+    const chip = within(screen.getByRole("list", { name: "Answer progress" }))
+      .getAllByRole("listitem")
+      .find((item) => item.textContent?.includes("James"));
+    expect(chip).toHaveTextContent(/not joined/i);
+    expect(chip).toHaveTextContent(/has not joined yet/i);
+  });
+
+  it("says nothing about joining when everyone has joined", () => {
+    renderScreen(payload());
+    expect(screen.queryByText(/invite link/i)).not.toBeInTheDocument();
   });
 
   it("says who has and has not answered in words, not only colour", () => {

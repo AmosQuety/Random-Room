@@ -55,7 +55,7 @@ describe("trivia setup", () => {
 });
 
 describe("trivia game screen", () => {
-  const players: PlayerView[] = ["Amos", "Lydia"].map((name) => ({ name, online: true }));
+  const players: PlayerView[] = ["Amos", "Lydia"].map((name) => ({ name, online: true, claimed: true }));
   const session: SessionView = { id: "s", number: 1, status: "Active", startedAt: null, endedAt: null };
   const payload: TriviaPayload = {
     questionNumber: 1,

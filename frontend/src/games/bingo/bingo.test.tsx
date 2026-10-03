@@ -5,7 +5,7 @@ import { BingoGameScreen } from "./GameScreen";
 import { isBingoSetupValid, toApiBingoSetup } from "./setup";
 import type { BingoPayload } from "./types";
 
-const PLAYERS: PlayerView[] = ["Amos", "Lydia"].map((name) => ({ name, online: true }));
+const PLAYERS: PlayerView[] = ["Amos", "Lydia"].map((name) => ({ name, online: true, claimed: true }));
 const ACTIVE: SessionView = { id: "s", number: 1, status: "Active", startedAt: null, endedAt: null };
 const CARD = Array.from({ length: 25 }, (_, i) => (i === 12 ? "" : `Word${i}`));
 

@@ -4,6 +4,8 @@ export type SessionStatus = "Waiting" | "Active" | "Completed";
 export interface PlayerView {
   name: string;
   online: boolean;
+  /** False until the player has opened their invite link and set a PIN. */
+  claimed: boolean;
 }
 
 export interface SessionView {

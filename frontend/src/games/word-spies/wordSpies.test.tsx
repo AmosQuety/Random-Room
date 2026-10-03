@@ -6,7 +6,7 @@ import { isSpySetupValid, toApiSpySetup } from "./setup";
 import type { Owner, SpyPayload } from "./types";
 
 const NAMES = ["Amos", "Lydia", "James", "Jacob"];
-const PLAYERS: PlayerView[] = NAMES.map((name) => ({ name, online: true }));
+const PLAYERS: PlayerView[] = NAMES.map((name) => ({ name, online: true, claimed: true }));
 const ACTIVE: SessionView = { id: "s", number: 1, status: "Active", startedAt: null, endedAt: null };
 const KEY: Owner[] = Array.from({ length: 25 }, (_, i) => (i === 0 ? "assassin" : i < 10 ? "red" : i < 18 ? "blue" : "neutral"));
 

@@ -6,7 +6,7 @@ import { isSketchSetupValid, toApiSketchSetup } from "./setup";
 import { GRID, MAX_POINTS_PER_STROKE, isFull, movedEnough, toGrid } from "./strokes";
 import type { SketchPayload } from "./types";
 
-const PLAYERS: PlayerView[] = ["Amos", "Lydia"].map((name) => ({ name, online: true }));
+const PLAYERS: PlayerView[] = ["Amos", "Lydia"].map((name) => ({ name, online: true, claimed: true }));
 const ACTIVE: SessionView = { id: "s", number: 1, status: "Active", startedAt: null, endedAt: null };
 const base: SketchPayload = {
   phase: "drawing",

@@ -8,7 +8,7 @@ import { entryText } from "./storyText";
 import { isChainSetupValid, toApiChainSetup } from "./setup";
 import type { ChainConfig, ChainPayload } from "./types";
 
-const PLAYERS: PlayerView[] = ["Amos", "Lydia"].map((name) => ({ name, online: true }));
+const PLAYERS: PlayerView[] = ["Amos", "Lydia"].map((name) => ({ name, online: true, claimed: true }));
 const ACTIVE: SessionView = { id: "s", number: 1, status: "Active", startedAt: null, endedAt: null };
 
 function payload(overrides: Partial<ChainPayload> = {}): ChainPayload {

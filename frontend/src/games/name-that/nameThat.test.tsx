@@ -4,7 +4,7 @@ import type { PlayerView, SessionView } from "../../lib/types";
 import { NameThatGameScreen, type NameThatPayload } from "./GameScreen";
 import { isHttpsLink, kit } from "./kit";
 
-const PLAYERS: PlayerView[] = ["Amos", "Lydia"].map((name) => ({ name, online: true }));
+const PLAYERS: PlayerView[] = ["Amos", "Lydia"].map((name) => ({ name, online: true, claimed: true }));
 const ACTIVE: SessionView = { id: "s", number: 1, status: "Active", startedAt: null, endedAt: null };
 const base = {
   phase: "collecting" as const,
