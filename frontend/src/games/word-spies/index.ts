@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { GameModule } from "../types";
 import { WordSpiesGlyph } from "./Glyph";
-import { isSpySetupValid, toApiSpySetup } from "./setup";
+import { spySetupIssue, isSpySetupValid, toApiSpySetup } from "./setup";
 import type { SpyPayload, SpySetup } from "./types";
 
 export const wordSpiesModule: GameModule<SpySetup, SpyPayload> = {
@@ -16,6 +16,7 @@ export const wordSpiesModule: GameModule<SpySetup, SpyPayload> = {
   maxPlayers: 12,
   defaultSetup: { words: [""], useBuiltIn: true },
   isSetupValid: isSpySetupValid,
+  setupIssue: spySetupIssue,
   toApiSetup: toApiSpySetup,
   SetupForm: lazy(() => import("./SetupForm").then((m) => ({ default: m.WordSpiesSetupForm }))),
   GameScreen: lazy(() => import("./GameScreen").then((m) => ({ default: m.WordSpiesGameScreen }))),

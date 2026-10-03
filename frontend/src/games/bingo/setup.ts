@@ -1,3 +1,4 @@
+import { normalizeAnswer } from "../../lib/text";
 import { BUILT_IN_COUNT, MAX_ITEMS, MIN_POOL, type BingoSetup } from "./types";
 
 export const filledItems = (items: string[]): string[] => items.map((i) => i.trim()).filter(Boolean);
@@ -7,10 +8,15 @@ export function poolSize(setup: BingoSetup): number {
   return filledItems(setup.items).length + (setup.useBuiltIn ? BUILT_IN_COUNT : 0);
 }
 
-export function isBingoSetupValid(setup: BingoSetup): boolean {
+/** Mirrors the server's checks (accents and punctuation ignored), so the host hears about a problem on the setup step. */
+export function bingoSetupIssue(setup: BingoSetup): string | null {
   const filled = filledItems(setup.items);
-  const distinct = new Set(filled.map((i) => i.toLowerCase()));
-  return distinct.size === filled.length && filled.length <= MAX_ITEMS && poolSize(setup) >= MIN_POOL;
+  if (new Set(filled.map(normalizeAnswer)).size !== filled.length) return "Each bingo item must be different.";
+  if (filled.length > MAX_ITEMS) return `Use at most ${MAX_ITEMS} items.`;
+  if (poolSize(setup) < MIN_POOL) return `Bingo needs at least ${MIN_POOL} different items, or turn on the built-in ones.`;
+  return null;
 }
+
+export const isBingoSetupValid = (setup: BingoSetup): boolean => bingoSetupIssue(setup) === null;
 
 export const toApiBingoSetup = (setup: BingoSetup) => ({ items: filledItems(setup.items), useBuiltIn: setup.useBuiltIn });

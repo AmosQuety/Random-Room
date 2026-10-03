@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { forbiddenWordsModule } from "./forbidden-words";
+import { bingoModule } from "./bingo";
 import { fortunatelyModule } from "./fortunately";
 import { oneWordStoryModule } from "./one-word-story";
 import { randomPickerModule } from "./random-picker";
+import { spinWheelModule } from "./spin-wheel";
 import { sketchGuessModule } from "./sketch-guess";
+import { wordSpiesModule } from "./word-spies";
 import { wouldYouRatherModule } from "./would-you-rather";
 
 /** A setup that is ready must say nothing; one that is not must say what is missing, not just "finish the setup". */
@@ -75,6 +78,38 @@ describe("setup issues", () => {
     it("asks for two different choices", () => {
       expect(randomPickerModule.setupIssue?.(["Same", "Same"])).toBe("Add at least two different choices.");
       expect(randomPickerModule.setupIssue?.(["Pizza", "Tacos"])).toBeNull();
+    });
+  });
+
+  describe("duplicate entries that differ only by accent or punctuation (the server folds these)", () => {
+    const CAFE = "Caf\u00e9";
+
+    it("Spin the Wheel names the problem and blocks Next", () => {
+      const setup = { ...spinWheelModule.defaultSetup, segments: [CAFE, "cafe"] };
+      expect(spinWheelModule.setupIssue?.(setup)).toBe("Each wheel segment must be different.");
+      expect(spinWheelModule.isSetupValid(setup)).toBe(false);
+    });
+
+    it("Bingo names the problem and blocks Next", () => {
+      const setup = { ...bingoModule.defaultSetup, items: [CAFE, "cafe!"] };
+      expect(bingoModule.setupIssue?.(setup)).toBe("Each bingo item must be different.");
+      expect(bingoModule.isSetupValid(setup)).toBe(false);
+    });
+
+    it("Word Spies names the problem and blocks Next", () => {
+      const setup = { ...wordSpiesModule.defaultSetup, words: [CAFE, "cafe"] };
+      expect(wordSpiesModule.setupIssue?.(setup)).toBe("Each word must be different.");
+      expect(wordSpiesModule.isSetupValid(setup)).toBe(false);
+    });
+
+    it("all three stay silent for a ready setup", () => {
+      expect(spinWheelModule.setupIssue?.(spinWheelModule.defaultSetup)).toBeNull();
+      expect(bingoModule.setupIssue?.(bingoModule.defaultSetup)).toBeNull();
+      expect(wordSpiesModule.setupIssue?.(wordSpiesModule.defaultSetup)).toBeNull();
+    });
+
+    it("Spin the Wheel asks for more segments when the built-ins are off", () => {
+      expect(spinWheelModule.setupIssue?.({ ...spinWheelModule.defaultSetup, useBuiltIn: false, segments: ["One"] })).toMatch(/at least 2 segments/);
     });
   });
 });

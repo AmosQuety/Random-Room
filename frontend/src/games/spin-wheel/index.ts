@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { GameModule } from "../types";
 import { SpinWheelGlyph } from "./Glyph";
-import { isWheelSetupValid, toApiWheelSetup } from "./setup";
+import { wheelSetupIssue, isWheelSetupValid, toApiWheelSetup } from "./setup";
 import type { WheelPayload, WheelSetup } from "./types";
 
 export const spinWheelModule: GameModule<WheelSetup, WheelPayload> = {
@@ -16,6 +16,7 @@ export const spinWheelModule: GameModule<WheelSetup, WheelPayload> = {
   maxPlayers: 12,
   defaultSetup: { segments: [""], useBuiltIn: true, spins: 6 },
   isSetupValid: isWheelSetupValid,
+  setupIssue: wheelSetupIssue,
   toApiSetup: toApiWheelSetup,
   SetupForm: lazy(() => import("./SetupForm").then((m) => ({ default: m.SpinWheelSetupForm }))),
   GameScreen: lazy(() => import("./GameScreen").then((m) => ({ default: m.SpinWheelGameScreen }))),

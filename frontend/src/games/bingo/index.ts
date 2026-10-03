@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { GameModule } from "../types";
 import { BingoGlyph } from "./Glyph";
-import { isBingoSetupValid, toApiBingoSetup } from "./setup";
+import { bingoSetupIssue, isBingoSetupValid, toApiBingoSetup } from "./setup";
 import type { BingoPayload, BingoSetup } from "./types";
 
 export const bingoModule: GameModule<BingoSetup, BingoPayload> = {
@@ -16,6 +16,7 @@ export const bingoModule: GameModule<BingoSetup, BingoPayload> = {
   maxPlayers: 12,
   defaultSetup: { items: [""], useBuiltIn: true },
   isSetupValid: isBingoSetupValid,
+  setupIssue: bingoSetupIssue,
   toApiSetup: toApiBingoSetup,
   SetupForm: lazy(() => import("./SetupForm").then((m) => ({ default: m.BingoSetupForm }))),
   GameScreen: lazy(() => import("./GameScreen").then((m) => ({ default: m.BingoGameScreen }))),
