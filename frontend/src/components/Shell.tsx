@@ -17,7 +17,11 @@ interface Props {
   accent?: Accent;
 }
 
-/** The frame every screen shares: skip link, persistent wordmark header, and a single <main> landmark. */
+/**
+ * The frame every screen shares: skip link, persistent wordmark header, and a single <main> landmark.
+ * main clips horizontal overflow because on phones a scaled-up animation (animate-stamp) otherwise widens the
+ * whole page, and body's overflow-x does not stop that.
+ */
 export function Shell({ children, width = "narrow", headerRight, accent }: Props) {
   return (
     <div data-accent={accent} className="flex min-h-dvh flex-col">
@@ -35,7 +39,7 @@ export function Shell({ children, width = "narrow", headerRight, accent }: Props
           {headerRight && <div className="flex min-w-0 items-center gap-3 text-sm">{headerRight}</div>}
         </div>
       </header>
-      <main id="main" tabIndex={-1} className={`mx-auto w-full flex-1 px-4 py-8 outline-none sm:py-12 ${WIDTH[width]}`}>
+      <main id="main" tabIndex={-1} className={`mx-auto w-full flex-1 overflow-x-clip px-4 py-8 outline-none sm:py-12 ${WIDTH[width]}`}>
         {children}
       </main>
       <footer className="border-t-2 border-dashed border-ink/40 px-4 py-5 text-center font-mono text-xs uppercase tracking-widest text-muted">
