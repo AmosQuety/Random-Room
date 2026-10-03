@@ -27,7 +27,7 @@ function Cell({ label, index, marked, called, inWinningLine, disabled, onMark }:
       aria-label={`${name}, ${state}`}
       disabled={disabled || marked || !called}
       onClick={onMark}
-      className={`relative grid min-h-14 place-items-center rounded-md border-2 border-ink p-1 text-center text-[0.7rem] font-bold leading-tight break-words transition disabled:cursor-default sm:min-h-20 sm:text-sm ${tone} ${called && !marked ? "ring-2 ring-ink ring-offset-1" : ""}`}
+      className={`relative grid min-h-14 place-items-center rounded-md border-2 border-ink p-1 text-center text-[0.7rem] font-bold leading-tight min-w-0 [overflow-wrap:anywhere] transition disabled:cursor-default sm:min-h-20 sm:text-sm ${tone} ${called && !marked ? "ring-2 ring-ink ring-offset-1" : ""}`}
     >
       {free ? "FREE" : label}
       {marked && !free && <CheckIcon aria-hidden="true" className="absolute right-0.5 top-0.5 size-3" />}

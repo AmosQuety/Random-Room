@@ -30,6 +30,14 @@ function renderScreen(p: BingoPayload, me = "Lydia", isHost = false) {
 }
 
 describe("Bingo screen", () => {
+  // jsdom has no layout, so this guards the classes; the overflow itself was reproduced and fixed in a real browser.
+  it("lets a long unbroken item wrap inside its cell instead of widening it", () => {
+    renderScreen(payload());
+    const cell = screen.getByRole("button", { name: /^Word3,/ });
+    expect(cell).toHaveClass("min-w-0");
+    expect(cell.className).toContain("[overflow-wrap:anywhere]");
+  });
+
   it("only lets a called item be marked, and sends its cell", () => {
     const onAction = renderScreen(payload());
     expect(screen.getByRole("button", { name: /Word4, not called/ })).toBeDisabled();
