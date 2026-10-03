@@ -778,8 +778,15 @@ a failing test that passes, plus a real-browser or live-API run where stated. Ev
 | LEAD-02 (429 without Retry-After) | Fixed. Verified through the dev proxy | 06ae386 |
 | POLL-08 (misleading survey percent) | Fixed | d3a2e8d |
 | WORD-12 (tiny Word Spies text) | Fixed. Checked in a browser at 320 and 360 px. The larger owner label at 390 px and up was not looked at | 2a72622 |
+| POLL-07, STORY-05, WORD-10 (setup errors only on the last step) | Fixed: the setup bar now says what is wrong, mirroring the server's rules (duplicate Forbidden Words cards, Sketch Guess words with no letters, unfinished dilemmas, no story starter, duplicate picker choices). Component and module tests; not re-run in a browser | 4a1cf7a |
+| POLL-11 (slow-3G blank page) | The audit's 8 to 15 s did not reproduce on the production build (skeleton 3.4 s, game 5.0 s at 400kbps and 400ms). Still improved: a static loading line takes first paint from 3.3 s to 1.3 s with layout shift unchanged at 0 | fccba58 |
+| LEAD-01 (join page LCP 2.8 s) | Not reproduced: 1.9 s in four Lighthouse runs on the production build. The audit run was probably distorted by the flapping network. No change made | |
+| STORY-04 (Fortunately label) | Fixed | 5d138dd |
+| POLL-10, the rank part (everyone shown as rank 1 at zero) | Fixed | 5a40273 |
+| WORD-11 (team win shown as a tie) | Fixed | 4985107 |
+| POLL-09 (duplicated lead-in) | Duplicate lead-in fixed. Not done: local, adult-appropriate content for the built-in banks (a content decision) | d664d34 |
+| QUIZ-07 (Two Truths accessibility) | Heading level fixed. Not done: focus after voting, the three live regions | 451ca9e |
 | LEAD-04 (build empties wwwroot) | Documented, not changed: the folder is git-ignored build output the Dockerfile relies on | 61a9005 |
 | Documentation discrepancies (section 12) | Fixed | 61a9005 |
 
-**Still open:** POLL-07, STORY-05, WORD-10 (setup errors only on the last step), POLL-09 (duplicated lead, content), POLL-11 (blank page on slow 3G), QUIZ-07 (heading order, focus), STORY-04 (Fortunately label), WORD-07 (Sketch canvas below the fold on a laptop), WORD-11 (no team banner), LEAD-01 (join LCP 2.8 s, measure before changing), LEAD-03 (dev-only console error), and the Known Issues G1 and G2.
-
+**Still open:** WORD-07 (Sketch canvas below the fold on a laptop), LEAD-03 (dev-only console error from React StrictMode; the fix touches the realtime connection teardown, so it was left alone), the unfixed parts noted above, caps on trivia question and option counts (QUIZ-06), and the Known Issues G1 and G2.

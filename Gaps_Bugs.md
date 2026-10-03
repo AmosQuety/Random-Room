@@ -53,7 +53,7 @@ Low-bandwidth note: keep whatever is added small (no image assets, no heavy libr
 
 ## Findings from the QA audit
 
-The first full QA audit is in `QA_REPORT.md` (47 findings, no blockers). All 8 Major findings are fixed, along with most Minors; section 14 of the report lists every finding's status and the commit that fixed it. Still open: setup errors shown only on the last step (POLL-07, STORY-05, WORD-10), slow-3G first paint (POLL-11), the join page LCP (LEAD-01), a few Polish items, and caps on trivia question and option counts.
+The first full QA audit is in `QA_REPORT.md` (47 findings, no blockers). All 8 Major findings and nearly all Minor and Polish ones are fixed; section 14 of the report lists every finding's status and the commit that fixed it. Still open: the Sketch Guess canvas below the fold on a laptop (WORD-07), local content for the built-in banks (POLL-09), focus after voting in Two Truths (QUIZ-07), a dev-only console message (LEAD-03), and caps on trivia question and option counts (QUIZ-06, needs a decision).
 
 ## Other known gaps
 
