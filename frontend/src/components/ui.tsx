@@ -1,4 +1,4 @@
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, HTMLAttributes, ReactNode, Ref } from "react";
 import { navigate } from "../lib/router";
 import { DiceIcon, WarningIcon } from "./icons";
 import { buttonClass, sectionHeadingClass, type ButtonSize, type ButtonVariant } from "./styles";
@@ -8,6 +8,8 @@ import { buttonClass, sectionHeadingClass, type ButtonSize, type ButtonVariant }
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  /** React 19 passes ref as an ordinary prop, so it reaches the <button> through ...rest. */
+  ref?: Ref<HTMLButtonElement>;
 }
 
 export function Button({ variant, size, className = "", type = "button", ...rest }: ButtonProps) {

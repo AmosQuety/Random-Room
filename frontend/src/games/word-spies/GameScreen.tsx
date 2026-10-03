@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FlagIcon } from "../../components/icons";
+import { ConfirmButton } from "../../components/ConfirmButton";
 import { Scoreboard } from "../../components/Scoreboard";
 import { fieldInputClass } from "../../components/styles";
 import { Button, Eyebrow } from "../../components/ui";
@@ -117,7 +118,7 @@ export function WordSpiesGameScreen({ me, isHost, session, payload, busy, onActi
         <section className="rounded-xl border-2 border-dashed border-ink bg-card p-6 text-center">
           <Eyebrow>Ready when you are</Eyebrow>
           <p className="mt-2 font-display text-3xl font-black">Two teams, one grid</p>
-          <p className="mt-1 text-muted">{isHost ? "Press Start round below to deal the teams and the board (4 or more players)." : "Waiting for the host to start."}</p>
+          <p className="mt-1 text-muted">{isHost ? "Press Start game below to deal the teams and the board (4 or more players)." : "Waiting for the host to start."}</p>
         </section>
       )}
 
@@ -163,9 +164,15 @@ export function WordSpiesGameScreen({ me, isHost, session, payload, busy, onActi
 
           {isHost && live && !over && (
             <HostBar>
-              <Button variant="secondary" size="sm" disabled={busy} onClick={() => onAction("end")}>
-                <FlagIcon className="size-4" /> End the game
-              </Button>
+              <ConfirmButton
+                disabled={busy}
+                question="End the game and reveal the board?"
+                confirmLabel="Yes, end and reveal"
+                cancelLabel="Keep playing"
+                onConfirm={() => onAction("end")}
+              >
+                <FlagIcon className="size-4" /> End and reveal
+              </ConfirmButton>
             </HostBar>
           )}
         </section>

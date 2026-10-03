@@ -89,10 +89,17 @@ describe("Word Spies screen", () => {
     expect(onAction).toHaveBeenCalledWith("pass");
   });
 
-  it("gives the host an end button and nobody else", () => {
+  it("lets the host end the game, but only after confirming", () => {
     const onAction = renderScreen(payload(), "Amos", true);
-    fireEvent.click(screen.getByRole("button", { name: /end the game/i }));
+    fireEvent.click(screen.getByRole("button", { name: /end and reveal/i }));
+    expect(onAction).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /yes, end and reveal/i }));
     expect(onAction).toHaveBeenCalledWith("end");
+  });
+
+  it("gives nobody but the host an end button", () => {
+    renderScreen(payload(), "Lydia");
+    expect(screen.queryByRole("button", { name: /end and reveal/i })).not.toBeInTheDocument();
   });
 
   it("names the winning team as the one that found every word", () => {
