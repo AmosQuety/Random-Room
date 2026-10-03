@@ -125,6 +125,43 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
         return player.Name;
     }
 
+    /// <summary>
+    /// For a player who forgot their PIN or lost their device: empties the seat so its owner can claim it again with a
+    /// new one-time link, and signs out whatever device held it. Only the host may do this, never to their own seat
+    /// (nobody else could reset it), and never during a game, so the host cannot take over a seat and see its secrets.
+    /// </summary>
+    public async Task<PlayerInvite> ResetSeatAsync(Guid roomId, string actor, string target, CancellationToken ct = default)
+    {
+        var room = await db.Rooms.AsNoTracking().FirstOrDefaultAsync(r => r.Id == roomId, ct)
+            ?? throw new RoomRuleException(RuleViolation.NotFound, "Room not found.");
+        if (actor != room.HostPlayer)
+            throw new RoomRuleException(RuleViolation.Forbidden, "Only the host can reset a seat.");
+        if (target == room.HostPlayer)
+            throw new RoomRuleException(RuleViolation.InvalidInput, "The host's own seat cannot be reset. If the host forgot their PIN, start a new room.");
+
+        var seat = await db.RoomPlayers.FirstOrDefaultAsync(p => p.RoomId == roomId && p.Name == target, ct)
+            ?? throw new RoomRuleException(RuleViolation.NotFound, "There is no such player in this room.");
+        var latest = await db.GameSessions.AsNoTracking().Where(s => s.RoomId == roomId).OrderByDescending(s => s.Number).FirstAsync(ct);
+        if (latest.Status == SessionStatus.Active)
+            throw new RoomRuleException(RuleViolation.Conflict, "End the current game before resetting a seat.");
+
+        seat.PinHash = null;
+        seat.ClaimedAt = null;
+        seat.InviteToken = GenerateToken();
+        seat.TokenVersion++;
+        db.RoomAuditEvents.Add(new RoomAuditEvent
+        {
+            Id = Guid.NewGuid(),
+            RoomId = roomId,
+            Actor = actor,
+            Action = RoomAuditEvent.SeatReset,
+            Target = target,
+            OccurredAt = clock.GetUtcNow(),
+        });
+        await db.SaveChangesAsync(ct);
+        return new PlayerInvite(seat.Name, seat.InviteToken);
+    }
+
     private IGameEngine EngineFor(string gameType) =>
         engines.FirstOrDefault(e => e.GameType == gameType)
         ?? throw new RoomRuleException(RuleViolation.InvalidInput, $"'{gameType}' is not a known game type.");

@@ -23,18 +23,18 @@ public sealed class PlayerTokenService(RoomDbContext db, IOptions<RoomOptions> o
     {
         var match = await db.RoomPlayers
             .Where(p => p.Room!.Slug == roomSlug && p.Name == player)
-            .Select(p => new { p.RoomId, p.PinHash, HostPlayer = p.Room!.HostPlayer })
+            .Select(p => new { p.RoomId, p.PinHash, p.TokenVersion, HostPlayer = p.Room!.HostPlayer })
             .SingleOrDefaultAsync(ct);
 
         // A claimed-but-nonexistent player still runs a hash comparison so timing does not reveal valid names.
         var known = match is not null && PinHasher.Verify(pin, match.PinHash);
         if (!known) return null;
 
-        var token = CreateToken(match!.RoomId, player);
+        var token = CreateToken(match!.RoomId, player, match.TokenVersion);
         return new IssuedToken(token, match.RoomId, roomSlug, player == match.HostPlayer);
     }
 
-    private string CreateToken(Guid roomId, string player)
+    private string CreateToken(Guid roomId, string player, int tokenVersion)
     {
         var now = clock.GetUtcNow().UtcDateTime;
         var descriptor = new SecurityTokenDescriptor
@@ -43,6 +43,7 @@ public sealed class PlayerTokenService(RoomDbContext db, IOptions<RoomOptions> o
             [
                 new Claim(PlayerIdentity.NameClaim, player),
                 new Claim(PlayerIdentity.RoomClaim, roomId.ToString()),
+                new Claim(PlayerIdentity.VersionClaim, tokenVersion.ToString(System.Globalization.CultureInfo.InvariantCulture)),
             ]),
             NotBefore = now,
             Expires = now + Lifetime,

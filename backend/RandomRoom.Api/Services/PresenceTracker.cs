@@ -12,6 +12,14 @@ public sealed class PresenceTracker
 
     public void Disconnected(string connectionId) => connections.TryRemove(connectionId, out _);
 
+    /// <summary>Forgets every connection a player has in a room and returns their ids, so the caller can cut them off.</summary>
+    public IReadOnlyList<string> RemovePlayer(Guid roomId, string player)
+    {
+        var ids = connections.Where(c => c.Value.RoomId == roomId && c.Value.Player == player).Select(c => c.Key).ToList();
+        foreach (var id in ids) connections.TryRemove(id, out _);
+        return ids;
+    }
+
     public IReadOnlyList<string> OnlinePlayers(Guid roomId) =>
         connections.Values.Where(c => c.RoomId == roomId).Select(c => c.Player).Distinct().ToList();
 

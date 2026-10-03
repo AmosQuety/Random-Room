@@ -37,6 +37,7 @@ public static class RoomEndpoints
             rooms.GetSnapshotForAsync(http.User.GetRoomId(), http.User.GetPlayerName(), ct));
         room.MapPost("/action", (HttpContext http, ActionRequest request, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
             Act(http, broadcaster, (roomId, player) => rooms.PerformActionAsync(roomId, player, request.Action, request.Payload, ct), ct));
+        room.MapPost("/players/{name}/reset-pin", ResetPin).RequireRateLimiting(RoomAdminRateLimitPolicy);
         room.MapPost("/session/start", (HttpContext http, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
             Act(http, broadcaster, (roomId, player) => rooms.StartSessionAsync(roomId, player, ct), ct));
         room.MapPost("/session/end", (HttpContext http, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
@@ -71,6 +72,16 @@ public static class RoomEndpoints
     {
         var player = await admin.ClaimInviteAsync(slug, token, request.Pin, ct);
         return Results.Ok(new ClaimInviteResponse(player));
+    }
+
+    private static async Task<IResult> ResetPin(
+        string name, HttpContext http, RoomAdminService admin, RoomBroadcaster broadcaster, CancellationToken ct)
+    {
+        var roomId = http.User.GetRoomId();
+        var invite = await admin.ResetSeatAsync(roomId, http.User.GetPlayerName(), name, ct);
+        await broadcaster.RevokeSeatAsync(roomId, name, ct);
+        await broadcaster.PublishAsync(roomId, ct);
+        return Results.Ok(invite);
     }
 
     private static async Task<IResult> Act(

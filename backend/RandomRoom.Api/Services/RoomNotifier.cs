@@ -7,11 +7,15 @@ public interface IRoomNotifier
 {
     /// <summary>Sends one player their own view of the room. There is deliberately no room-wide send: views differ per player.</summary>
     Task PublishToPlayerAsync(Guid roomId, string player, RoomSnapshot snapshot, CancellationToken ct = default);
+
+    /// <summary>Tells a player their seat was reset and stops sending anything to the connections they already have open.</summary>
+    Task RevokePlayerAsync(Guid roomId, string player, IReadOnlyList<string> connectionIds, CancellationToken ct = default);
 }
 
 public sealed class SignalRRoomNotifier(IHubContext<RoomHub> hub) : IRoomNotifier
 {
     public const string SnapshotEvent = "roomChanged";
+    public const string RevokedEvent = "seatReset";
 
     public static string GroupName(Guid roomId) => $"room:{roomId}";
 
@@ -20,6 +24,17 @@ public sealed class SignalRRoomNotifier(IHubContext<RoomHub> hub) : IRoomNotifie
 
     public Task PublishToPlayerAsync(Guid roomId, string player, RoomSnapshot snapshot, CancellationToken ct = default) =>
         hub.Clients.Group(PlayerGroupName(roomId, player)).SendAsync(SnapshotEvent, snapshot, ct);
+
+    public async Task RevokePlayerAsync(Guid roomId, string player, IReadOnlyList<string> connectionIds, CancellationToken ct = default)
+    {
+        var group = PlayerGroupName(roomId, player);
+        await hub.Clients.Group(group).SendAsync(RevokedEvent, ct);
+        foreach (var connectionId in connectionIds)
+        {
+            await hub.Groups.RemoveFromGroupAsync(connectionId, group, ct);
+            await hub.Groups.RemoveFromGroupAsync(connectionId, GroupName(roomId), ct);
+        }
+    }
 }
 
 /// <summary>
@@ -33,4 +48,8 @@ public sealed class RoomBroadcaster(GameSessionService rooms, PresenceTracker pr
         foreach (var player in presence.OnlinePlayers(roomId))
             await notifier.PublishToPlayerAsync(roomId, player, await rooms.GetSnapshotForAsync(roomId, player, ct), ct);
     }
+
+    /// <summary>Cuts a reset seat's open connections off from the room, so the old device receives nothing further.</summary>
+    public Task RevokeSeatAsync(Guid roomId, string player, CancellationToken ct = default) =>
+        notifier.RevokePlayerAsync(roomId, player, presence.RemovePlayer(roomId, player), ct);
 }

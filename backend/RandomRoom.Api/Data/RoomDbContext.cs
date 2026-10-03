@@ -18,6 +18,7 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
     public DbSet<RoomGameSetup> RoomGameSetups => Set<RoomGameSetup>();
     public DbSet<GameSessionState> GameSessionStates => Set<GameSessionState>();
     public DbSet<GameEntry> GameEntries => Set<GameEntry>();
+    public DbSet<RoomAuditEvent> RoomAuditEvents => Set<RoomAuditEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -45,6 +46,15 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
             player.Property(p => p.PinHash).HasMaxLength(256);
             player.Property(p => p.InviteToken).HasMaxLength(64);
             player.HasOne(p => p.Room).WithMany().HasForeignKey(p => p.RoomId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RoomAuditEvent>(audit =>
+        {
+            audit.HasIndex(e => new { e.RoomId, e.OccurredAt });
+            audit.Property(e => e.Actor).HasMaxLength(32);
+            audit.Property(e => e.Action).HasMaxLength(32);
+            audit.Property(e => e.Target).HasMaxLength(32);
+            audit.HasOne<Room>().WithMany().HasForeignKey(e => e.RoomId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<GameSession>(session =>
@@ -139,7 +149,8 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
     private void RejectImmutableMutations()
     {
         var mutated = ChangeTracker.Entries<RandomPickerEvent>().Any(e => e.State is EntityState.Modified or EntityState.Deleted)
-            || ChangeTracker.Entries<TriviaAnswer>().Any(e => e.State is EntityState.Modified or EntityState.Deleted);
+            || ChangeTracker.Entries<TriviaAnswer>().Any(e => e.State is EntityState.Modified or EntityState.Deleted)
+            || ChangeTracker.Entries<RoomAuditEvent>().Any(e => e.State is EntityState.Modified or EntityState.Deleted);
         if (mutated)
         {
             throw new InvalidOperationException("Recorded game events are immutable once recorded.");

@@ -113,6 +113,23 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
         // Browsers cannot set headers on WebSocket upgrades, so SignalR sends the token in the query string.
         jwt.Events = new JwtBearerEvents
         {
+            // A signed token is not enough: the seat must still be on the version the token was issued for, so a
+            // reset (forgotten PIN, lost device) signs the old device out immediately.
+            OnTokenValidated = async ctx =>
+            {
+                var user = ctx.Principal!;
+                if (!Guid.TryParse(user.FindFirst(PlayerIdentity.RoomClaim)?.Value, out var roomId) || user.FindFirst(PlayerIdentity.NameClaim) is not { } name)
+                {
+                    ctx.Fail("The token has no seat.");
+                    return;
+                }
+
+                var db = ctx.HttpContext.RequestServices.GetRequiredService<RoomDbContext>();
+                var version = user.GetTokenVersion();
+                var current = await db.RoomPlayers.AsNoTracking()
+                    .AnyAsync(p => p.RoomId == roomId && p.Name == name.Value && p.TokenVersion == version, ctx.HttpContext.RequestAborted);
+                if (!current) ctx.Fail("The seat was reset or no longer exists.");
+            },
             OnMessageReceived = ctx =>
             {
                 if (ctx.Request.Path.StartsWithSegments("/hubs")) ctx.Token = ctx.Request.Query["access_token"];

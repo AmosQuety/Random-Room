@@ -167,6 +167,14 @@ public sealed class RecordingNotifier : IRoomNotifier
         Sent.Add((player, snapshot));
         return Task.CompletedTask;
     }
+
+    public List<(string Player, IReadOnlyList<string> ConnectionIds)> Revoked { get; } = [];
+
+    public Task RevokePlayerAsync(Guid roomId, string player, IReadOnlyList<string> connectionIds, CancellationToken ct = default)
+    {
+        Revoked.Add((player, connectionIds));
+        return Task.CompletedTask;
+    }
 }
 
 public class RoomBroadcasterTests
@@ -188,6 +196,28 @@ public class RoomBroadcasterTests
         var lydia = (SecretEngine.SecretPayload)notifier.Sent.Single(s => s.Player == "Lydia").Snapshot.GamePayload;
         Assert.Equal("hunter2", amos.Secret);
         Assert.Null(lydia.Secret);
+    }
+}
+
+public class SeatRevocationTests
+{
+    [Fact]
+    public async Task Revoking_a_seat_cuts_off_every_connection_that_player_has_and_nobody_elses()
+    {
+        using var h = new GameHarness(d => new SecretEngine(d.Store), "test-secret", new { });
+        var presence = new PresenceTracker();
+        presence.Connected("c1", h.RoomId, "Amos");
+        presence.Connected("c2", h.RoomId, "Lydia");
+        presence.Connected("c3", h.RoomId, "Lydia");
+        var notifier = new RecordingNotifier();
+
+        await new RoomBroadcaster(h.Service, presence, notifier).RevokeSeatAsync(h.RoomId, "Lydia");
+
+        var revoked = Assert.Single(notifier.Revoked);
+        Assert.Equal("Lydia", revoked.Player);
+        Assert.Equal(["c2", "c3"], revoked.ConnectionIds.Order());
+        Assert.True(presence.IsOnline(h.RoomId, "Amos"));
+        Assert.False(presence.IsOnline(h.RoomId, "Lydia"));
     }
 }
 
