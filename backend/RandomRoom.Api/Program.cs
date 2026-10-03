@@ -40,6 +40,7 @@ builder.Services.AddSingleton<PresenceTracker>();
 builder.Services.AddSingleton<IRandomChoiceSource, CryptoRandomChoiceSource>();
 builder.Services.AddSingleton<IRoomNotifier, SignalRRoomNotifier>();
 builder.Services.AddScoped<PlayerTokenService>();
+builder.Services.AddSingleton(RoomSnapshotSequencer.Shared);
 builder.Services.AddScoped<GameSessionService>();
 builder.Services.AddScoped<RoomBroadcaster>();
 builder.Services.AddScoped<GameStore>();

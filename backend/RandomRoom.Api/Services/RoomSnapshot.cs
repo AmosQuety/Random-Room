@@ -5,6 +5,7 @@ namespace RandomRoom.Api.Services;
 /// <summary>
 /// Everything a client needs to render the room. The same view is sent to every participant.
 /// GamePayload is whatever shape the room's IGameEngine returns - generic here on purpose.
+/// Sequence orders snapshots of one room: a client keeps the highest it has seen and ignores older ones.
 /// </summary>
 public sealed record RoomSnapshot(
     Guid RoomId,
@@ -14,7 +15,8 @@ public sealed record RoomSnapshot(
     string GameType,
     SessionView Session,
     IReadOnlyList<PlayerView> Players,
-    object GamePayload);
+    object GamePayload,
+    long Sequence);
 
 public sealed record SessionView(Guid Id, int Number, SessionStatus Status, DateTimeOffset? StartedAt, DateTimeOffset? EndedAt);
 

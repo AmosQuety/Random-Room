@@ -11,8 +11,11 @@ namespace RandomRoom.Api.Services;
 /// session active, when a new one starts. Everything about what happens inside an active
 /// session is delegated to the room's IGameEngine (chosen by Room.GameType).
 /// </summary>
-public sealed class GameSessionService(RoomDbContext db, PresenceTracker presence, TimeProvider clock, IEnumerable<IGameEngine> engines)
+public sealed class GameSessionService(
+    RoomDbContext db, PresenceTracker presence, TimeProvider clock, IEnumerable<IGameEngine> engines, RoomSnapshotSequencer? sequencer = null)
 {
+    private readonly RoomSnapshotSequencer snapshotSequencer = sequencer ?? RoomSnapshotSequencer.Shared;
+
     /// <summary>The public view of the room: no viewer, so games with hidden information return only what everyone may see.</summary>
     public Task<RoomSnapshot> GetSnapshotAsync(Guid roomId, CancellationToken ct = default) =>
         BuildSnapshotAsync(roomId, viewer: null, ct);
@@ -21,7 +24,10 @@ public sealed class GameSessionService(RoomDbContext db, PresenceTracker presenc
     public Task<RoomSnapshot> GetSnapshotForAsync(Guid roomId, string viewer, CancellationToken ct = default) =>
         BuildSnapshotAsync(roomId, viewer, ct);
 
-    private async Task<RoomSnapshot> BuildSnapshotAsync(Guid roomId, string? viewer, CancellationToken ct)
+    private Task<RoomSnapshot> BuildSnapshotAsync(Guid roomId, string? viewer, CancellationToken ct) =>
+        snapshotSequencer.RunAsync(roomId, sequence => BuildSnapshotAsync(roomId, viewer, sequence, ct));
+
+    private async Task<RoomSnapshot> BuildSnapshotAsync(Guid roomId, string? viewer, long sequence, CancellationToken ct)
     {
         var room = await RequireRoomAsync(roomId, ct);
         var session = await CurrentSessionAsync(roomId, ct);
@@ -38,7 +44,8 @@ public sealed class GameSessionService(RoomDbContext db, PresenceTracker presenc
             players.Select(p => new PlayerView(p.Name, presence.IsOnline(roomId, p.Name))).ToList(),
             viewer is null
                 ? await engine.GetPayloadAsync(roomId, session.Id, ct)
-                : await engine.GetPayloadForAsync(roomId, session.Id, viewer, ct));
+                : await engine.GetPayloadForAsync(roomId, session.Id, viewer, ct),
+            sequence);
     }
 
     public async Task<RoomSnapshot> PerformActionAsync(
