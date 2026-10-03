@@ -65,4 +65,24 @@ public class InputLimitTests
             d => new RandomRoom.Api.Games.Trivia.TriviaEngine(d.Db, d.Clock), "trivia",
             new { questions = new[] { new { text = question.Text, options = question.Options, correctIndex = 0 } } }), "300");
     }
+
+    [Fact]
+    public void Values_exactly_at_each_limit_are_accepted()
+    {
+        var choices = Enumerable.Range(1, 49).Select(i => $"Choice {i}").Append(new string('c', 80)).ToArray();
+
+        using var h = Picker(new { choices }, title: new string('t', 80));
+
+        Assert.NotEqual(Guid.Empty, h.RoomId);
+    }
+
+    [Fact]
+    public void Trivia_question_of_exactly_300_characters_is_accepted()
+    {
+        using var h = new GameHarness(
+            d => new RandomRoom.Api.Games.Trivia.TriviaEngine(d.Db, d.Clock), "trivia",
+            new { questions = new[] { new { text = new string('q', 300), options = new[] { "Yes", "No" }, correctIndex = 0 } } });
+
+        Assert.NotEqual(Guid.Empty, h.RoomId);
+    }
 }

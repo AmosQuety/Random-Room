@@ -130,6 +130,20 @@ public class TriviaEngineTests
     }
 
     [Fact]
+    public async Task Activity_includes_every_answer_once_the_whole_game_is_over()
+    {
+        using var h = new TriviaTestHarness();
+        await h.Room.StartRoundAsync(TriviaTestHarness.HostPlayer);
+        await h.Room.AnswerAsync("Amos", 1);
+        await h.Room.AnswerAsync("Lydia", 0);
+        await h.Room.AnswerAsync("Amos", 0);
+        var snapshot = await h.Room.AnswerAsync("Lydia", 1);
+
+        Assert.Equal(SessionStatus.Completed, snapshot.Session.Status);
+        Assert.Equal(4, Payload(snapshot).Activity.Count);
+    }
+
+    [Fact]
     public async Task Session_completes_after_the_last_question_is_answered_by_everyone()
     {
         using var h = new TriviaTestHarness();
