@@ -21,6 +21,7 @@ export function ClaimInviteScreen({ slug, token, onJoined }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [claimedAs, setClaimedAs] = useState<string | null>(null);
+  const [signInNotice, setSignInNotice] = useState<string | null>(null);
 
   const mismatch = confirmPin.length > 0 && pin !== confirmPin;
 
@@ -30,7 +31,12 @@ export function ClaimInviteScreen({ slug, token, onJoined }: Props) {
     try {
       onJoined(await join(slug, player, pin));
       redirect(`/room/${slug}`);
-    } catch {
+    } catch (e) {
+      setSignInNotice(
+        e instanceof ApiError && e.status === 429
+          ? "Too many people are signing in from this network. Wait a minute, then press Continue."
+          : "We could not sign you in just now. Press Continue to sign in with your PIN.",
+      );
       setPending(false);
     }
   }
@@ -64,6 +70,7 @@ export function ClaimInviteScreen({ slug, token, onJoined }: Props) {
           <Eyebrow className="!text-leaf">PIN set</Eyebrow>
           <h1 className="font-display text-4xl font-black leading-tight">You're in, {claimedAs}</h1>
           <p className="text-lg text-muted">Keep that PIN to yourself - it's what proves it's you.</p>
+          {signInNotice && <Alert>{signInNotice}</Alert>}
           <Button variant="primary" size="lg" onClick={() => redirect(`/room/${slug}/join`)}>
             Continue to the room <ArrowRightIcon />
           </Button>

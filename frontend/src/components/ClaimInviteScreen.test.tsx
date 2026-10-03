@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiError } from "../lib/api";
 import type { Session } from "../lib/types";
 import { ClaimInviteScreen } from "./ClaimInviteScreen";
 
@@ -40,5 +41,14 @@ describe("ClaimInviteScreen", () => {
 
     expect(await screen.findByRole("button", { name: /continue to the room/i })).toBeInTheDocument();
     expect(onJoined).not.toHaveBeenCalled();
+  });
+
+  it("says so when the sign-in is throttled, instead of only showing success", async () => {
+    api.join.mockRejectedValue(new ApiError("Too many attempts.", 429));
+    render(<ClaimInviteScreen slug="abc123" token="tok" onJoined={vi.fn()} />);
+
+    fillAndSubmit("1234");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/wait a minute/i);
   });
 });
