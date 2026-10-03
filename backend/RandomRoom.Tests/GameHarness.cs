@@ -48,7 +48,7 @@ public sealed class GameHarness : IDisposable
     public string[] Players { get; }
     public string Host => Players[0];
 
-    public GameHarness(Func<EngineDeps, IGameEngine> engineFactory, string gameType, object setup, string[]? players = null, IRandomChoiceSource? randomSource = null)
+    public GameHarness(Func<EngineDeps, IGameEngine> engineFactory, string gameType, object setup, string[]? players = null, IRandomChoiceSource? randomSource = null, string title = "Test room")
     {
         factory = engineFactory;
         random = randomSource ?? new ScriptedRandom();
@@ -62,7 +62,7 @@ public sealed class GameHarness : IDisposable
             Service = service;
 
             var admin = new RoomAdminService(Db, Clock, [engine]);
-            var created = admin.CreateRoomAsync(new CreateRoomRequest("Test room", gameType, TestSetup.Of(setup), Players, Host))
+            var created = admin.CreateRoomAsync(new CreateRoomRequest(title, gameType, TestSetup.Of(setup), Players, Host))
                 .GetAwaiter().GetResult();
             RoomId = Db.Rooms.Single(r => r.Slug == created.Slug).Id;
         }

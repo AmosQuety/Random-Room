@@ -28,6 +28,10 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
 {
     private const int MinPlayers = 2;
 
+    // Match the column sizes in RoomDbContext, so oversized input is a 400 and not a database error.
+    private const int MaxTitleLength = 80;
+    private const int MaxPlayerNameLength = 32;
+
     public async Task<CreateRoomResult> CreateRoomAsync(CreateRoomRequest request, CancellationToken ct = default)
     {
         var title = request.Title.Trim();
@@ -35,6 +39,10 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
 
         if (title.Length == 0)
             throw new RoomRuleException(RuleViolation.InvalidInput, "A room needs a title.");
+        if (title.Length > MaxTitleLength)
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"The room name is too long (at most {MaxTitleLength} characters).");
+        if (players.Any(p => p.Length > MaxPlayerNameLength))
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"Player names can be at most {MaxPlayerNameLength} characters.");
         if (players.Count < MinPlayers)
             throw new RoomRuleException(RuleViolation.InvalidInput, $"A room needs at least {MinPlayers} players.");
         if (!players.Contains(request.HostPlayer, StringComparer.Ordinal))

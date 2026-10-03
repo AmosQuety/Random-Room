@@ -23,6 +23,7 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
     public const string StarterBank = "trivia-starter";
 
     private const int MaxCategoryLength = 40;
+    private const int MaxQuestionLength = 300;
     private const int MinTimeLimit = 5;
     private const int MaxTimeLimit = 120;
     private const int DefaultBuiltInCount = 10;
@@ -72,6 +73,8 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
 
         if (text.Length == 0)
             throw new RoomRuleException(RuleViolation.InvalidInput, "Every trivia question needs text.");
+        if (text.Length > MaxQuestionLength)
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"A trivia question can be at most {MaxQuestionLength} characters.");
         if (options.Count < 2)
             throw new RoomRuleException(RuleViolation.InvalidInput, $"'{text}' needs at least 2 options.");
         if (correctIndex < 0 || correctIndex >= options.Count)
