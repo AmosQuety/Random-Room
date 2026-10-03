@@ -66,6 +66,8 @@ export function JoinScreen({ slug, onJoined }: Props) {
     }
   }
 
+  const missingStep = !player ? "Pick your name above to continue." : pin.length < 4 ? "Enter the PIN you chose when you opened your invite link (4+ characters)." : null;
+
   if (load.status === "loading") {
     return (
       <Shell>
@@ -185,6 +187,11 @@ export function JoinScreen({ slug, onJoined }: Props) {
           <Button type="submit" variant="accent" size="lg" disabled={!player || pin.length < 4 || pending}>
             {pending ? "Joining..." : "Enter the room"} <ArrowRightIcon />
           </Button>
+          {missingStep && !pending && (
+            <p role="status" className="-mt-3 text-sm text-muted">
+              {missingStep}
+            </p>
+          )}
         </form>
       </div>
     </Shell>
