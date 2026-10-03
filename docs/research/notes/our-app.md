@@ -8,7 +8,7 @@ play, state sync, roles, persistence, operations, testing.
 
 A web app: ASP.NET Core 10 API + EF Core + Postgres + SignalR (`backend/RandomRoom.Api`), React 19 + Vite frontend
 (`frontend/`), served as one Docker container (`README.md`, "Deploy on Render"). Single server instance by design:
-presence and the snapshot sequencer are in process memory (`README.md` "Notes"; `Services/RoomSnapshotSequencer.cs:9-13`).
+presence and the snapshot sequencer are in process memory (`README.md` "Notes"; `Services/RoomSnapshotSequencer.cs:10-12`).
 Turn/phase based; no real-time simulation.
 
 ## 2. Game contract
@@ -50,23 +50,23 @@ There is no shutdown hook on the engine: completion is `IsSessionCompleteAsync`,
 - Actions go in over REST (`POST /api/room/action`, `Endpoints/RoomEndpoints.cs:52`), state goes out over SignalR
   (`Hubs/RoomHub.cs:8`: "Server-to-client push only").
 - After any change, `RoomBroadcaster.PublishAsync` builds **one snapshot per online player** and sends it to that
-  player's group (`Services/RoomNotifier.cs:46-55`, 59-63). There is deliberately no room-wide send (line 5).
+  player's group (`Services/RoomNotifier.cs:51-57`, notifier 29-30). There is deliberately no room-wide send (line 8).
 - Each snapshot carries a `Sequence`; builds for one room are serialised behind a semaphore and sequences start from the
-  clock so they rise across restarts (`Services/RoomSnapshotSequencer.cs:4-37`). The client keeps the higher one
+  clock so they rise across restarts (`Services/RoomSnapshotSequencer.cs:5-42`). The client keeps the higher one
   (`frontend/src/lib/snapshots.ts`, `newerSnapshot`) and drops an action error once a newer snapshot arrives
   (`currentError`).
-- Resync: full refetch on every (re)connect (`frontend/src/lib/useRoom.ts:84-115`). No acks, no deltas: every push is a
+- Resync: full refetch on every (re)connect (`frontend/src/lib/useRoom.ts:28-59`). No acks, no deltas: every push is a
   full snapshot.
 - Hidden information: `GetPayloadForAsync(viewer)`; the viewer-less view must be safe (`IGameEngine.cs:49-55`;
   `DECISIONS.md` "Per-viewer snapshots").
-- Doc drift found: `Services/RoomSnapshot.cs:4` still says "The same view is sent to every participant", which is no
+- Doc drift found: `Services/RoomSnapshot.cs:6` still says "The same view is sent to every participant", which is no
   longer true since per-viewer snapshots were added.
 
 ## 5. Timers and concurrency
 
 - Deadlines are server time; clients get `TimerView(DeadlineAt, ServerNow)` and may send `tick`, honoured only if the
-  server clock agrees (`Games/Shared/ServerTimer.cs:3-19`). No background tick loop.
-- Phase moves through `PhaseGuard` (`Games/Shared/PhaseGuard.cs:17-40`).
+  server clock agrees (`Games/Shared/ServerTimer.cs:4-19`). No background tick loop.
+- Phase moves through `PhaseGuard` (`Games/Shared/PhaseGuard.cs:18-39`).
 - Concurrency: row lock `FOR UPDATE` on the session state (`GameStore.cs:176-184`), optimistic `Version`
   (73-86), single-UPDATE claims for buzzers (88-110), unique index on entries (114-138).
 
@@ -86,7 +86,7 @@ There is no shutdown hook on the engine: completion is `IsSessionCompleteAsync`,
 - Everything in Postgres; restart-safe because live state is in rows, not memory (`GameStore.cs:24-28`).
 - Scores are per game and per session; no room-wide or cross-session score (`docs/plan-switch-games-in-a-room.md`
   "Scores are per game").
-- Built-in content: versioned JSON embedded in the assembly (`Games/Shared/ContentBank.cs:5-9`).
+- Built-in content: versioned JSON embedded in the assembly (`Games/Shared/ContentBank.cs:7-9`).
 - Retention job deletes rooms inactive for `Room__RetentionDays` (default 30)
   (`Services/RoomRetentionService.cs:8-35`).
 

@@ -31,7 +31,7 @@ built around (`README.md:64-70`):
 ## Compare
 
 Our phase machine (`PhaseGuard`: lobby -> collecting -> revealed -> collecting | complete,
-`backend/RandomRoom.Api/Games/Shared/PhaseGuard.cs:17-24`) and session status (Waiting -> Active -> Completed,
+`backend/RandomRoom.Api/Games/Shared/PhaseGuard.cs:18-25`) and session status (Waiting -> Active -> Completed,
 `Domain/GameSession.cs`) are the same idea, driven by actions and a lazily checked deadline instead of ticks.
 Our scoreboard rule "ties share a rank, next rank skips" (`DECISIONS.md` "Shared `Scoreboard` extracted now") is a
 deterministic tie rule; it lives in the frontend component. Scores are keyed by player name, which is stable for the

@@ -22,8 +22,7 @@ of `LICENSE` (all "MIT License"). These did not bear on the owner's questions be
 | zee-dot-weapons | a weapons pack built on the family | out of scope |
 
 Found to exist with `git ls-remote` but not cloned or read: dot-2d, dot-objective, dot-bootstrap, dot-voice, dot-audio,
-dot-settings, dot-weapon, dot-browser, dot-spectate, dot-2d-hungry, dot-fx (modcommunity); mg-buses-from-hell
-(gamemann). NOT READ.
+dot-settings, dot-weapon, dot-browser, dot-spectate, dot-2d-hungry, dot-fx (modcommunity); mg-buses-from-hell and mg-smash-copter (gamemann). NOT READ.
 
 Named in the notes but not found under either owner: dot-query, game-blob, website-city, game-dev, dot-randomness,
-dot-p2p, mg-smash-copter (not tested). UNREACHABLE or private; I cannot tell which.
+dot-p2p. UNREACHABLE or private; I cannot tell which.
