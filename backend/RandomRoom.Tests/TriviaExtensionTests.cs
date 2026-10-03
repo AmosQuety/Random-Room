@@ -75,6 +75,75 @@ public class TriviaExtensionTests
         });
     }
 
+    // ---- question packs ----
+
+    private static readonly string[] EastAfricaCategories = ["Uganda", "Food", "Region"];
+
+    [Fact]
+    public void The_east_africa_pack_is_sound_and_fits_the_trivia_limits()
+    {
+        var bank = ContentBank.Load<JsonElement>(TriviaEngine.EastAfricaBank);
+
+        Assert.Equal(20, bank.Count);
+        Assert.Equal(bank.Count, bank.Select(q => q.GetProperty("text").GetString()).Distinct().Count());
+        Assert.All(bank, q =>
+        {
+            var options = q.GetProperty("options").EnumerateArray().Select(o => o.GetString()!).ToList();
+            Assert.InRange(options.Count, 2, TriviaEngine.MaxOptionsPerQuestion);
+            Assert.Equal(options.Count, options.Distinct().Count());
+            Assert.All(options, o => Assert.InRange(o.Length, 1, TriviaEngine.MaxOptionLength));
+            Assert.InRange(q.GetProperty("text").GetString()!.Length, 1, TriviaEngine.MaxQuestionLength);
+            Assert.InRange(q.GetProperty("correctIndex").GetInt32(), 0, options.Count - 1);
+            Assert.Contains(q.GetProperty("category").GetString(), EastAfricaCategories);
+        });
+        Assert.True(bank.Select(q => q.GetProperty("correctIndex").GetInt32()).Distinct().Count() >= 3, "the right answer should not always sit in the same place");
+    }
+
+    [Fact]
+    public async Task The_host_can_play_the_east_africa_pack_and_every_question_comes_from_it()
+    {
+        using var game = Trivia(new { useBuiltIn = true, starterPack = "east-africa", builtInCount = 20 });
+        var view = Payload(await game.StartAsync());
+        Assert.Equal(20, view.TotalQuestions);
+
+        var seen = new List<string?> { view.CurrentQuestion!.Category };
+        for (var i = 1; i < 20; i++)
+        {
+            foreach (var player in game.Players) await game.ActAsync(player, "answer", new { optionIndex = 0 });
+            seen.Add(Payload(await game.SnapshotAsync(game.Host)).CurrentQuestion?.Category);
+        }
+
+        Assert.All(seen.Where(c => c is not null), c => Assert.Contains(c, EastAfricaCategories));
+    }
+
+    [Fact]
+    public async Task Without_a_pack_the_general_starter_set_is_used_as_before()
+    {
+        using var game = Trivia(new { useBuiltIn = true, builtInCount = 5 });
+
+        var category = Payload(await game.StartAsync()).CurrentQuestion!.Category;
+
+        Assert.DoesNotContain(category, EastAfricaCategories);
+    }
+
+    [Fact]
+    public void An_unknown_pack_is_rejected()
+    {
+        var ex = SetupRejected(new { useBuiltIn = true, starterPack = "atlantis" });
+
+        Assert.Equal(RuleViolation.InvalidInput, ex.Violation);
+        Assert.Contains("atlantis", ex.Message);
+    }
+
+    [Fact]
+    public void Asking_for_more_questions_than_the_chosen_pack_has_is_rejected_but_all_of_it_is_fine()
+    {
+        Assert.Equal(RuleViolation.InvalidInput, SetupRejected(new { useBuiltIn = true, starterPack = "east-africa", builtInCount = 21 }).Violation);
+
+        using var game = Trivia(new { useBuiltIn = true, starterPack = "east-africa", builtInCount = 20 });
+        Assert.NotEqual(Guid.Empty, game.RoomId);
+    }
+
     [Fact]
     public async Task The_built_in_bank_alone_plays_ten_questions_by_default()
     {

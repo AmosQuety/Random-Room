@@ -1,8 +1,18 @@
-import type { TriviaQuestionInput, TriviaSetup } from "./types";
+import type { StarterPackKey, TriviaQuestionInput, TriviaSetup } from "./types";
 
-/** Matches the number of starter questions the server ships (backend Games/Content/trivia-starter.json). */
-export const STARTER_COUNT = 30;
-export const STARTER_COUNT_CHOICES = [5, 10, 15, 20, 30];
+/** The ready-made sets. Sizes match the banks the server ships (backend Games/Content/trivia-*.json). */
+export const STARTER_PACKS: { key: StarterPackKey; label: string; size: number; blurb: string }[] = [
+  { key: "general", label: "General knowledge", size: 30, blurb: "30 questions across science, geography, history, nature and food." },
+  { key: "east-africa", label: "East Africa", size: 20, blurb: "20 questions about Uganda, Kenya, Tanzania, Rwanda and the region." },
+];
+
+export const packOf = (key: StarterPackKey) => STARTER_PACKS.find((p) => p.key === key) ?? STARTER_PACKS[0];
+
+/** Usual counts that fit the pack, plus "all of it". */
+export const starterCountChoices = (key: StarterPackKey): number[] => {
+  const size = packOf(key).size;
+  return [...[5, 10, 15, 20, 30].filter((n) => n < size), size];
+};
 export const TIME_LIMIT_CHOICES = [10, 15, 20, 30, 45, 60];
 
 /** These match the server's limits (TriviaEngine), so a question the form accepts is never refused after the last step. */
@@ -14,7 +24,7 @@ export const MAX_CATEGORY_LENGTH = 40;
 
 export const emptyQuestion = (): TriviaQuestionInput => ({ text: "", options: ["", ""], correctIndex: 0, category: "" });
 
-export const defaultSetup: TriviaSetup = { questions: [emptyQuestion()], useBuiltIn: false, builtInCount: 10, timeLimit: null };
+export const defaultSetup: TriviaSetup = { questions: [emptyQuestion()], useBuiltIn: false, starterPack: "general", builtInCount: 10, timeLimit: null };
 
 /** Untouched rows are ignored rather than treated as mistakes. */
 export const isFilled = (q: TriviaQuestionInput): boolean =>
@@ -50,7 +60,7 @@ export function toApiSetup(setup: TriviaSetup) {
       correctIndex: q.correctIndex,
       ...(q.category.trim() ? { category: q.category.trim() } : {}),
     })),
-    ...(setup.useBuiltIn ? { useBuiltIn: true, builtInCount: setup.builtInCount } : {}),
+    ...(setup.useBuiltIn ? { useBuiltIn: true, starterPack: setup.starterPack, builtInCount: Math.min(setup.builtInCount, packOf(setup.starterPack).size) } : {}),
     ...(setup.timeLimit ? { timeLimitSeconds: setup.timeLimit } : {}),
   };
 }

@@ -51,10 +51,14 @@ export interface TriviaQuestionInput {
   category: string;
 }
 
+export type StarterPackKey = "general" | "east-africa";
+
 /** Local setup-form state. */
 export interface TriviaSetup {
   questions: TriviaQuestionInput[];
   useBuiltIn: boolean;
+  /** Which ready-made set the starter questions come from. */
+  starterPack: StarterPackKey;
   builtInCount: number;
   /** Seconds per question, or null for no limit. */
   timeLimit: number | null;

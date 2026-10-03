@@ -1,0 +1,225 @@
+{
+ "version": 1,
+ "items": [
+  {
+   "category": "Uganda",
+   "text": "What is the capital of Uganda?",
+   "options": [
+    "Entebbe",
+    "Jinja",
+    "Gulu",
+    "Kampala"
+   ],
+   "correctIndex": 3
+  },
+  {
+   "category": "Uganda",
+   "text": "In which year did Uganda become independent?",
+   "options": [
+    "1962",
+    "1957",
+    "1966",
+    "1971"
+   ],
+   "correctIndex": 0
+  },
+  {
+   "category": "Uganda",
+   "text": "Which bird is on Uganda's flag and coat of arms?",
+   "options": [
+    "Marabou stork",
+    "Shoebill",
+    "African fish eagle",
+    "Grey crowned crane"
+   ],
+   "correctIndex": 3
+  },
+  {
+   "category": "Uganda",
+   "text": "Which Ugandan town is known as the source of the White Nile?",
+   "options": [
+    "Masaka",
+    "Jinja",
+    "Mbale",
+    "Fort Portal"
+   ],
+   "correctIndex": 1
+  },
+  {
+   "category": "Uganda",
+   "text": "Which waterfalls on the Nile are inside a famous Ugandan national park?",
+   "options": [
+    "Victoria Falls",
+    "Blue Nile Falls",
+    "Murchison Falls",
+    "Kalambo Falls"
+   ],
+   "correctIndex": 2
+  },
+  {
+   "category": "Uganda",
+   "text": "Which Ugandan mountains are known as the \"Mountains of the Moon\"?",
+   "options": [
+    "Rwenzori",
+    "Elgon",
+    "Moroto",
+    "Muhavura"
+   ],
+   "correctIndex": 0
+  },
+  {
+   "category": "Uganda",
+   "text": "Bwindi Impenetrable Forest is famous for which animal?",
+   "options": [
+    "Lions",
+    "Elephants",
+    "Hippos",
+    "Mountain gorillas"
+   ],
+   "correctIndex": 3
+  },
+  {
+   "category": "Uganda",
+   "text": "Which imaginary line crosses southern Uganda?",
+   "options": [
+    "Tropic of Cancer",
+    "Prime Meridian",
+    "The Equator",
+    "Tropic of Capricorn"
+   ],
+   "correctIndex": 2
+  },
+  {
+   "category": "Uganda",
+   "text": "What is the currency of Uganda?",
+   "options": [
+    "Ugandan shilling",
+    "Kenyan shilling",
+    "Ugandan pound",
+    "Rwandan franc"
+   ],
+   "correctIndex": 0
+  },
+  {
+   "category": "Food",
+   "text": "Matooke is made from which food?",
+   "options": [
+    "Cassava",
+    "Sweet potato",
+    "Maize",
+    "Green bananas"
+   ],
+   "correctIndex": 3
+  },
+  {
+   "category": "Region",
+   "text": "What is the capital of Kenya?",
+   "options": [
+    "Mombasa",
+    "Kisumu",
+    "Nairobi",
+    "Nakuru"
+   ],
+   "correctIndex": 2
+  },
+  {
+   "category": "Region",
+   "text": "What is the capital of Rwanda?",
+   "options": [
+    "Butare",
+    "Kigali",
+    "Gisenyi",
+    "Musanze"
+   ],
+   "correctIndex": 1
+  },
+  {
+   "category": "Region",
+   "text": "Which city is the official capital of Tanzania?",
+   "options": [
+    "Dar es Salaam",
+    "Arusha",
+    "Mwanza",
+    "Dodoma"
+   ],
+   "correctIndex": 3
+  },
+  {
+   "category": "Region",
+   "text": "Which is the highest mountain in Africa?",
+   "options": [
+    "Mount Kilimanjaro",
+    "Mount Kenya",
+    "Mount Elgon",
+    "Mount Stanley"
+   ],
+   "correctIndex": 0
+  },
+  {
+   "category": "Region",
+   "text": "Which is the largest lake in Africa by area?",
+   "options": [
+    "Lake Tanganyika",
+    "Lake Victoria",
+    "Lake Malawi",
+    "Lake Albert"
+   ],
+   "correctIndex": 1
+  },
+  {
+   "category": "Region",
+   "text": "Which East African country is called the \"Land of a Thousand Hills\"?",
+   "options": [
+    "Uganda",
+    "Kenya",
+    "Tanzania",
+    "Rwanda"
+   ],
+   "correctIndex": 3
+  },
+  {
+   "category": "Region",
+   "text": "Which language is widely spoken as a common language across East Africa?",
+   "options": [
+    "Amharic",
+    "Zulu",
+    "Swahili",
+    "Hausa"
+   ],
+   "correctIndex": 2
+  },
+  {
+   "category": "Region",
+   "text": "The Serengeti is famous for the yearly migration of which animal?",
+   "options": [
+    "Wildebeest",
+    "Zebra only",
+    "Elephants",
+    "Giraffes"
+   ],
+   "correctIndex": 0
+  },
+  {
+   "category": "Region",
+   "text": "In which year did Kenya become independent?",
+   "options": [
+    "1960",
+    "1961",
+    "1964",
+    "1963"
+   ],
+   "correctIndex": 3
+  },
+  {
+   "category": "Region",
+   "text": "Which of these countries has the most people?",
+   "options": [
+    "Uganda",
+    "Ethiopia",
+    "Kenya",
+    "Tanzania"
+   ],
+   "correctIndex": 1
+  }
+ ]
+}

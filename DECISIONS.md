@@ -64,3 +64,22 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **Activity** is a room created, a game created, started or ended, or a recorded action in a game. An old room that is played again is kept.
 - **The job is the one place allowed to delete recorded answers and picks.** They are append-only while their room lives, and their foreign keys refuse a cascade, so the job deletes them first with `ExecuteDelete` (which bypasses the context's immutability guard on purpose) and then the room, in one transaction, 100 rooms at a time.
 - **A failed run is logged and retried at the next run.** Deleting is idempotent, so two instances running it at once is harmless.
+
+## Migrations at startup
+
+- **The app migrates only when allowed.** `Database__AutoMigrate=true` always migrates; `false` never does; unset migrates only a database on this machine (`localhost`, loopback addresses, a unix socket). A local `.env` pointing at a shared or production database therefore cannot change its schema by accident.
+- **When not allowed and the database is behind, the app refuses to start** with a message that says how to fix it, rather than running against a missing column. When the schema is current it starts normally.
+- **Production sets `Database__AutoMigrate=true`.** One instance, additive migrations, so applying them at startup is simple and safe. If you ever run several instances or want a review step, turn it off and run `dotnet ef database update` from the deploy pipeline.
+- **Retention stays at 30 days** (`Room__RetentionDays`), the default, confirmed.
+
+## Trivia packs
+
+- **Starter questions come in named packs** (`starterPack` in the setup: `general`, the default, or `east-africa`). The server maps the name to an embedded bank (`TriviaEngine.StarterPacks`), rejects unknown names with a 400, and takes the question count from the chosen bank. A setup with no pack behaves as before.
+- **The pack's size is also written in the frontend** (`STARTER_PACKS`), the same way the general set's size always was, so the form can offer sensible counts. Both places must change together.
+- **East Africa is unreviewed content.** Written from general knowledge, shipped on request so it can be tested; review it before relying on it (`docs/trivia-east-africa-draft.md`).
+
+## Database encryption
+
+- **TLS is required for any database that is not on this machine.** Npgsql's default (`Prefer`) falls back to plain text if encryption is blocked, which on the open internet lets someone on the path read the password and every room's data. The same "local" test as the migration guard decides (`localhost`, loopback, a unix socket), so local development is unchanged.
+- **An explicit choice always wins**: `?sslmode=...` on a URL or `SSL Mode=...` in a key=value string. A value that is not recognised never weakens the default.
+- **Not verified against a real hosted database.** The rule is covered by tests and local startup only; the first connection to Render, Neon or Supabase should be checked by hand. Whether a host's certificate validates under `Require` depends on the host; `Trust Server Certificate=true` is the escape hatch.

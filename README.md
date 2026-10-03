@@ -44,6 +44,23 @@ that folder first. To build somewhere else without touching it: `npm run build -
     cd backend && dotnet test          # needs the Postgres container above; each test uses a throwaway database
     cd frontend && npx vitest run && npx tsc -b
 
+## Database encryption
+
+A database on another machine is connected to with TLS required: if encryption is not available the app refuses to
+connect rather than quietly falling back to plain text. A database on this machine (`localhost`, loopback) is left as
+it was, so local development is unchanged. To choose otherwise for a remote database, say so in the connection: add
+`?sslmode=prefer` to a `postgres://` URL, or `SSL Mode=Prefer` to a key=value string (for example for a private network
+whose database does not offer TLS). `verify-full` and `verify-ca` are also accepted.
+
+## Database migrations
+
+The app changes the database schema at startup only when it is allowed to. If `Database__AutoMigrate` is not set it
+migrates a database on this machine (`localhost`, `127.x.x.x`, `::1`) and nothing else, so a local `.env` that points at
+a shared or production database cannot migrate it by accident. Set `Database__AutoMigrate=true` in production so a
+deploy applies new migrations, or leave it off and run `dotnet ef database update` yourself. If the database is behind
+and the app is not allowed to migrate it, it stops at startup and says so, instead of failing later on a missing column.
+Keep `Database__AutoMigrate=true` out of any `.env` you use locally.
+
 ## Data retention
 
 A background job runs a minute after the API starts and then daily. It deletes every room with no activity for
@@ -61,8 +78,10 @@ The repo root `Dockerfile` builds the UI and API into one container.
 
        Room__JwtSigningKey=...                                     (32+ random characters)
        ConnectionStrings__Default=<the Internal Database URL>      (postgres:// URLs are accepted as-is)
+       Database__AutoMigrate=true                                  (lets the app apply new migrations at startup)
 
-   The app refuses to start if the signing key is missing or too short.
+   The app refuses to start if the signing key is missing or too short. It also refuses to start against a database
+   that needs migrations unless `Database__AutoMigrate=true` (see "Database migrations" below).
 4. Open `https://<your-service>.onrender.com`, create a room, and send each player their own invite link privately. They choose their own PINs.
 
 Notes:
@@ -76,7 +95,7 @@ Notes:
 | Game | Category | Notes |
 | --- | --- | --- |
 | Random Picker | Reflex & Chance | Everyone triggers a server-random pick from a shared list |
-| Trivia | Quiz | Host-curated multiple choice with a scoreboard; optional categories, a 30-question starter bank, and a per-question timer |
+| Trivia | Quiz | Host-curated multiple choice with a scoreboard; optional categories, two ready-made question sets (general knowledge, East Africa), and a per-question timer |
 | Would You Rather | Poll & Reveal | Private two-way pick; sit with the majority to score. 30 built-in dilemmas |
 | This or That | Poll & Reveal | Rapid pairs, same scoring. 30 built-in pairs |
 | Most Likely To | Poll & Reveal | Vote for a friend (not yourself); the most-voted is crowned. 30 built-in prompts, 3+ players |

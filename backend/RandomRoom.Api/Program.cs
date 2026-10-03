@@ -32,8 +32,8 @@ builder.Services.AddOptions<RoomOptions>()
     .Validate(RoomOptions.IsValid, "Room settings need a 32+ char JwtSigningKey and a RetentionDays of 0 or more.")
     .ValidateOnStart();
 
-builder.Services.AddDbContext<RoomDbContext>(o =>
-    o.UseNpgsql(DatabaseConnection.Resolve(builder.Configuration.GetConnectionString("Default"))));
+var databaseConnection = DatabaseConnection.Resolve(builder.Configuration.GetConnectionString("Default"));
+builder.Services.AddDbContext<RoomDbContext>(o => o.UseNpgsql(databaseConnection));
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<PresenceTracker>();
@@ -145,7 +145,11 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    await scope.ServiceProvider.GetRequiredService<RoomDbContext>().Database.MigrateAsync();
+    await DatabaseMigrationPolicy.ApplyAsync(
+        scope.ServiceProvider.GetRequiredService<RoomDbContext>(),
+        app.Configuration.GetValue<bool?>(DatabaseMigrationPolicy.SettingName),
+        databaseConnection,
+        app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup"));
 }
 
 app.UseExceptionHandler();
