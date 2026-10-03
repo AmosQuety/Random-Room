@@ -90,6 +90,37 @@ describe("Sketch Guess screen", () => {
     expect(onAction).toHaveBeenLastCalledWith("strokes", { strokes: [{ color: 0, size: 9, points: [1000, 1000, 800, 800] }] });
   });
 
+  it("ignores a second finger while one is drawing, so two touches never zig-zag into one stroke", () => {
+    const onAction = vi.fn();
+    render(<SketchGuessGameScreen {...props} me="Amos" payload={{ ...base, word: "Bicycle" }} onAction={onAction} />);
+    const canvas = screen.getByRole("img", { name: "Your drawing board" });
+
+    fireEvent.pointerDown(canvas, { clientX: 0, clientY: 0, pointerId: 1, pointerType: "touch" });
+    fireEvent.pointerDown(canvas, { clientX: 900, clientY: 900, pointerId: 2, pointerType: "touch" });
+    fireEvent.pointerMove(canvas, { clientX: 900, clientY: 100, pointerId: 2, pointerType: "touch" });
+    fireEvent.pointerMove(canvas, { clientX: 250, clientY: 250, pointerId: 1, pointerType: "touch" });
+    fireEvent.pointerUp(canvas, { pointerId: 2, pointerType: "touch" });
+    fireEvent.pointerMove(canvas, { clientX: 500, clientY: 500, pointerId: 1, pointerType: "touch" });
+    fireEvent.pointerUp(canvas, { pointerId: 1, pointerType: "touch" });
+    act(() => void vi.advanceTimersByTime(400));
+
+    expect(onAction).toHaveBeenCalledWith("strokes", { strokes: [{ color: 0, size: 9, points: [0, 0, 500, 500, 1000, 1000] }] });
+  });
+
+  it("lets the next touch draw after the first finger lifts", () => {
+    const onAction = vi.fn();
+    render(<SketchGuessGameScreen {...props} me="Amos" payload={{ ...base, word: "Bicycle" }} onAction={onAction} />);
+    const canvas = screen.getByRole("img", { name: "Your drawing board" });
+
+    drawLine(canvas);
+    fireEvent.pointerDown(canvas, { clientX: 0, clientY: 0, pointerId: 3 });
+    fireEvent.pointerMove(canvas, { clientX: 250, clientY: 250, pointerId: 3 });
+    fireEvent.pointerUp(canvas, { pointerId: 3 });
+    act(() => void vi.advanceTimersByTime(400));
+
+    expect(onAction).toHaveBeenCalledWith("strokes", { strokes: expect.arrayContaining([expect.objectContaining({ points: [0, 0, 500, 500] })]) });
+  });
+
   it("ignores a right-button drag, which would draw a stray mark and open the context menu", () => {
     const onAction = vi.fn();
     render(<SketchGuessGameScreen {...props} me="Amos" payload={{ ...base, word: "Bicycle" }} onAction={onAction} />);

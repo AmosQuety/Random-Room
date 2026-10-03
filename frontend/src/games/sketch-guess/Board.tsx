@@ -62,6 +62,7 @@ export function Board({ strokes, canDraw, label, onStrokes, onUndo, onClear }: B
   const pending = useRef<Stroke[]>([]);
   const inflight = useRef<Stroke[]>([]);
   const current = useRef<Stroke | null>(null);
+  const activePointer = useRef<number | null>(null);
   const lastSentAt = useRef(0);
   const segmentStartedAt = useRef(0);
   const [full, setFull] = useState(false);
@@ -115,12 +116,15 @@ export function Board({ strokes, canDraw, label, onStrokes, onUndo, onClear }: B
 
   function onDown(event: PointerEvent<HTMLCanvasElement>) {
     if (!canDraw) return;
+    // One pointer draws at a time: a second finger or a resting palm must not hijack the stroke.
+    if (activePointer.current !== null) return;
     // Only the main button draws; a right-click would leave a stray mark and open the context menu.
     if (event.pointerType === "mouse" && event.button !== 0) return;
     if (strokes.length + inflight.current.length + pending.current.length >= MAX_STROKES) {
       setFull(true);
       return;
     }
+    activePointer.current = event.pointerId;
     event.currentTarget.setPointerCapture?.(event.pointerId);
     segmentStartedAt.current = Date.now();
     const [x, y] = pointFrom(event);
@@ -128,9 +132,15 @@ export function Board({ strokes, canDraw, label, onStrokes, onUndo, onClear }: B
     repaint();
   }
 
+  function onUp(event: PointerEvent<HTMLCanvasElement>) {
+    if (event.pointerId !== activePointer.current) return;
+    activePointer.current = null;
+    finishStroke();
+  }
+
   function onMove(event: PointerEvent<HTMLCanvasElement>) {
     const stroke = current.current;
-    if (!stroke) return;
+    if (!stroke || event.pointerId !== activePointer.current) return;
     const [x, y] = pointFrom(event);
     if (!movedEnough(stroke.points, x, y)) return;
     stroke.points.push(x, y);
@@ -160,6 +170,7 @@ export function Board({ strokes, canDraw, label, onStrokes, onUndo, onClear }: B
     pending.current = [];
     inflight.current = [];
     current.current = null;
+    activePointer.current = null;
     if (flushTimer.current) clearTimeout(flushTimer.current);
     flushTimer.current = null;
     setFull(false);
@@ -175,8 +186,8 @@ export function Board({ strokes, canDraw, label, onStrokes, onUndo, onClear }: B
         aria-label={label}
         onPointerDown={onDown}
         onPointerMove={onMove}
-        onPointerUp={finishStroke}
-        onPointerCancel={finishStroke}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
         className={`aspect-square w-[min(100%,36rem,70dvh)] self-center rounded-lg border-2 border-ink bg-white ${canDraw ? "cursor-crosshair touch-none" : ""}`}
       />
       {canDraw && full && (
