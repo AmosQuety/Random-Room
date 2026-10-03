@@ -107,3 +107,4 @@ short quotes with paths, never fabricate.
 - game-simple-lobby deep read done: notes/game-simple-lobby.md.
 - 21:38 game-hungario notes done.
 - 21:39 dot-vote notes done (docs fully, code partly).
+- 21:39 dot-server notes done.
