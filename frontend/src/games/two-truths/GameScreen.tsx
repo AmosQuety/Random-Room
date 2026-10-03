@@ -65,9 +65,9 @@ export function TwoTruthsGameScreen({ me, isHost, players, session, payload, bus
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
               Round {payload.round} of {payload.totalRounds}
             </p>
-            <h3 id="turn-heading" className="mt-1 font-display text-2xl font-black sm:text-3xl">
+            <h2 id="turn-heading" className="mt-1 font-display text-2xl font-black sm:text-3xl">
               {isStoryteller ? "Your turn to fool everyone" : `${payload.storyteller}'s turn`}
-            </h3>
+            </h2>
           </div>
 
           {payload.phase === "submitting" &&

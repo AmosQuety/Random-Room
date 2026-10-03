@@ -31,6 +31,13 @@ function renderScreen(p: TwoTruthsPayload, me = "Amos", isHost = false) {
 }
 
 describe("Two Truths and a Lie screen", () => {
+  it("puts the turn heading directly under the page heading, not skipping a level", () => {
+    renderScreen(payload());
+
+    expect(screen.getByRole("heading", { level: 2, name: /turn/i })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 3 })).not.toBeInTheDocument();
+  });
+
   it("shows the storyteller a form and nothing is sent until they submit", () => {
     const onAction = renderScreen(payload({ phase: "submitting", statements: null }), "Lydia");
     const lockIn = screen.getByRole("button", { name: /lock them in/i });
