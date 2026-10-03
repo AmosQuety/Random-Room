@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ApiError, claimInvite, join } from "../lib/api";
-import { navigate } from "../lib/router";
+import { redirect } from "../lib/router";
 import type { Session } from "../lib/types";
 import { ArrowRightIcon, CheckIcon } from "./icons";
 import { Shell } from "./Shell";
@@ -29,7 +29,7 @@ export function ClaimInviteScreen({ slug, token, onJoined }: Props) {
   async function signInWithNewPin(player: string) {
     try {
       onJoined(await join(slug, player, pin));
-      navigate(`/room/${slug}`);
+      redirect(`/room/${slug}`);
     } catch {
       setPending(false);
     }
@@ -64,7 +64,7 @@ export function ClaimInviteScreen({ slug, token, onJoined }: Props) {
           <Eyebrow className="!text-leaf">PIN set</Eyebrow>
           <h1 className="font-display text-4xl font-black leading-tight">You're in, {claimedAs}</h1>
           <p className="text-lg text-muted">Keep that PIN to yourself - it's what proves it's you.</p>
-          <Button variant="primary" size="lg" onClick={() => navigate(`/room/${slug}/join`)}>
+          <Button variant="primary" size="lg" onClick={() => redirect(`/room/${slug}/join`)}>
             Continue to the room <ArrowRightIcon />
           </Button>
         </Card>
