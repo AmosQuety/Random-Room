@@ -178,7 +178,7 @@ Name changes off here because of the leaderboard (`CLAUDE.md:965-966`). Nothing 
 Five suites, run as headless Godot scenes. Declared totals in code: `headless_playground` CHECKS 563, SECTIONS 31
 (`examples/headless_playground.gd:52-58`); `headless_net` 294/31 (`headless_net.gd:58-64`); `dedicated` 224/25
 (`dedicated.gd:48-49`). **Doc drift:** README says 432, 271/28, 217/24, 99, 40 (`README.md` "Validating");
-`CLAUDE.md:22-26` says 359 for headless_playground; `CLAUDE.md:1181-1196` says 563/31, 294/31, 224/25, 107, 40.
+`CLAUDE.md:27` says 359 for headless_playground; `CLAUDE.md:1181-1196` says 563/31, 294/31, 224/25, 107, 40.
 
 - A suite fails (exit 1) if the number of sections entered != completed != SECTIONS, or passed+failed != CHECKS,
   because "a runtime error inside a section aborts that function" and would otherwise leave "0 failed"

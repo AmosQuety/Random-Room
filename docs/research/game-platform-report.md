@@ -594,7 +594,7 @@ Linked rooms remain a fallback if step 3 below turns out too large.
   ran in CI (`game-simple-lobby/.github/workflows/ci.yml` comment). By reading the files as text, I confirmed that
   the four compared fields currently agree for five games (see `notes/dot-server-deploy.md`).
 - **F25. Test counts drift between README, CLAUDE.md and code.** game-playground: README says 432 / 271 / 217 checks,
-  `CLAUDE.md:22-26` says 359, `CLAUDE.md` "Validating" and the code say 563 / 294 / 224
+  `CLAUDE.md:27` says 359, `CLAUDE.md` "Validating" and the code say 563 / 294 / 224
   (`examples/headless_playground.gd:52`, `headless_net.gd:58`, `dedicated.gd:49`). game-simple-lobby's README and
   `CLAUDE.md` disagree on every suite. A project whose central rule is "one copy of a number" keeps three copies of
   its own test counts.
@@ -645,7 +645,7 @@ Linked rooms remain a fallback if step 3 below turns out too large.
 | F22 late joiner re-sent vote state | dot-server-deploy | CLAUDE.md | "Four things about the wiring in TmcVote" |
 | F23 READY gate | game-playground | CLAUDE.md | 1687-1695 |
 | F24 state between runs | game-playground; game-hungario | CLAUDE.md | 728-733; "A suite that fails on its ninth run" |
-| F25 count drift | game-playground; game-simple-lobby | README.md; CLAUDE.md; examples | "Validating"; 22-26; constants |
+| F25 count drift | game-playground; game-simple-lobby | README.md; CLAUDE.md; examples | "Validating"; 27; constants |
 | F26 setting count | game-playground; dot-vote | game/playground_vote.gd; CLAUDE.md | 10; table |
 | F27 moving repositories | dot-ci | (git) | 8a41ce6 to d26b5a4 |
 | F28 leaked RCON password | dot-server-deploy | CLAUDE.md | "`cfg/` is written by setup" |

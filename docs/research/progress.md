@@ -57,22 +57,22 @@ short quotes with paths, never fabricate.
 
 ## Questions answered
 
-- [ ] A1 game contract / `game.yml`
-- [ ] A2 discovery, install, versioning, launch
-- [ ] A3 content packaging
-- [ ] B4 changing what is played (rotation, votes)
-- [ ] B5 multi-game lobby
-- [ ] B6 unit of state for a play
-- [ ] C7 roles and permissions
-- [ ] C8 host leaves / migration
-- [ ] C9 identity, accounts, bans
-- [ ] D10 client/server sync
-- [ ] D11 timers, ticks, one source of truth
-- [ ] E12 leaderboards, stats, achievements, replays
-- [ ] F13 config layering, console, operator tools
-- [ ] F14 deployment, packaging, CI
-- [ ] G15 integration suite, bots
-- [ ] H16 documentation practice
+- [x] A1 game contract / `game.yml` — report §4, §5-A (field table)
+- [x] A2 discovery, install, versioning, launch — §4, §5-A; notes/dot-server-deploy.md, dot-ci.md
+- [x] A3 content packaging — §5-A; notes/dot-cloud.md
+- [x] B4 changing what is played (rotation, votes) — §4, §5-B; notes/dot-vote.md (no veto exists)
+- [x] B5 multi-game lobby — §5-B; notes/game-simple-lobby.md (it is not one)
+- [x] B6 unit of state for a play — §4, §5-B (INFERRED in part)
+- [x] C7 roles and permissions — §5-C; notes/dot-server.md
+- [x] C8 host leaves / migration — §5-C table (verified in code for all five games)
+- [x] C9 identity, accounts, bans — §5-C; notes/dot-user.md, dot-moderation.md
+- [x] D10 client/server sync — §5-D; notes/dot-net.md, game-playground.md §8
+- [x] D11 timers, ticks, one source of truth — §5-D (13 examples)
+- [x] E12 leaderboards, stats, achievements, replays — §5-E; notes/dot-stats.md (backbone validation UNREACHABLE)
+- [x] F13 config layering, console, operator tools — §5-F; notes/game-playground.md §4-5, dot-server.md
+- [x] F14 deployment, packaging, CI — §5-F; notes/dot-ci.md, dot-server-deploy.md
+- [x] G15 integration suite, bots — §5-G
+- [x] H16 documentation practice — §5-H
 
 ## Blocked or unreachable
 
@@ -89,6 +89,8 @@ short quotes with paths, never fabricate.
 
 - "Family-wide" documents referenced by the repositories (`../../CLAUDE.md`, `docs/testing.md`,
   `docs/gdscript-hazards.md`) are outside every repository I can clone; treated as NOT READ.
+- The studied repositories' notes files are named `CLAUDE.md`. I cite them by that file name as evidence (the owner's
+  own brief does the same); no file here otherwise names the assistant or its maker.
 - Where a README and the code disagree on a test count, the number in the code (`const CHECKS`) is taken as current.
 
 - Scratch folder is the session scratchpad (`.../scratchpad/game-research`), not `/tmp/game-research`; it is outside
@@ -115,3 +117,25 @@ short quotes with paths, never fabricate.
 - 21:44 dot-map/dot-match notes and skimmed list done. Verified the five-game host-migration table against each game's party file (all five match). Phase 4 complete.
 - 21:44 Corrected line numbers for our own files (an earlier multi-file `cat -n` had numbered them continuously).
 - 21:49 Phases 5-6: full report written (sections 1-12, appendices A-D).
+
+## Verification (section 7 of the brief)
+
+1. Findings have evidence: every numbered finding in the report has a path and lines or heading, or is marked INFERRED
+   or NOT READ. Appendix A indexes F1-F30.
+2. Spot-check of ten claims about the studied repositories, by reopening the files: game-playground README "432
+   checks"; game-playground `CLAUDE.md` "359 checks"; dot-server "malformed admins.json is loud"; dot-vote "374 checks"
+   and "Eighty settings"; game-hungario "Boards are scoped by mode"; dot-peer-to-peer election rule; dot-server-deploy
+   `close_when_all_voted: true`; dot-match three failure modes; game-playground `report_to_backbone` default; dot-cloud
+   versioned mount path. **10 checked, 1 failed**: the "359 checks" line is `CLAUDE.md:27`, not 22-26. Fixed in the
+   report and notes. Earlier I also found and fixed wrong line numbers for six of our own files (a multi-file `cat -n`),
+   and seven ranges in the hungario/playground notes (estimated from un-numbered output).
+3. Our files reopened and confirmed: `Games/IGameEngine.cs:21-26` (setup "Called once, at room creation"),
+   `Domain/Room.cs:10` ("Fixed for the room's lifetime"), `Services/RoomAdminService.cs:165` (reset only between games),
+   `Services/GameSessionService.cs:154-157` (untracked latest session), `Endpoints/RoomEndpoints.cs:52-61` (broadcast after
+   each session call), `frontend/src/components/RoomScreen.tsx:171,184`. 6 of 6 confirmed.
+4. Quotes are short (one or two sentences) with paths and lines; no file was copied.
+5. Report sections 1-12 and appendices A-D exist; A1-H16 all answered (checklist above).
+6. `git diff --name-only origin/main...HEAD` lists only `docs/research/` files.
+7. Secret scan (`token`, `key`, `secret`, `password`, `Bearer`, `ghp_`): only descriptive text (RCON design notes).
+8. Commit messages contain no attribution; all commits authored and committed by AmosQuety <amosnabasa4@gmail.com>.
+9. Scratch clones deleted at the end (see below).
