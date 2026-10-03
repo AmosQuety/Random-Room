@@ -168,6 +168,14 @@ public sealed class RecordingNotifier : IRoomNotifier
         return Task.CompletedTask;
     }
 
+    public List<Guid> DeletedRooms { get; } = [];
+
+    public Task NotifyRoomDeletedAsync(Guid roomId, CancellationToken ct = default)
+    {
+        DeletedRooms.Add(roomId);
+        return Task.CompletedTask;
+    }
+
     public List<(string Player, IReadOnlyList<string> ConnectionIds)> Revoked { get; } = [];
 
     public Task RevokePlayerAsync(Guid roomId, string player, IReadOnlyList<string> connectionIds, CancellationToken ct = default)

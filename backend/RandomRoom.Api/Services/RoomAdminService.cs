@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RandomRoom.Api.Auth;
 using RandomRoom.Api.Data;
 using RandomRoom.Api.Domain;
+using Microsoft.Extensions.Options;
 using RandomRoom.Api.Games;
 
 namespace RandomRoom.Api.Services;
@@ -16,7 +17,8 @@ public sealed record CreateRoomResult(string Slug, IReadOnlyList<PlayerInvite> I
 
 public sealed record RoomPreviewPlayer(string Name, bool Claimed);
 
-public sealed record RoomPreview(string Title, string GameType, object GamePreview, IReadOnlyList<RoomPreviewPlayer> Players);
+/// <param name="RetentionDays">After how many days without play the room is deleted; 0 when it never is.</param>
+public sealed record RoomPreview(string Title, string GameType, object GamePreview, IReadOnlyList<RoomPreviewPlayer> Players, int RetentionDays = 0);
 
 /// <summary>
 /// Room lifecycle outside of gameplay: creating a room and letting invited players claim their
@@ -24,7 +26,7 @@ public sealed record RoomPreview(string Title, string GameType, object GamePrevi
 /// Everything about a game's own setup (Random Picker's choices, Trivia's questions) is opaque
 /// here - it's validated and persisted by that game's own IGameEngine.
 /// </summary>
-public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnumerable<IGameEngine> engines)
+public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnumerable<IGameEngine> engines, IOptions<RoomOptions>? options = null)
 {
     private const int MinPlayers = 2;
 
@@ -109,7 +111,7 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
             .ToListAsync(ct);
         var gamePreview = await EngineFor(room.GameType).GetRoomPreviewAsync(room.Id, ct);
 
-        return new RoomPreview(room.Title, room.GameType, gamePreview, players);
+        return new RoomPreview(room.Title, room.GameType, gamePreview, players, options?.Value.RetentionDays ?? 0);
     }
 
     public async Task<string> ClaimInviteAsync(string slug, string inviteToken, string pin, CancellationToken ct = default)
@@ -123,6 +125,17 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
         player.ClaimedAt = clock.GetUtcNow();
         await db.SaveChangesAsync(ct);
         return player.Name;
+    }
+
+    /// <summary>Deletes the room and everything in it. Only the host can, and it cannot be undone.</summary>
+    public async Task DeleteRoomAsync(Guid roomId, string actor, CancellationToken ct = default)
+    {
+        var room = await db.Rooms.AsNoTracking().FirstOrDefaultAsync(r => r.Id == roomId, ct)
+            ?? throw new RoomRuleException(RuleViolation.NotFound, "Room not found.");
+        if (actor != room.HostPlayer)
+            throw new RoomRuleException(RuleViolation.Forbidden, "Only the host can delete the room.");
+
+        await RoomDeletion.DeleteAsync(db, [roomId], ct);
     }
 
     /// <summary>

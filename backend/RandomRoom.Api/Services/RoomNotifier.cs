@@ -8,6 +8,9 @@ public interface IRoomNotifier
     /// <summary>Sends one player their own view of the room. There is deliberately no room-wide send: views differ per player.</summary>
     Task PublishToPlayerAsync(Guid roomId, string player, RoomSnapshot snapshot, CancellationToken ct = default);
 
+    /// <summary>Tells everyone connected to a room that the host deleted it. Carries no room data.</summary>
+    Task NotifyRoomDeletedAsync(Guid roomId, CancellationToken ct = default);
+
     /// <summary>Tells a player their seat was reset and stops sending anything to the connections they already have open.</summary>
     Task RevokePlayerAsync(Guid roomId, string player, IReadOnlyList<string> connectionIds, CancellationToken ct = default);
 }
@@ -16,6 +19,7 @@ public sealed class SignalRRoomNotifier(IHubContext<RoomHub> hub) : IRoomNotifie
 {
     public const string SnapshotEvent = "roomChanged";
     public const string RevokedEvent = "seatReset";
+    public const string RoomDeletedEvent = "roomDeleted";
 
     public static string GroupName(Guid roomId) => $"room:{roomId}";
 
@@ -24,6 +28,9 @@ public sealed class SignalRRoomNotifier(IHubContext<RoomHub> hub) : IRoomNotifie
 
     public Task PublishToPlayerAsync(Guid roomId, string player, RoomSnapshot snapshot, CancellationToken ct = default) =>
         hub.Clients.Group(PlayerGroupName(roomId, player)).SendAsync(SnapshotEvent, snapshot, ct);
+
+    public Task NotifyRoomDeletedAsync(Guid roomId, CancellationToken ct = default) =>
+        hub.Clients.Group(GroupName(roomId)).SendAsync(RoomDeletedEvent, ct);
 
     public async Task RevokePlayerAsync(Guid roomId, string player, IReadOnlyList<string> connectionIds, CancellationToken ct = default)
     {
@@ -47,6 +54,13 @@ public sealed class RoomBroadcaster(GameSessionService rooms, PresenceTracker pr
     {
         foreach (var player in presence.OnlinePlayers(roomId))
             await notifier.PublishToPlayerAsync(roomId, player, await rooms.GetSnapshotForAsync(roomId, player, ct), ct);
+    }
+
+    /// <summary>After a room is deleted: tells everyone still connected, then forgets their connections.</summary>
+    public async Task AnnounceRoomDeletedAsync(Guid roomId, CancellationToken ct = default)
+    {
+        await notifier.NotifyRoomDeletedAsync(roomId, ct);
+        presence.RemoveRoom(roomId);
     }
 
     /// <summary>Cuts a reset seat's open connections off from the room, so the old device receives nothing further.</summary>

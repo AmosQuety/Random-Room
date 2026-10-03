@@ -16,6 +16,8 @@ public sealed record ClaimInviteResponse(string Player);
 
 public sealed record ActionRequest(string Action, JsonElement? Payload);
 
+public sealed record AppConfig(int RetentionDays);
+
 public static class RoomEndpoints
 {
     public const string JoinRateLimitPolicy = "join";
@@ -27,6 +29,10 @@ public static class RoomEndpoints
 
         api.MapPost("/join", Join).RequireRateLimiting(JoinRateLimitPolicy);
 
+        // What the app needs to know before any room exists, so the create screen can say how long rooms are kept.
+        api.MapGet("/config", (Microsoft.Extensions.Options.IOptions<RoomOptions> room) =>
+            Results.Ok(new AppConfig(room.Value.RetentionDays)));
+
         var rooms = api.MapGroup("/rooms");
         rooms.MapPost("/", CreateRoom).RequireRateLimiting(RoomAdminRateLimitPolicy);
         rooms.MapGet("/{slug}", GetPreview);
@@ -37,6 +43,7 @@ public static class RoomEndpoints
             rooms.GetSnapshotForAsync(http.User.GetRoomId(), http.User.GetPlayerName(), ct));
         room.MapPost("/action", (HttpContext http, ActionRequest request, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
             Act(http, broadcaster, (roomId, player) => rooms.PerformActionAsync(roomId, player, request.Action, request.Payload, ct), ct));
+        room.MapDelete("/", DeleteRoom).RequireRateLimiting(RoomAdminRateLimitPolicy);
         room.MapPost("/players/{name}/reset-pin", ResetPin).RequireRateLimiting(RoomAdminRateLimitPolicy);
         room.MapPost("/session/start", (HttpContext http, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
             Act(http, broadcaster, (roomId, player) => rooms.StartSessionAsync(roomId, player, ct), ct));
@@ -72,6 +79,14 @@ public static class RoomEndpoints
     {
         var player = await admin.ClaimInviteAsync(slug, token, request.Pin, ct);
         return Results.Ok(new ClaimInviteResponse(player));
+    }
+
+    private static async Task<IResult> DeleteRoom(HttpContext http, RoomAdminService admin, RoomBroadcaster broadcaster, CancellationToken ct)
+    {
+        var roomId = http.User.GetRoomId();
+        await admin.DeleteRoomAsync(roomId, http.User.GetPlayerName(), ct);
+        await broadcaster.AnnounceRoomDeletedAsync(roomId, ct);
+        return Results.NoContent();
     }
 
     private static async Task<IResult> ResetPin(
