@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PlayerView, SessionView } from "../../lib/types";
 import { SpinWheelGameScreen } from "./GameScreen";
 import { isWheelSetupValid, toApiWheelSetup } from "./setup";
@@ -49,6 +49,39 @@ describe("Spin the Wheel screen", () => {
     expect(onAction).toHaveBeenCalledWith("award");
     fireEvent.click(screen.getByRole("button", { name: /next spin/i }));
     expect(onAction).toHaveBeenCalledWith("next");
+  });
+
+  describe("while the wheel is turning", () => {
+    afterEach(() => vi.useRealTimers());
+
+    function renderAsHost(p: WheelPayload) {
+      const ui = (next: WheelPayload) => (
+        <SpinWheelGameScreen me="Amos" isHost players={PLAYERS} session={ACTIVE} payload={next} busy={false} onAction={vi.fn()} />
+      );
+      const view = render(ui(p));
+      return (next: WheelPayload) => view.rerender(ui(next));
+    }
+
+    it("holds back the result of every spin, not only the first", () => {
+      vi.useFakeTimers();
+      const show = renderAsHost(payload({ totalRounds: 3 }));
+      const spun = (round: number) => payload({ phase: "spun", round, totalRounds: 3, last: { player: "Amos", index: 1, label: "Dance" } });
+
+      show(spun(1));
+      act(() => void vi.advanceTimersByTime(4000));
+      expect(screen.getByRole("button", { name: /next spin/i })).toBeEnabled();
+
+      show(payload({ round: 2, totalRounds: 3 }));
+      show(spun(2));
+
+      expect(screen.getByRole("status")).toHaveClass("sr-only");
+      expect(screen.getByRole("button", { name: /next spin/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: /award a point/i })).toBeDisabled();
+
+      act(() => void vi.advanceTimersByTime(4000));
+      expect(screen.getByRole("status")).not.toHaveClass("sr-only");
+      expect(screen.getByRole("button", { name: /next spin/i })).toBeEnabled();
+    });
   });
 
   it("does not offer host controls to a player", () => {

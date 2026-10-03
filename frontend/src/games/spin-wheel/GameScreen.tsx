@@ -11,7 +11,10 @@ const SPIN_MS = 4000;
 
 const reducedMotion = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 
-/** Holds the result text back until the disc has stopped, unless the page loaded with the result already there. */
+/**
+ * Holds the result text back until the disc has stopped, unless the page loaded with the result already there.
+ * Turn is remounted per spin (key), so each spin starts un-landed.
+ */
 function useLanded(hasResult: boolean): boolean {
   const [landed, setLanded] = useState(hasResult);
   useEffect(() => {
@@ -87,7 +90,7 @@ export function SpinWheelGameScreen({ me, isHost, session, payload, busy, onActi
       )}
 
       {(payload.phase === "ready" || payload.phase === "spun") && !over && (
-        <Turn payload={payload} me={me} isHost={isHost} live={live} busy={busy} onAction={onAction} />
+        <Turn key={payload.round} payload={payload} me={me} isHost={isHost} live={live} busy={busy} onAction={onAction} />
       )}
 
       {over && <GameOver scoreboard={payload.scoreboard} />}
