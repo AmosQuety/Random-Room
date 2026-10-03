@@ -32,6 +32,20 @@ function renderScreen(config: ChainConfig, p: ChainPayload, me = "Amos", isHost 
 }
 
 describe("Story screen", () => {
+  it("shows the lead-in as the start of the sentence being typed, with a plain instruction as the label", () => {
+    renderScreen(fortunatelyConfig, payload({ prefix: "Unfortunately,", currentPlayer: "Amos" }), "Amos");
+
+    const input = screen.getByLabelText("Finish the sentence");
+    expect(input).toHaveAccessibleDescription("Unfortunately,");
+    expect(screen.getByText("Unfortunately,")).not.toContainElement(screen.getByText("Finish the sentence"));
+  });
+
+  it("asks for one word in One-Word Story, which has no lead-in", () => {
+    renderScreen(oneWordConfig, payload({ prefix: "", currentPlayer: "Amos" }), "Amos");
+
+    expect(screen.getByLabelText("Add one word")).toBeInTheDocument();
+  });
+
   // jsdom has no layout, so this guards the class; the overflow itself was reproduced and fixed in a real browser.
   it("lets a long unbroken entry wrap inside the story instead of widening the page", () => {
     renderScreen(fortunatelyConfig, payload({ entries: [{ player: "Lydia", text: "x".repeat(140), prefix: "" }] }));

@@ -11,7 +11,7 @@ export const fortunatelyConfig: ChainConfig = {
   defaultLength: 12,
   maxChars: 140,
   singleWord: false,
-  inputHint: "What happens next?",
+  inputHint: "Finish the sentence",
   intro: "The story swings between good luck and bad. The game starts each turn for you with \"Fortunately,\" or \"Unfortunately,\" in turn, and you finish the sentence.",
 };
 

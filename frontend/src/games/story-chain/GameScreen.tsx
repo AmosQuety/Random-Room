@@ -27,12 +27,18 @@ function TurnForm({ config, prefix, disabled, onAdd }: { config: ChainConfig; pr
       className="flex flex-col gap-3"
     >
       <label htmlFor="chain-input" className="font-bold">
-        {prefix ? <span className="text-accent-ink">{prefix} </span> : null}
         {config.inputHint}
       </label>
       <div className="flex flex-col gap-3 sm:flex-row">
+        {/* The game supplies the start of the sentence; the player types the rest. */}
+        {prefix ? (
+          <span id="chain-prefix" className="font-display text-xl font-black text-accent-ink sm:self-center">
+            {prefix}
+          </span>
+        ) : null}
         <input
           id="chain-input"
+          aria-describedby={prefix ? "chain-prefix" : undefined}
           value={text}
           maxLength={config.maxChars}
           autoComplete="off"
