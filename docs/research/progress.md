@@ -112,3 +112,4 @@ short quotes with paths, never fabricate.
 - 21:41 dot-core, dot-game notes done.
 - 21:42 priority-4 notes done: dot-net, dot-peer-to-peer, dot-user, dot-stats (+leaderboard, achievements), dot-moderation.
 - 21:43 dot-ci, dot-cloud notes done.
+- 21:44 dot-map/dot-match notes and skimmed list done. Verified the five-game host-migration table against each game's party file (all five match). Phase 4 complete.
