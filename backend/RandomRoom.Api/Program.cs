@@ -75,6 +75,16 @@ builder.Services.AddExceptionHandler<ProblemExceptionHandler>();
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    // Tell clients how long to wait and use the same problem+json shape as every other error.
+    o.OnRejected = async (context, ct) =>
+    {
+        var response = context.HttpContext.Response;
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await response.WriteAsJsonAsync(
+            new Microsoft.AspNetCore.Mvc.ProblemDetails { Status = StatusCodes.Status429TooManyRequests, Title = "Too many attempts. Please wait a moment and try again." }, ct);
+    };
     o.AddPolicy(RoomEndpoints.JoinRateLimitPolicy, http =>
         RateLimitPartition.GetFixedWindowLimiter(
             http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
