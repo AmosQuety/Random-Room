@@ -20,5 +20,8 @@ public sealed record RoomSnapshot(
 
 public sealed record SessionView(Guid Id, int Number, SessionStatus Status, DateTimeOffset? StartedAt, DateTimeOffset? EndedAt);
 
-/// <summary>Room-level presence only; whatever a player has done *in* the game lives in GamePayload.</summary>
-public sealed record PlayerView(string Name, bool Online);
+/// <summary>
+/// Room-level presence only; whatever a player has done *in* the game lives in GamePayload.
+/// Claimed is false until the player has opened their invite and set a PIN, which tells the group who is still missing.
+/// </summary>
+public sealed record PlayerView(string Name, bool Online, bool Claimed);

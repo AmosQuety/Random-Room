@@ -41,7 +41,7 @@ public sealed class GameSessionService(
             room.HostPlayer,
             room.GameType,
             new SessionView(session.Id, session.Number, session.Status, session.StartedAt, session.EndedAt),
-            players.Select(p => new PlayerView(p.Name, presence.IsOnline(roomId, p.Name))).ToList(),
+            players.Select(p => new PlayerView(p.Name, presence.IsOnline(roomId, p.Name), p.IsClaimed)).ToList(),
             viewer is null
                 ? await engine.GetPayloadAsync(roomId, session.Id, ct)
                 : await engine.GetPayloadForAsync(roomId, session.Id, viewer, ct),
