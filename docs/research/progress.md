@@ -108,3 +108,4 @@ short quotes with paths, never fabricate.
 - 21:38 game-hungario notes done.
 - 21:39 dot-vote notes done (docs fully, code partly).
 - 21:39 dot-server notes done.
+- 21:41 dot-server-deploy notes done (the multi-game server and game vote live here).
