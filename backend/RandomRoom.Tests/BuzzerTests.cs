@@ -103,6 +103,19 @@ public class BuzzerTests
     }
 
     [Fact]
+    public async Task Each_point_the_host_gives_is_listed_so_the_board_is_not_a_mystery()
+    {
+        using var game = await OpenRoundAsync();
+        await game.ActAsync("Lydia", "buzz");
+
+        var view = Payload(await game.ActAsync("Amos", "correct"));
+
+        var note = Assert.Single(view.HostScoring);
+        Assert.Equal((1, "Lydia", 1), (note.Round, note.Player, note.Points));
+        Assert.Contains("judged", note.Reason);
+    }
+
+    [Fact]
     public async Task A_correct_answer_scores_and_resolves_the_round()
     {
         using var game = await OpenRoundAsync();

@@ -16,6 +16,9 @@ public sealed class ForbiddenData
     public Dictionary<string, int> Scores { get; set; } = [];
 
     public JsonElement? Result { get; set; }
+
+    /// <summary>Points the host changed (only possible when the host is the judge), so they are visible to everyone.</summary>
+    public List<HostScoreNote> HostScoring { get; set; } = [];
 }
 
 public sealed record ForbiddenScore(string Player, int Score);
@@ -44,14 +47,15 @@ public sealed record ForbiddenPayload(
     JsonElement? Result,
     TimerView Timer,
     int? TimeLimitSeconds,
-    IReadOnlyList<ForbiddenScore> Scoreboard);
+    IReadOnlyList<ForbiddenScore> Scoreboard,
+    IReadOnlyList<HostScoreNote> HostScoring);
 
 /// <summary>
 /// One player describes a secret word without saying the words on its card; everyone else types guesses. The judge
-/// (the next player in turn) also sees the card and flags a slip; the host can flag one too. Scoring: a correct guess
+/// (the next player in turn) also sees the card and is the only one who can flag a slip. Scoring: a correct guess
 /// scores 1 for the guesser and 1 for the describer. A flagged slip costs the describer 1 point (never below 0).
 /// The card is hidden from guessers; the server matches guesses (ignoring case, accents and punctuation).
-/// Actions: guess, skip (describer), flag (judge or host), reveal / next (host), tick (anyone, honoured only after the deadline).
+/// Actions: guess, skip (describer), flag (judge only), reveal / next (host), tick (anyone, honoured only after the deadline).
 /// </summary>
 public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource random, TimeProvider clock) : IGameEngine
 {
@@ -180,10 +184,14 @@ public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource ra
         var describer = Describer(state, players);
         if (actor == describer)
             throw new RoomRuleException(RuleViolation.Forbidden, "You cannot flag yourself.");
-        if (actor != Judge(state, players) && actor != host)
-            throw new RoomRuleException(RuleViolation.Forbidden, "Only the judge or the host can flag a slip.");
+        // Only the judge sees the card, so only the judge can tell whether a forbidden word was said. The host gets no
+        // blind flag: it would let a host who is also playing punish a rival without knowing the card.
+        if (actor != Judge(state, players))
+            throw new RoomRuleException(RuleViolation.Forbidden, "Only the judge can flag a slip, because only the judge can see the card.");
 
         state.Data.Scores[describer] = Math.Max(0, state.Data.Scores.GetValueOrDefault(describer) - 1);
+        if (actor == host)
+            state.Data.HostScoring.Add(new HostScoreNote(state.Round, describer, -1, "The host, as judge, flagged a slip"));
         await EndRoundAsync(state, "flagged", null, ct);
     }
 
@@ -278,7 +286,8 @@ public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource ra
             state.Phase is Phases.Revealed or Phases.Complete ? state.Data.Result : null,
             ServerTimer.View(clock, state.DeadlineAt),
             setup.TimeLimitSeconds,
-            players.Select(p => new ForbiddenScore(p, state.Data.Scores.GetValueOrDefault(p))).ToList());
+            players.Select(p => new ForbiddenScore(p, state.Data.Scores.GetValueOrDefault(p))).ToList(),
+            state.Data.HostScoring);
     }
 
     public Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) =>
