@@ -98,3 +98,9 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **Guessing is throttled like PINs** (`/recover` shares the join limiter, 20 a minute per address), a wrong code and an unknown room get the same answer, and a room with no code still pays for a hash check.
 - **The host can replace their code from inside the room**, which is also how rooms made before codes existed get one. Making and using a code are recorded in the audit table (the code itself never is).
 - **Whoever holds the code is the host.** That is its purpose; the screen says not to share it.
+
+## Host fairness (when the host also plays)
+
+- **The host is a player today, so the places where a host decides a score are checked.** Spin the Wheel: nobody gives themselves the point. The host gives it, unless the host is the one who spun, in which case any other player may (the spin payload says which: `awardMode`). Forbidden Words: only the judge can flag a slip, because only the judge sees the card; the old blind flag by the host is gone. Buzzer: every point is the host's judgement, which is its design (the host never buzzes).
+- **Host decisions about scores are shown to everyone**, not hidden: a short "Host decisions about scores" list under the scoreboard in those three games (`HostScoreNote`: round, player, points, reason). It includes a decision to give no point (the host moving on without awarding), because withholding is also a way to tilt a board.
+- **This is not the end state.** The intended model is a referee host who does not play by default, with an option to play (see `NEXT_STEPS.md`, items 3 and 4). These rules stay in force whenever a host does play.
