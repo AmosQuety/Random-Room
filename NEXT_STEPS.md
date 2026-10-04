@@ -3,7 +3,7 @@
 This file lists only work that is still to do. Each item says why it matters, where it touches the code, the steps to
 build it, how to test it, and what is still undecided, so you can start without asking anyone. The reasons behind past
 choices are in `DECISIONS.md`; known gaps are in `Gaps_Bugs.md`; the research this list draws on is in
-`docs/research/game-platform-report.md` (on the branch `research/game-platform-report`, merge it to read it in `main`).
+`docs/research/game-platform-report.md` (with per-repository notes in `docs/research/notes/`).
 
 ## Order and dependencies
 
@@ -363,5 +363,3 @@ secret scan); revoking the link disconnects them.
    Nothing has measured this yet.
 5. **Test on real phones and with a screen reader** (everything so far used emulation). Check the QR code scan on a real
    phone, the share sheet, and the keyboard covering inputs.
-6. **Commit or discard `QA_REPORT_2.md`** (the only untracked file) and merge the research branch if you want the report
-   in `main`.
