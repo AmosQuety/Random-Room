@@ -129,4 +129,54 @@ describe("Spin the Wheel setup", () => {
   it("sends trimmed, non-empty segments", () => {
     expect(toApiWheelSetup(setup({ segments: [" A ", "", "B"], spins: 3 }))).toEqual({ segments: ["A", "B"], useBuiltIn: true, spins: 3 });
   });
+
+  describe("who gives the point", () => {
+    const spun = (overrides: Partial<WheelPayload> = {}) =>
+      payload({ phase: "spun", last: { player: "Amos", index: 1, label: "Dance" }, ...overrides });
+
+    it("lets the host award another player's spin, and no other player", () => {
+      const onAction = renderScreen(spun({ spinner: "Lydia", awardMode: "host" }), "Amos", true);
+      fireEvent.click(screen.getByRole("button", { name: /award a point/i }));
+      expect(onAction).toHaveBeenCalledWith("award");
+    });
+
+    it("shows a player nothing to award when the host is not the one spinning", () => {
+      renderScreen(spun({ spinner: "Lydia", awardMode: "host" }), "James", false);
+      expect(screen.queryByRole("button", { name: /award a point|give lydia the point/i })).not.toBeInTheDocument();
+    });
+
+    it("does not let the host award themselves: when the host spins, another player gives the point", () => {
+      renderScreen(spun({ spinner: "Amos", awardMode: "players" }), "Amos", true);
+      expect(screen.queryByRole("button", { name: /award a point|give amos the point/i })).not.toBeInTheDocument();
+      expect(screen.getByText(/another player decides whether you earn the point/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /next spin/i })).toBeEnabled();
+    });
+
+    it("gives every other player the button when the host is the one spinning", () => {
+      const onAction = renderScreen(spun({ spinner: "Amos", awardMode: "players" }), "Lydia", false);
+      fireEvent.click(screen.getByRole("button", { name: /give amos the point/i }));
+      expect(onAction).toHaveBeenCalledWith("award");
+    });
+
+    it("takes the button away once the point is given", () => {
+      renderScreen(spun({ spinner: "Amos", awardMode: "players", awarded: true }), "Lydia", false);
+      expect(screen.queryByRole("button", { name: /give amos the point/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("lists what the host decided about scores, including moving on without a point", () => {
+    renderScreen(payload({ hostScoring: [
+      { round: 1, player: "Lydia", points: 1, reason: "The host gave the point" },
+      { round: 2, player: "James", points: 0, reason: "The host moved on without giving a point" },
+    ] }), "Lydia");
+    const notes = screen.getByRole("region", { name: /host decisions about scores/i });
+    expect(notes).toHaveTextContent("The host gave the point");
+    expect(notes).toHaveTextContent("no points");
+    expect(notes).toHaveTextContent("moved on without giving a point");
+  });
+
+  it("shows no host-decision list when there is nothing to list", () => {
+    renderScreen(payload({ hostScoring: [] }), "Lydia");
+    expect(screen.queryByRole("region", { name: /host decisions about scores/i })).not.toBeInTheDocument();
+  });
 });

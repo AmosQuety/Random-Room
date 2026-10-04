@@ -64,10 +64,24 @@ describe("Forbidden Words screen", () => {
     expect(onAction).toHaveBeenCalledWith("flag");
   });
 
-  it("lets the host flag without seeing the card, and never the describer", () => {
+  it("does not let a host who is not the judge flag a slip, because the host cannot see the card", () => {
     renderScreen(payload(), "Jacob", true);
-    expect(screen.getByRole("button", { name: /flag a slip/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /flag a slip/i })).not.toBeInTheDocument();
     expect(screen.queryByText("Bicycle")).not.toBeInTheDocument();
+  });
+
+  it("lets a host who is the judge flag a slip, as any judge can", () => {
+    const onAction = renderScreen(payload({ role: "judge", card: CARD }), "Amos", true);
+    fireEvent.click(screen.getByRole("button", { name: /flag a slip/i }));
+    expect(onAction).toHaveBeenCalledWith("flag");
+  });
+
+  it("lists the points the host changed, so a host who plays cannot do it unseen", () => {
+    renderScreen(payload({ hostScoring: [{ round: 3, player: "Lydia", points: -1, reason: "The host, as judge, flagged a slip" }] }), "Lydia");
+    const notes = screen.getByRole("region", { name: /host decisions about scores/i });
+    expect(notes).toHaveTextContent("Lydia");
+    expect(notes).toHaveTextContent("-1");
+    expect(notes).toHaveTextContent("as judge, flagged a slip");
   });
 
   it("does not let a describer who is also the host flag their own round", () => {

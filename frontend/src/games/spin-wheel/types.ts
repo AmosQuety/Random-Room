@@ -1,4 +1,4 @@
-import type { RoundScore } from "../rounds/types";
+import type { HostScoreNote, RoundScore } from "../rounds/types";
 
 export type WheelPhase = "lobby" | "ready" | "spun" | "complete";
 
@@ -17,6 +17,9 @@ export interface WheelPayload {
   last: WheelSpin | null;
   awarded: boolean;
   scoreboard: RoundScore[];
+  /** Who gives the point: the host, or (when the host is the one spinning) any other player. Never the spinner. */
+  awardMode?: "host" | "players";
+  hostScoring?: HostScoreNote[];
 }
 
 export interface WheelSetup {

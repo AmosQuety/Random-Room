@@ -6,6 +6,14 @@ export interface TimerView {
   serverNow: string;
 }
 
+/** A score change (or a decision not to change one) the host made, shown to everyone so a host who plays cannot tilt a score unseen. */
+export interface HostScoreNote {
+  round: number;
+  player: string;
+  points: number;
+  reason: string;
+}
+
 export interface RoundScore {
   player: string;
   score: number;

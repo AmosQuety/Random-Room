@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { FlagIcon, PlayIcon } from "../../components/icons";
 import { Scoreboard } from "../../components/Scoreboard";
 import { Button, Eyebrow } from "../../components/ui";
-import { GameOver, HostBar, NotJoinedNote } from "../rounds/parts";
+import { GameOver, HostBar, HostScoreNotes, NotJoinedNote } from "../rounds/parts";
 import type { GameScreenProps } from "../types";
 import type { WheelPayload } from "./types";
 import { Wheel } from "./Wheel";
@@ -29,6 +29,9 @@ function Turn({ payload, players, me, isHost, live, busy, onAction }: { payload:
   const landed = useLanded(payload.last !== null);
   const myTurn = payload.spinner === me;
   const lastSpin = payload.round >= payload.totalRounds;
+  // The host gives the point, unless the host is the one spinning; then any other player does. Nobody gives their own.
+  const awardMode = payload.awardMode ?? "host";
+  const playersAward = awardMode === "players";
 
   return (
     <section aria-labelledby="turn-heading" className="flex flex-col gap-5 rounded-xl border-2 border-ink bg-card p-5 shadow-ticket sm:p-6">
@@ -53,6 +56,21 @@ function Turn({ payload, players, me, isHost, live, busy, onAction }: { payload:
 
       {payload.phase === "spun" && landed && payload.awarded && <p className="font-bold">Point awarded to {payload.last?.player}.</p>}
 
+      {playersAward && payload.phase === "spun" && landed && !payload.awarded && (
+        <div className="flex flex-col gap-2 rounded-lg border-2 border-dashed border-ink px-4 py-3">
+          <p className="text-sm">
+            {myTurn ? "You are the host and you spun, so another player decides whether you earn the point." : `${payload.spinner} is the host, so a player decides whether they earned the point.`}
+          </p>
+          {!myTurn && live && (
+            <div>
+              <Button variant="secondary" size="sm" disabled={busy || !landed} onClick={() => onAction("award")}>
+                Give {payload.spinner} the point
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
       <details className="text-sm">
         <summary className="min-h-11 cursor-pointer py-2 font-semibold">Everything on the wheel</summary>
         <ol className="list-decimal pl-6">
@@ -64,9 +82,11 @@ function Turn({ payload, players, me, isHost, live, busy, onAction }: { payload:
 
       {isHost && live && payload.phase === "spun" && (
         <HostBar>
-          <Button variant="secondary" size="sm" disabled={busy || payload.awarded || !landed} onClick={() => onAction("award")}>
-            Award a point
-          </Button>
+          {!playersAward && (
+            <Button variant="secondary" size="sm" disabled={busy || payload.awarded || !landed} onClick={() => onAction("award")}>
+              Award a point
+            </Button>
+          )}
           <Button variant="accent" size="sm" disabled={busy || !landed} onClick={() => onAction("next")}>
             {lastSpin ? <FlagIcon className="size-4" /> : <PlayIcon className="size-4" />}
             {lastSpin ? "Finish game" : "Next spin"}
@@ -98,6 +118,7 @@ export function SpinWheelGameScreen({ me, isHost, players, session, payload, bus
       {over && <GameOver scoreboard={payload.scoreboard} />}
 
       <Scoreboard rows={payload.scoreboard.map((s) => ({ name: s.player, score: s.score }))} me={me} unit="points" />
+      <HostScoreNotes notes={payload.hostScoring} />
     </>
   );
 }

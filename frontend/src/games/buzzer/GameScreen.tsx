@@ -1,7 +1,7 @@
 import { FlagIcon, PlayIcon } from "../../components/icons";
 import { Scoreboard } from "../../components/Scoreboard";
 import { Button, Eyebrow } from "../../components/ui";
-import { GameOver, HostBar } from "../rounds/parts";
+import { GameOver, HostBar, HostScoreNotes } from "../rounds/parts";
 import type { GameScreenProps } from "../types";
 import type { BuzzerPayload } from "./types";
 
@@ -93,6 +93,7 @@ export function BuzzerGameScreen({ me, isHost, session, payload, busy, onAction 
       {over && <GameOver scoreboard={payload.scoreboard} />}
 
       <Scoreboard rows={payload.scoreboard.map((s) => ({ name: s.player, score: s.score }))} me={me} unit="points" />
+      <HostScoreNotes notes={payload.hostScoring} />
     </>
   );
 }

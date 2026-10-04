@@ -3,7 +3,26 @@ import { CheckIcon } from "../../components/icons";
 import { Eyebrow } from "../../components/ui";
 import { unjoinedNames } from "../../lib/players";
 import { winnersOf } from "./winners";
-import type { RoundScore } from "./types";
+import type { HostScoreNote, RoundScore } from "./types";
+
+/** The host's decisions that changed (or withheld) a score, in plain words, so nobody has to wonder where a point came from. */
+export function HostScoreNotes({ notes }: { notes?: readonly HostScoreNote[] }) {
+  if (!notes || notes.length === 0) return null;
+  const newestFirst = [...notes].reverse();
+  return (
+    <section aria-label="Host decisions about scores" className="rounded-lg border-2 border-dashed border-ink px-4 py-3">
+      <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">Host decisions about scores</p>
+      <ul className="mt-2 flex flex-col gap-1 text-sm">
+        {newestFirst.map((n, i) => (
+          <li key={`${n.round}-${i}`}>
+            <span className="font-mono text-xs text-muted">Round {n.round}</span> {n.player}{" "}
+            <strong>{n.points === 0 ? "no points" : `${n.points > 0 ? "+" : "-"}${Math.abs(n.points)}`}</strong>: {n.reason}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 /** Said under a "waiting for X" line when X has not opened their invite link, so the group knows why nothing happens. */
 export function NotJoinedNote({ name, players }: { name: string | null; players: readonly { name: string; claimed: boolean }[] }) {
