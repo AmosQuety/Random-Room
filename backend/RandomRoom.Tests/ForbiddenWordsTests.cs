@@ -158,7 +158,7 @@ public class ForbiddenWordsTests
     }
 
     [Fact]
-    public async Task The_judge_or_the_host_can_flag_a_slip_which_costs_the_describer_a_point_but_never_below_zero()
+    public async Task Only_the_judge_can_flag_a_slip_which_costs_the_describer_a_point_but_never_below_zero()
     {
         using var game = NewGame();
         await game.StartAsync();
@@ -172,6 +172,46 @@ public class ForbiddenWordsTests
         Assert.Equal("flagged", flagged.Result!.Value.GetProperty("outcome").GetString());
         Assert.Equal(0, flagged.Scoreboard.Single(s => s.Player == r.Describer).Score);
         Assert.Equal(RuleViolation.Conflict, await ViolationOf(() => game.ActAsync(r.Judge, "flag")));
+    }
+
+    [Fact]
+    public async Task The_host_cannot_flag_a_slip_unless_the_host_is_the_judge_because_otherwise_they_could_not_see_the_card()
+    {
+        using var game = NewGame();
+        await game.StartAsync();
+        await game.ActAsync("Amos", "reveal");
+        var second = Payload(await game.ActAsync("Amos", "next"));
+        Assert.NotEqual("Amos", second.Describer);
+        Assert.NotEqual("Amos", second.Judge);
+
+        var ex = await GameHarness.RejectedAsync(() => game.ActAsync("Amos", "flag"));
+
+        Assert.Equal(RuleViolation.Forbidden, ex.Violation);
+        Assert.Contains("only the judge", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(ForbiddenWordsEngine.Playing, Payload(await game.SnapshotAsync("Amos")).Phase);
+    }
+
+    [Fact]
+    public async Task A_slip_the_host_flags_as_the_judge_is_listed_for_everyone_and_one_another_judge_flags_is_not()
+    {
+        // With 3 players the judge is the next player in turn, so the host (first in the list) judges round 3.
+        using var game = NewGame(new { useBuiltIn = true, rounds = 4 }, ["Amos", "Jacob", "James"]);
+        await game.StartAsync();
+        var first = Payload(await game.SnapshotAsync("Amos"));
+        Assert.Equal("Jacob", first.Judge);
+        await game.ActAsync("Jacob", "flag");
+        Assert.Empty(Payload(await game.SnapshotAsync("James")).HostScoring);
+
+        await game.ActAsync("Amos", "next");
+        await game.ActAsync("Amos", "reveal");
+        var third = Payload(await game.ActAsync("Amos", "next"));
+        Assert.Equal("Amos", third.Judge);
+
+        await game.ActAsync("Amos", "flag");
+
+        var note = Assert.Single(Payload(await game.SnapshotAsync("James")).HostScoring);
+        Assert.Equal((3, third.Describer, -1), (note.Round, note.Player, note.Points));
+        Assert.Contains("as judge", note.Reason);
     }
 
     [Fact]

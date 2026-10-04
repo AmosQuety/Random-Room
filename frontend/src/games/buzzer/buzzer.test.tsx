@@ -89,4 +89,10 @@ describe("Buzzer setup", () => {
   it("sends trimmed prompts", () => {
     expect(toApiBuzzerSetup({ prompts: [" A ", ""], useBuiltIn: false, rounds: 3 })).toEqual({ prompts: ["A"], useBuiltIn: false, rounds: 3 });
   });
+
+  it("lists each point the host gave", () => {
+    const view: BuzzerPayload = { ...payload(), hostScoring: [{ round: 1, player: "Lydia", points: 1, reason: "The host judged the answer correct" }] };
+    renderScreen(view, "James");
+    expect(screen.getByRole("region", { name: /host decisions about scores/i })).toHaveTextContent("The host judged the answer correct");
+  });
 });

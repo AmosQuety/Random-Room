@@ -1,4 +1,4 @@
-import type { RoundScore, TimerView } from "../rounds/types";
+import type { HostScoreNote, RoundScore, TimerView } from "../rounds/types";
 
 export type ForbiddenPhase = "lobby" | "playing" | "revealed" | "complete";
 export type ForbiddenRole = "describer" | "judge" | "guesser";
@@ -36,6 +36,8 @@ export interface ForbiddenPayload {
   timer: TimerView;
   timeLimitSeconds: number | null;
   scoreboard: RoundScore[];
+  /** Points the host changed, which only happens when the host is the judge. */
+  hostScoring?: HostScoreNote[];
 }
 
 export const OUTCOME_TEXT: Record<Outcome, string> = {

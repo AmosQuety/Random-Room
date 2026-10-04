@@ -1,4 +1,4 @@
-import type { RoundScore } from "../rounds/types";
+import type { HostScoreNote, RoundScore } from "../rounds/types";
 
 export type BuzzerPhase = "lobby" | "waiting" | "open" | "resolved" | "complete";
 
@@ -12,6 +12,7 @@ export interface BuzzerPayload {
   lockedOut: string[];
   winner: string | null;
   scoreboard: RoundScore[];
+  hostScoring?: HostScoreNote[];
 }
 
 export interface BuzzerSetup {

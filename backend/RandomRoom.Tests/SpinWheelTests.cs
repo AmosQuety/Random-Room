@@ -83,18 +83,73 @@ public class SpinWheelTests
     }
 
     [Fact]
-    public async Task Only_the_host_can_award_and_a_spin_is_awarded_once()
+    public async Task A_player_other_than_the_host_cannot_award_when_the_host_is_not_the_one_spinning()
+    {
+        using var game = NewGame();
+        await game.StartAsync();
+        await game.ActAsync("Amos", "spin");
+        await game.ActAsync("Lydia", "award");
+        await game.ActAsync("Amos", "next");
+        Assert.Equal("Jacob", Payload(await game.SnapshotAsync("Amos")).Spinner);
+        await game.ActAsync("Jacob", "spin");
+
+        Assert.Equal("host", Payload(await game.SnapshotAsync("James")).AwardMode);
+        Assert.Equal(RuleViolation.Forbidden, (await GameHarness.RejectedAsync(() => game.ActAsync("James", "award"))).Violation);
+        Assert.Equal(RuleViolation.Forbidden, (await GameHarness.RejectedAsync(() => game.ActAsync("Jacob", "award"))).Violation);
+        var awarded = Payload(await game.ActAsync("Amos", "award"));
+
+        Assert.True(awarded.Awarded);
+        Assert.Equal(1, awarded.Scoreboard.Single(s => s.Player == "Jacob").Score);
+        Assert.Equal(RuleViolation.Conflict, (await GameHarness.RejectedAsync(() => game.ActAsync("Amos", "award"))).Violation);
+    }
+
+    [Fact]
+    public async Task When_the_host_is_the_one_spinning_another_player_awards_and_the_host_cannot_award_themselves()
     {
         using var game = NewGame();
         await game.StartAsync();
         await game.ActAsync("Amos", "spin");
 
-        Assert.Equal(RuleViolation.Forbidden, (await GameHarness.RejectedAsync(() => game.ActAsync("Lydia", "award"))).Violation);
-        var awarded = Payload(await game.ActAsync("Amos", "award"));
+        Assert.Equal("players", Payload(await game.SnapshotAsync("Lydia")).AwardMode);
+        Assert.Equal(RuleViolation.Forbidden, (await GameHarness.RejectedAsync(() => game.ActAsync("Amos", "award"))).Violation);
+        Assert.Equal(0, Payload(await game.SnapshotAsync("Amos")).Scoreboard.Single(s => s.Player == "Amos").Score);
+
+        var awarded = Payload(await game.ActAsync("Lydia", "award"));
 
         Assert.True(awarded.Awarded);
         Assert.Equal(1, awarded.Scoreboard.Single(s => s.Player == "Amos").Score);
-        Assert.Equal(RuleViolation.Conflict, (await GameHarness.RejectedAsync(() => game.ActAsync("Amos", "award"))).Violation);
+        Assert.Equal(RuleViolation.Conflict, (await GameHarness.RejectedAsync(() => game.ActAsync("James", "award"))).Violation);
+    }
+
+    [Fact]
+    public async Task A_point_the_host_gives_is_listed_for_everyone_but_one_another_player_gives_is_not()
+    {
+        using var game = NewGame();
+        await game.StartAsync();
+        await game.ActAsync("Amos", "spin");
+        await game.ActAsync("Lydia", "award");
+        Assert.Empty(Payload(await game.SnapshotAsync("James")).HostScoring);
+
+        await game.ActAsync("Amos", "next");
+        await game.ActAsync("Jacob", "spin");
+        await game.ActAsync("Amos", "award");
+
+        var note = Assert.Single(Payload(await game.SnapshotAsync("James")).HostScoring);
+        Assert.Equal(new HostScoreNote(2, "Jacob", 1, "The host gave the point"), note);
+    }
+
+    [Fact]
+    public async Task Moving_on_without_a_point_is_listed_too_so_a_host_cannot_quietly_withhold_one()
+    {
+        using var game = NewGame();
+        await game.StartAsync();
+        await game.ActAsync("Amos", "spin");
+
+        await game.ActAsync("Amos", "next");
+
+        var note = Assert.Single(Payload(await game.SnapshotAsync("Lydia")).HostScoring);
+        Assert.Equal(("Amos", 0, 1), (note.Player, note.Points, note.Round));
+        Assert.Contains("without giving a point", note.Reason);
     }
 
     [Fact]

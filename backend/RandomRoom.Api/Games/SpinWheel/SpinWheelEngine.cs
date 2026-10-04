@@ -17,6 +17,9 @@ public sealed class WheelData
     public WheelSpin? Last { get; set; }
 
     public bool Awarded { get; set; }
+
+    /// <summary>Points the host gave or withheld, so a host who is also playing cannot tilt the board unseen.</summary>
+    public List<HostScoreNote> HostScoring { get; set; } = [];
 }
 
 /// <summary>A landed spin. The server chose Index; clients only animate towards it.</summary>
@@ -35,12 +38,15 @@ public sealed record WheelPayload(
     string? Spinner,
     WheelSpin? Last,
     bool Awarded,
-    IReadOnlyList<WheelScore> Scoreboard);
+    IReadOnlyList<WheelScore> Scoreboard,
+    string AwardMode,
+    IReadOnlyList<HostScoreNote> HostScoring);
 
 /// <summary>
 /// Players take turns spinning a wheel. The server picks the segment (a spin cannot be steered or replayed);
-/// the client only animates to it. The host may award the spinner one point for completing the challenge.
-/// Actions: spin (the player whose turn it is), award / next (host).
+/// the client only animates to it. The spinner earns one point for completing the challenge, which the host awards;
+/// when the host is the one spinning, any other player awards it instead, and nobody ever awards themselves.
+/// Actions: spin (the player whose turn it is), award (see above), next (host).
 /// </summary>
 public sealed class SpinWheelEngine(GameStore store, IRandomChoiceSource random) : IGameEngine
 {
@@ -131,8 +137,8 @@ public sealed class SpinWheelEngine(GameStore store, IRandomChoiceSource random)
             switch (action)
             {
                 case "spin": await SpinAsync(actor, state, players, ct); break;
-                case "award": RequireHost(actor, host); await AwardAsync(state, players, ct); break;
-                case "next": RequireHost(actor, host); await NextAsync(state, setup, ct); break;
+                case "award": await AwardAsync(actor, host, state, players, ct); break;
+                case "next": RequireHost(actor, host); await NextAsync(state, setup, players, ct); break;
             }
         }, ct);
     }
@@ -151,21 +157,37 @@ public sealed class SpinWheelEngine(GameStore store, IRandomChoiceSource random)
         await store.SaveStateAsync(state, ct);
     }
 
-    private async Task AwardAsync(SessionState<WheelData> state, IReadOnlyList<string> players, CancellationToken ct)
+    /// <summary>
+    /// Who may give the point: the host, unless the host is the one who spun, in which case any other player. The
+    /// spinner never awards themselves. This is what keeps a host who plays from handing themselves points.
+    /// </summary>
+    public static string AwardModeFor(string spinner, string host) => spinner == host ? "players" : "host";
+
+    private async Task AwardAsync(string actor, string host, SessionState<WheelData> state, IReadOnlyList<string> players, CancellationToken ct)
     {
         PhaseGuard.Require(state.Phase, Spun, "Nothing has been spun to award.");
         if (state.Data.Awarded)
             throw new RoomRuleException(RuleViolation.Conflict, "This spin has already been awarded.");
 
         var spinner = SpinnerFor(state.Round, players);
+        if (actor == spinner)
+            throw new RoomRuleException(RuleViolation.Forbidden, "You cannot give yourself the point.");
+        if (AwardModeFor(spinner, host) == "host" && actor != host)
+            throw new RoomRuleException(RuleViolation.Forbidden, "Only the host can give the point.");
+
         state.Data.Scores[spinner] = state.Data.Scores.GetValueOrDefault(spinner) + 1;
         state.Data.Awarded = true;
+        if (actor == host)
+            state.Data.HostScoring.Add(new HostScoreNote(state.Round, spinner, 1, "The host gave the point"));
         await store.SaveStateAsync(state, ct);
     }
 
-    private async Task NextAsync(SessionState<WheelData> state, WheelSetup setup, CancellationToken ct)
+    private async Task NextAsync(SessionState<WheelData> state, WheelSetup setup, IReadOnlyList<string> players, CancellationToken ct)
     {
         PhaseGuard.Require(state.Phase, Spun, "Spin the wheel before moving on.");
+        // Moving on without a point is a decision about the score too, so it is shown rather than hidden.
+        if (!state.Data.Awarded)
+            state.Data.HostScoring.Add(new HostScoreNote(state.Round, SpinnerFor(state.Round, players), 0, "The host moved on without giving a point"));
         if (state.Round >= setup.Spins)
         {
             state.Phase = Guard.Move(state.Phase, Phases.Complete);
@@ -196,6 +218,7 @@ public sealed class SpinWheelEngine(GameStore store, IRandomChoiceSource random)
         var state = await store.LoadStateAsync<WheelData>(sessionId, ct);
         var players = await store.PlayerNamesAsync(roomId, ct);
         var setup = await store.GetSetupAsync<WheelSetup>(roomId, ct);
+        var host = await store.HostOfAsync(roomId, ct);
         var playing = state.Round >= 1 && state.Phase != Phases.Complete;
         return new WheelPayload(
             state.Phase,
@@ -205,7 +228,9 @@ public sealed class SpinWheelEngine(GameStore store, IRandomChoiceSource random)
             playing ? SpinnerFor(state.Round, players) : null,
             state.Data.Last,
             state.Data.Awarded,
-            players.Select(p => new WheelScore(p, state.Data.Scores.GetValueOrDefault(p))).ToList());
+            players.Select(p => new WheelScore(p, state.Data.Scores.GetValueOrDefault(p))).ToList(),
+            playing ? AwardModeFor(SpinnerFor(state.Round, players), host) : "host",
+            state.Data.HostScoring);
     }
 
     public Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) =>

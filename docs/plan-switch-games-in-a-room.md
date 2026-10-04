@@ -80,7 +80,7 @@ drawer's word after a switch).
 ## Order of work
 
 0. **Prerequisite: contract tests** that fail when frontend and server copies of the same number differ (trivia caps,
-   pack sizes, player ranges). A change this size touches all of them. (Item 2 in NEXT_STEPS.)
+   pack sizes, player ranges). A change this size touches all of them. (Item 1 in NEXT_STEPS.)
 1. **Data model only, no behaviour change.** Add the columns, key setup by session, update engines and tests. Everything
    still works exactly as before. This is the risky step, so it ships alone.
 2. **Host "Change game" between games**, with the player-count check and the audit record.

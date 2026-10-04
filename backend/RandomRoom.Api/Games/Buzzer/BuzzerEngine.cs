@@ -18,6 +18,12 @@ public sealed class BuzzerData
 
     /// <summary>Who won the round, once it is resolved. Null for a skipped or fully missed round.</summary>
     public string? Winner { get; set; }
+
+    /// <summary>
+    /// Every point here is the host's judgement, so each one is listed. The host does not play Buzzer, so this is about
+    /// transparency rather than fairness, and a host who plays is not possible here.
+    /// </summary>
+    public List<HostScoreNote> HostScoring { get; set; } = [];
 }
 
 public sealed record BuzzerScore(string Player, int Score);
@@ -33,7 +39,8 @@ public sealed record BuzzerPayload(
     string? Buzzed,
     IReadOnlyList<string> LockedOut,
     string? Winner,
-    IReadOnlyList<BuzzerScore> Scoreboard);
+    IReadOnlyList<BuzzerScore> Scoreboard,
+    IReadOnlyList<HostScoreNote> HostScoring);
 
 /// <summary>
 /// Quick-fire rounds. The host reads a prompt, opens the buzzers, and the first player to buzz answers out loud;
@@ -163,6 +170,7 @@ public sealed class BuzzerEngine(GameStore store, IRandomChoiceSource random) : 
     {
         var winner = RequireBuzzed(state);
         state.Data.Scores[winner] = state.Data.Scores.GetValueOrDefault(winner) + 1;
+        state.Data.HostScoring.Add(new HostScoreNote(state.Round, winner, 1, "The host judged the answer correct"));
         state.Data.Winner = winner;
         state.Phase = Guard.Move(state.Phase, Resolved);
         await store.SaveStateAsync(state, ct);
@@ -231,7 +239,8 @@ public sealed class BuzzerEngine(GameStore store, IRandomChoiceSource random) : 
             state.Phase == Open ? state.Row.Claimant : null,
             state.Data.LockedOut,
             state.Phase == Resolved ? state.Data.Winner : null,
-            players.Select(p => new BuzzerScore(p, state.Data.Scores.GetValueOrDefault(p))).ToList());
+            players.Select(p => new BuzzerScore(p, state.Data.Scores.GetValueOrDefault(p))).ToList(),
+            state.Data.HostScoring);
     }
 
     public Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) =>

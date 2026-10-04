@@ -4,7 +4,7 @@ import { Scoreboard } from "../../components/Scoreboard";
 import { fieldInputClass } from "../../components/styles";
 import { Button, Eyebrow } from "../../components/ui";
 import { Countdown } from "../rounds/Countdown";
-import { GameOver, HostBar, NotJoinedNote } from "../rounds/parts";
+import { GameOver, HostBar, HostScoreNotes, NotJoinedNote } from "../rounds/parts";
 import { useCountdown } from "../rounds/useCountdown";
 import type { GameScreenProps } from "../types";
 import { OUTCOME_TEXT, type ForbiddenPayload } from "./types";
@@ -64,7 +64,8 @@ export function ForbiddenGameScreen({ me, isHost, players, session, payload, bus
   const playing = live && payload.phase === "playing";
   const secondsLeft = useCountdown(payload.timer, playing, () => onAction("tick"));
   const lastRound = payload.round >= payload.totalRounds;
-  const canFlag = playing && (payload.role === "judge" || isHost) && payload.role !== "describer";
+  // Only the judge sees the card, so only the judge can tell whether a forbidden word was said.
+  const canFlag = playing && payload.role === "judge";
 
   return (
     <>
@@ -159,6 +160,7 @@ export function ForbiddenGameScreen({ me, isHost, players, session, payload, bus
       {over && <GameOver scoreboard={payload.scoreboard} />}
 
       <Scoreboard rows={payload.scoreboard.map((s) => ({ name: s.player, score: s.score }))} me={me} unit="points" />
+      <HostScoreNotes notes={payload.hostScoring} />
     </>
   );
 }
