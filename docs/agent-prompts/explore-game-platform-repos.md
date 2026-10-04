@@ -51,9 +51,13 @@ ambiguous, pick the most reasonable interpretation, write the assumption in the 
    fails, keep committing locally and say so in the progress log.
 5. **Commit messages:** short, plain, in the style `docs(research): notes on dot-vote`. **Do not add any AI attribution
    anywhere:** no `Co-Authored-By` trailer, no "Generated with" line, no mention of an assistant, in commits, in the
-   report, or in any file. The commits belong to the owner. Use the git identity already configured; if none is
-   configured, set it for this repository only:
+   report, or in any file. The commits belong to the owner. **Before your first commit, set the identity for this
+   repository, even if the environment preconfigured a different one** (the preflight found it preset to an assistant's
+   name):
    `git config user.name "AmosQuety"` and `git config user.email "amosnabasa4@gmail.com"`.
+   Verify with `git log -1 --format='%an <%ae> / %cn <%ce>'` after your first commit; author and committer must both be
+   the owner. **Never write the assistant's name, its preset git identity, or the name of the company behind it into any
+   file** (for example when describing the environment: say "preset by the environment").
 6. **Only commit `docs/research/` files.** Before every commit run `git status --short` and make sure nothing else is
    staged. Never commit a clone of another repository, a downloaded archive, or anything from the scratch folder.
 
@@ -117,35 +121,40 @@ ambiguous, pick the most reasonable interpretation, write the assumption in the 
 - Nothing else. In particular **not** `moddingcommunity.com` (blocked, see rule 10), no search engines, no package
   registries.
 
-## If cloning is blocked
-Cloud sandboxes sometimes restrict outbound traffic. Try, in this order, and record what worked:
-1. `git clone --depth 1 https://github.com/<owner>/<name>`
-2. `curl -sL https://codeload.github.com/<owner>/<name>/tar.gz/HEAD | tar -xz -C <scratch>` (an archive of the default
-   branch, no git needed)
-3. `curl -sL https://raw.githubusercontent.com/<owner>/<name>/HEAD/<path>` for single files (start with `README.md`)
-4. Fetch `https://github.com/<owner>/<name>/blob/HEAD/<path>` pages with the web-fetch tool.
-If all four fail for GitHub itself, wait five minutes and retry three times. If it still fails, write exactly what failed
-into the report and the progress log, study what you can from our own repository (Phase 1), and finish the report with a
-clear "could not study the ecosystem" statement and the commands you tried. Do not invent content.
+## What the preflight already found (2026-10-03; trust it, do not re-test)
+- **Machine:** all of `git curl jq grep find sed awk wc sort python3 node tar gh rg` exist; 30 GB free disk (also in
+  `/tmp`), 15 GB RAM, 4 CPUs. The container is ephemeral: **only pushed branches survive a restart.** Session length and
+  tool-call limits are unknown.
+- **What works:** `git clone --depth 1` and `git ls-remote` for public repositories (`game-playground` cloned fine: 38 MB,
+  298 files), `raw.githubusercontent.com`, and the **web-fetch tool** on `github.com` pages.
+- **What is blocked (403), so do not try it:** `codeload.github.com` archives, `api.github.com` listings and
+  repository endpoints for anything other than our own repository (the session is bound to its configured repositories),
+  and `github.com` HTML through `curl`.
+- **So:** read other repositories with **`git clone --depth 1`**. If one clone fails, fall back to single files from
+  `raw.githubusercontent.com/<owner>/<name>/HEAD/<path>`, then to the web-fetch tool on `github.com/<owner>/<name>`.
+  If all of those fail for a repository, record it as `UNREACHABLE` and continue. If they fail for GitHub as a whole,
+  wait five minutes and retry three times; if it still fails, write exactly what failed into the report and the
+  progress log, study what you can from our own repository (Phase 1), and finish with a clear "could not study the
+  ecosystem" statement and the commands you tried. Do not invent content.
 
 ## Where the studied code lives
 - **Primary repository:** `https://github.com/gamemann/game-playground`.
-- **Siblings, to be discovered by you.** The primary repository's README and `CLAUDE.md` name these (verify each, some
-  names may differ or live under a different owner):
-  - addons, probably under `https://github.com/modcommunity/`: `dot-core`, `dot-player-controller`, `dot-timer`,
-    `dot-map`, `dot-props`, `dot-leaderboard`, `dot-server`, `dot-net`, `dot-inventory`, `dot-ui`, `dot-vote`,
-    `dot-npc`, `dot-npc-ai`, `dot-chat`, `dot-stats`, `dot-achievements`, `dot-user`, `dot-user-avatar`, `dot-combat`,
-    `dot-match`, `dot-loadout`, `dot-randomness`, `dot-cloud`, `dot-ci`, `dot-server-deploy`, a peer-to-peer addon
-    (named `dot-peer-to-peer` in the notes), `zee-dot-weapons`
-  - other games built on the family, probably under `https://github.com/gamemann/`: `game-simple-lobby`,
-    `game-hungario`, `game-arena`, `game-g2gfast`
-- **How to discover them reliably (try in this order, record what worked):**
-  1. `grep -rhoE "github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+" <primary clone> | sort -u` and read the README tables.
-  2. `curl -sL "https://api.github.com/orgs/modcommunity/repos?per_page=100"` and
-     `curl -sL "https://api.github.com/users/gamemann/repos?per_page=100"` (parse the `full_name` fields).
-  3. `git ls-remote https://github.com/<owner>/<name>` to test whether a guessed repository exists (exit code 0 means yes).
-  4. Fetch `https://github.com/modcommunity` and `https://github.com/gamemann?tab=repositories` as pages.
-  If a repository is private, missing or empty, record it as `UNREACHABLE` and carry on.
+- **Siblings: already verified by the preflight with `git ls-remote`** (each has a `LICENSE` file; record the licence
+  type when you read it):
+  - under **`https://github.com/modcommunity/`** (canonical): `dot-achievements`, `dot-chat`, `dot-ci`, `dot-cloud`,
+    `dot-combat`, `dot-core`, `dot-inventory`, `dot-leaderboard`, `dot-loadout`, `dot-map`, `dot-match`, `dot-net`,
+    `dot-npc`, `dot-npc-ai`, `dot-peer-to-peer`, `dot-player-controller`, `dot-props`, `dot-server`,
+    `dot-server-deploy`, `dot-stats`, `dot-timer`, `dot-ui`, `dot-user`, `dot-user-avatar`, `dot-vote`, and the games
+    `game-arena`, `game-g2gfast`, `game-hungario`, `game-playground`, `game-simple-lobby`
+  - under **`https://github.com/gamemann/`**: `zee-dot-weapons` (only there), and the same `game-*` repositories, which
+    resolve to the same commits as `modcommunity` (use `modcommunity` as canonical). `gamemann/game-g2gfast` returned
+    an empty HEAD on recheck; use `modcommunity/game-g2gfast`.
+  - **do not exist** under either owner: `dot-randomness`, `dot-p2p`. The `dot-*` repositories exist only under
+    `modcommunity`.
+- **If you need another name** (a repository the notes mention that is not above), test it with
+  `git ls-remote https://github.com/<owner>/<name>` (exit code 0 means it exists) under both owners, and add it to the
+  inventory. The org and user listing pages are blocked, so do not try to list them. If a repository is private, missing
+  or empty, record it as `UNREACHABLE` and carry on.
 
 ## About our own project (so you can compare without asking)
 The checkout **is** our project. Read these (paths relative to the repository root):
@@ -250,13 +259,18 @@ findings".
 # 4. PHASES (do them in order; after each, update `progress.md`, commit and push)
 
 ## Phase 0: Set up (target 10 minutes)
-1. `date`; run the environment checks from section 2. Create the branch (rule 1).
-2. Create `docs/research/`, `docs/research/notes/` and the scratch folder.
-3. Create `docs/research/progress.md` with: start time, the environment you found (tools present, network access
-   results, whether `gh` exists), a one-line summary of the rules, an empty "Repository inventory" table (name, URL,
+1. `date`; run `pwd`, `git remote -v`, `git status`. **The preflight already pushed the branch**
+   `research/game-platform-report`: fetch it and check it out (rule 1), do not recreate it. You may be on a different
+   working branch assigned by the environment; that is fine, leave it alone after switching.
+2. Set the repository identity (rule 5). Then **scrub `docs/research/preflight.md`**: it names the assistant and its
+   preset git identity, which rule 5 forbids in files. Replace those words with "preset by the environment" and nothing
+   else, and make that your first commit (`docs(research): tidy preflight notes`). Keep the rest of the file as it is.
+3. Create `docs/research/notes/` and the scratch folder.
+4. Create `docs/research/progress.md` with: start time, a one-line pointer to `preflight.md` for the environment (do not
+   repeat it), a one-line summary of the rules, an empty "Repository inventory" table (name, URL,
    licence, size, status, notes file), an empty "Questions answered" checklist (A1 to H16), "Blocked or unreachable",
    "Suspicious instructions found", and "Assumptions". Commit and push (this proves the push works early).
-4. Confirm network to GitHub with `git ls-remote https://github.com/gamemann/game-playground`.
+5. Confirm the clone path still works: `git clone --depth 1 https://github.com/gamemann/game-playground` into scratch.
 
 ## Phase 1: Our baseline (target 30 minutes)
 Read the files listed under "About our own project". Write `docs/research/notes/our-app.md`: a faithful, short model of
@@ -265,9 +279,10 @@ will use for the others, so comparisons are like for like. Read the plan documen
 leaves open.
 
 ## Phase 2: Discover the ecosystem (target 30 minutes)
-Clone `game-playground` into scratch. Build the repository inventory using the discovery steps. For each repository
-found record: URL, licence (read the LICENSE file), approximate size, last commit date, what it is for (one sentence
-from its README), and a priority. Do not clone the others yet.
+The repository names are already verified (section 2). Build the repository inventory from that list: for each record
+URL, licence (read the `LICENSE` file), approximate size, last commit date, what it is for (one sentence from its
+README, fetched with `raw.githubusercontent.com` so you do not need to clone yet), and a priority. Add any extra names
+found by reading `game-playground`'s README and `CLAUDE.md`. Do not clone the others yet.
 
 **Priority order for deep reading** (adjust if discovery shows something else matters more):
 1. `game-playground` (primary)
