@@ -14,7 +14,7 @@ choices are in `DECISIONS.md`; known gaps are in `Gaps_Bugs.md`; the research th
 | 3 | Referee host, phase 1: the host does not play by default | L | 1 | confirm the design below |
 | 4 | Referee host, phase 2: the host can choose to play | M | 3 | none |
 | 5 | Data model: a game session owns its game type and setup | M-L | 1, 2 | **go-ahead (migration on live data)** |
-| 6 | Host "Change game" between games | M | 5 | who may choose |
+| 6 | Host "Change game" between games, including the "play again or choose another game" choice on Start new game | M | 5 | who may choose |
 | 7 | Add a player to a room | S-M | none (more useful after 6) | wanted at all? |
 | 8 | "Tonight's scoreboard" across games | M | 5 | scoring rule, reset scope |
 | 9 | Next-game vote | M | 6 | host override, repeats |
@@ -257,6 +257,30 @@ test: end game at the same instant as an action still ends cleanly.
    The game picker lists only games that fit the room's participant count and says why the others do not.
 3. Hidden information: nothing from the old game may appear in the new payload (payloads are per session; assert it).
 4. Games that need more players than the room has cannot be picked until item 7 exists.
+5. **What the host sees when they press "Start new game" (requested by the owner).** Today the button
+   (`components/HostControls.tsx:37`, wired in `RoomScreen.tsx:252` to `startNewSession` in `lib/api.ts:70`) immediately
+   creates the next session and **starts it** (`GameSessionService.StartNewSessionAsync`, which activates the new session
+   in one step). Replace that with a choice, shown as a popup or an inline panel:
+   - **"Play <current game> again"**: the same game with the same setup, exactly what the button does now (call
+     `session/new` with no body). This should be the default and the first button, so the common case stays one tap.
+   - **"Choose a different game"**: shows the game picker (item 6.2), then that game's setup step, then calls
+     `session/new` with `gameType` and `setup`. Only games that fit the room's participant count are selectable; the
+     others show why (for example "Needs 4 players, you have 3").
+   - **Cancel** closes it and changes nothing.
+   - A different game with a setup should not start on the instant the setup is submitted by accident: show a final
+     "Start <game>" button on the setup step, then start.
+   - If the host-plays toggle exists (item 4), offer "Play in this game" in the same panel, since that choice also takes
+     effect from the next game.
+   - **Presentation:** on a phone a bottom sheet or an inline panel that expands under the button is easier than a
+     centred popup (reachable with a thumb, no keyboard fight). If you use a modal dialog it needs a proper focus trap,
+     Escape to close, focus returned to the button on close, and `aria-modal`. The existing `ConfirmButton` is inline on
+     purpose (no focus trap, light on slow phones); keep that spirit unless a modal is clearly better.
+   - Until item 5 (data model) exists, only the first option can work; ship the panel with just "Play again" hidden
+     behind the same call, so nothing changes for users, then add the second option when the server supports it.
+
+**Tests for the choice:** pressing "Start new game" shows both options and starts nothing; "Play again" calls the old
+request with no body; "Choose a different game" lists only games that fit and shows the reason for the others; cancelling
+changes nothing; Escape and focus return work if it is a dialog; a non-host never sees it.
 
 **Tests (including the case the research found missing in the studied ecosystem):** switch A to B to A with bots online;
 **a player joining or reconnecting at the instant of the switch**; a Word Spies key and a Bingo card absent after a
