@@ -29,6 +29,9 @@ describe("the room-created card", () => {
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
     fireEvent.change(screen.getByLabelText("Player 1"), { target: { value: "Amos" } });
     fireEvent.change(screen.getByLabelText("Player 2"), { target: { value: "Lydia" } });
+    // The host referees, so two players need a third name for the host.
+    fireEvent.click(screen.getByRole("button", { name: /add a player/i }));
+    fireEvent.change(screen.getByLabelText("Player 3"), { target: { value: "Ben" } });
     fireEvent.click(screen.getByRole("button", { name: /create the room/i }));
   }
 

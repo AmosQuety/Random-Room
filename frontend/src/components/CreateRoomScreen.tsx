@@ -3,7 +3,7 @@ import { GAME_LIST, GAMES } from "../games/registry";
 import { ApiError, createRoom } from "../lib/api";
 import { claimPath, claimUrl } from "../lib/invites";
 import { navigate } from "../lib/router";
-import { playerCountIssue } from "../lib/players";
+import { describePlayerRange, playerCountIssue, withReferee } from "../lib/players";
 import { useRetentionDays } from "../lib/useRetentionDays";
 import type { CreateRoomResult } from "../lib/types";
 import { GamePicker } from "./GamePicker";
@@ -162,9 +162,12 @@ export function CreateRoomScreen() {
 
   const game = gameKey ? GAMES[gameKey] : null;
   const cleanPlayers = players.map((p) => p.trim()).filter(Boolean);
-  const countIssue = game ? playerCountIssue(cleanPlayers.length, game) : null;
+  // The host holds a seat but referees, so the people playing are everyone else.
+  const participantCount = Math.max(cleanPlayers.length - 1, 0);
+  const refereeGame = game ? withReferee(game) : null;
+  const countIssue = refereeGame ? playerCountIssue(participantCount, refereeGame) : null;
   const duplicateIssue = hasDuplicates(cleanPlayers) ? "Each player needs a different name." : null;
-  const playersIssue = countIssue ?? duplicateIssue;
+  const playersIssue = duplicateIssue ?? countIssue;
   const setupReady = game ? game.isSetupValid(setup) : false;
 
   function selectGame(key: string) {
@@ -182,7 +185,7 @@ export function CreateRoomScreen() {
     setPending(true);
     setError(null);
     try {
-      setResult(await createRoom(title.trim() || `${game.name} night`, game.key, game.toApiSetup(setup), cleanPlayers, hostPlayer));
+      setResult(await createRoom(title.trim() || `${game.name} night`, game.key, game.toApiSetup(setup), cleanPlayers, hostPlayer, false));
       setCreatedHost(hostPlayer);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not reach the server. Check your connection and try again.");
@@ -253,13 +256,13 @@ export function CreateRoomScreen() {
               <h3 id="create-heading" ref={headingRef} tabIndex={-1} className="font-display text-3xl font-black leading-tight outline-none">
                 Who's playing?
               </h3>
-              <p className="mt-1 text-muted">Each person gets their own private invite link.</p>
+              <p className="mt-1 text-muted">You are the host and referee. Add the people who will play. Each person gets their own private invite link.</p>
               <RetentionNotice days={retentionDays} hostCanDelete className="mt-2" />
             </div>
 
             <ListEditor
               legend="Players"
-              hint={`Add everyone who's joining ${game.name}.`}
+              hint="Type your own name first, then everyone joining the game."
               items={players}
               onChange={setPlayers}
               placeholder={(i) => `Player ${i + 1}`}
@@ -268,7 +271,13 @@ export function CreateRoomScreen() {
               addLabel="Add a player"
             />
 
-            <Field id="host" label="Who's hosting?" hint="The host starts and ends games. Defaults to the first player.">
+            {refereeGame && (
+              <p role="status" className="text-sm font-semibold">
+                {participantCount} {participantCount === 1 ? "player" : "players"} so far (not counting the host). {game?.name} takes {describePlayerRange(refereeGame)}.
+              </p>
+            )}
+
+            <Field id="host" label="Who's hosting?" hint="The host starts and ends games and referees, so does not play. Defaults to the first name.">
               <select id="host" value={host} onChange={(e) => setHost(e.target.value)} aria-describedby="host-hint" className={inputClass}>
                 <option value="">{cleanPlayers[0] || "First player"}</option>
                 {cleanPlayers.map((p) => (

@@ -27,10 +27,11 @@ async function request<T>(path: string, init: RequestInit, token?: string): Prom
 
 export const getConfig = () => request<AppConfig>("/api/config", { method: "GET" });
 
-export const createRoom = (title: string, gameType: string, setup: unknown, players: string[], hostPlayer: string) =>
+/** hostPlays false makes the host a referee: they hold a seat and run the game but are not one of the players. */
+export const createRoom = (title: string, gameType: string, setup: unknown, players: string[], hostPlayer: string, hostPlays: boolean) =>
   request<CreateRoomResult>("/api/rooms", {
     method: "POST",
-    body: JSON.stringify({ title, gameType, setup, players, hostPlayer }),
+    body: JSON.stringify({ title, gameType, setup, players, hostPlayer, hostPlays }),
   });
 
 export const getRoomPreview = (slug: string) => request<RoomPreview>(`/api/rooms/${slug}`, { method: "GET" });
