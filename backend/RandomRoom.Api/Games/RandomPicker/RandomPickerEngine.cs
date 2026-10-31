@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using RandomRoom.Api.Data;
 using RandomRoom.Api.Domain;
+using RandomRoom.Api.Games.Shared;
 using RandomRoom.Api.Services;
 
 namespace RandomRoom.Api.Games.RandomPicker;
@@ -86,7 +87,7 @@ public sealed class RandomPickerEngine(RoomDbContext db, IRandomChoiceSource ran
     public async Task<bool> IsSessionCompleteAsync(Guid sessionId, CancellationToken ct)
     {
         var session = await db.GameSessions.AsNoTracking().SingleAsync(s => s.Id == sessionId, ct);
-        var playerCount = await db.RoomPlayers.CountAsync(p => p.RoomId == session.RoomId, ct);
+        var playerCount = await db.ParticipantCountAsync(session.RoomId, ct);
         var eventCount = await db.RandomPickerEvents.CountAsync(e => e.SessionId == sessionId, ct);
         return eventCount >= playerCount;
     }

@@ -9,7 +9,8 @@ using RandomRoom.Api.Games;
 
 namespace RandomRoom.Api.Services;
 
-public sealed record CreateRoomRequest(string Title, string GameType, JsonElement Setup, IReadOnlyList<string> Players, string HostPlayer);
+/// <param name="HostPlays">False makes the host a referee who runs the game without playing. True by default, as before referees existed.</param>
+public sealed record CreateRoomRequest(string Title, string GameType, JsonElement Setup, IReadOnlyList<string> Players, string HostPlayer, bool HostPlays = true);
 
 public sealed record PlayerInvite(string Player, string InviteToken);
 
@@ -68,6 +69,7 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
             Title = title,
             GameType = request.GameType,
             HostPlayer = request.HostPlayer,
+            HostPlays = request.HostPlays,
             CreatedAt = clock.GetUtcNow(),
         };
         db.Rooms.Add(room);

@@ -195,6 +195,9 @@ namespace RandomRoom.Api.Data.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
+                    b.Property<bool>("HostPlays")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("RecoveryCodeHash")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");

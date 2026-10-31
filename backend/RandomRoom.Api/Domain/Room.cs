@@ -19,5 +19,11 @@ public sealed class Room
     /// </summary>
     public string? RecoveryCodeHash { get; set; }
 
+    /// <summary>
+    /// Whether the host also plays. When false the host is a referee: they run the game but are not a participant.
+    /// Rooms made before referees existed are true.
+    /// </summary>
+    public bool HostPlays { get; set; } = true;
+
     public DateTimeOffset CreatedAt { get; set; }
 }
