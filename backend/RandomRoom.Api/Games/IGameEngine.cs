@@ -19,6 +19,20 @@ public interface IGameEngine
     int MaxPlayers => 12;
 
     /// <summary>
+    /// The fewest participants when the host referees. Players are always counted as participants, so this differs
+    /// from MinPlayers only for a game where a host who plays still does not take part in play (Buzzer).
+    /// </summary>
+    int MinPlayersWithReferee => MinPlayers;
+
+    /// <summary>
+    /// The actions a referee host may send: running the game (reveal, next, end, award, judge), never playing it.
+    /// Checked centrally before HandleActionAsync. Empty by default, so a referee can do nothing a game has not allowed.
+    /// </summary>
+    IReadOnlySet<string> RefereeActions => EmptyActions;
+
+    private static readonly IReadOnlySet<string> EmptyActions = new HashSet<string>();
+
+    /// <summary>
     /// Validates and persists this game's room-level setup (e.g. Random Picker's choices,
     /// Trivia's question bank). Called once, at room creation. Throws RoomRuleException.InvalidInput
     /// for a malformed or insufficient setup.

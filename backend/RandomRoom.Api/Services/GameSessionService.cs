@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using RandomRoom.Api.Data;
 using RandomRoom.Api.Domain;
 using RandomRoom.Api.Games;
+using RandomRoom.Api.Games.Shared;
 
 namespace RandomRoom.Api.Services;
 
@@ -39,9 +40,10 @@ public sealed class GameSessionService(
             room.Slug,
             room.Title,
             room.HostPlayer,
+            room.HostPlays,
             room.GameType,
             new SessionView(session.Id, session.Number, session.Status, session.StartedAt, session.EndedAt),
-            players.Select(p => new PlayerView(p.Name, presence.IsOnline(roomId, p.Name), p.IsClaimed)).ToList(),
+            players.Select(p => new PlayerView(p.Name, presence.IsOnline(roomId, p.Name), p.IsClaimed, room.HostPlays || p.Name != room.HostPlayer)).ToList(),
             viewer is null
                 ? await engine.GetPayloadAsync(roomId, session.Id, ct)
                 : await engine.GetPayloadForAsync(roomId, session.Id, viewer, ct),
@@ -61,6 +63,7 @@ public sealed class GameSessionService(
             throw new RoomRuleException(RuleViolation.Conflict, "This game is not active.");
 
         var engine = EngineFor(room.GameType);
+        RequirePlayingOrRefereeAction(room, engine, actor, action);
         await engine.HandleActionAsync(roomId, session.Id, actor, action, payload, ct);
 
         if (await engine.IsSessionCompleteAsync(session.Id, ct))
@@ -78,6 +81,7 @@ public sealed class GameSessionService(
         var session = await CurrentSessionForHostAsync(roomId, actor, ct);
         if (session.Status != SessionStatus.Waiting)
             throw new RoomRuleException(RuleViolation.Conflict, "Only a game that has not started can be started.");
+        await RequireEnoughParticipantsAsync(room, ct);
 
         Activate(session);
         await db.SaveChangesAsync(ct);
@@ -102,6 +106,7 @@ public sealed class GameSessionService(
         var session = await CurrentSessionForHostAsync(roomId, actor, ct);
         if (session.Status != SessionStatus.Completed)
             throw new RoomRuleException(RuleViolation.Conflict, "End the current game before starting a new one.");
+        await RequireEnoughParticipantsAsync(room, ct);
 
         var next = NewSession(roomId, session.Number + 1);
         db.GameSessions.Add(next);
@@ -120,6 +125,19 @@ public sealed class GameSessionService(
         await db.SaveChangesAsync(ct);
         await engine.OnSessionStartedAsync(roomId, next.Id, ct);
         return await GetSnapshotForAsync(roomId, actor, ct);
+    }
+
+    // A referee runs the game but never plays it: anything the game has not listed as a referee action is refused.
+    private static void RequirePlayingOrRefereeAction(Room room, IGameEngine engine, string actor, string action)
+    {
+        if (!room.HostPlays && actor == room.HostPlayer && !engine.RefereeActions.Contains(action))
+            throw new RoomRuleException(RuleViolation.Forbidden, "You are refereeing this game, so you do not play.");
+    }
+
+    private async Task RequireEnoughParticipantsAsync(Room room, CancellationToken ct)
+    {
+        var participants = await db.ParticipantCountAsync(room.Id, ct);
+        ParticipantRange.Require(EngineFor(room.GameType), participants, room.HostPlays);
     }
 
     private IGameEngine EngineFor(string gameType) =>

@@ -69,7 +69,11 @@ public sealed class BuzzerEngine(GameStore store, IRandomChoiceSource random) : 
         (Resolved, Phases.Complete));
 
     public string GameType => Key;
+    public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "open", "correct", "wrong", "skip", "next" };
     public int MinPlayers => 3;
+
+    // A host who plays only judges, so three seats give two buzzers; a referee is not a seat in the game.
+    public int MinPlayersWithReferee => 2;
 
     public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
     {
