@@ -19,8 +19,8 @@ public sealed class GameSession
     public int Number { get; set; }
 
     /// <summary>
-    /// Which IGameEngine runs this session. Copied from the room's game when the session is made; Room.GameType is kept
-    /// equal to the latest session's.
+    /// Which IGameEngine runs this session. Copied from the previous session (the room's game at creation). Equal to
+    /// Room.GameType today, because nothing can change the game; a "change game" must update both together.
     /// </summary>
     public required string GameType { get; set; }
 

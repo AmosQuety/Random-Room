@@ -7,7 +7,10 @@ public sealed class Room
     public required string Slug { get; set; }
     public required string Title { get; set; }
 
-    /// <summary>The current game: always equal to the latest session's GameType, which is what really runs.</summary>
+    /// <summary>
+    /// The current game. Equal to every session's GameType today, because nothing can change the game after creation;
+    /// a "change game" must update this and the new session together, or stop reading this.
+    /// </summary>
     public required string GameType { get; set; }
 
     /// <summary>The RoomPlayer.Name who controls session lifecycle. Defaults to the room's creator.</summary>
