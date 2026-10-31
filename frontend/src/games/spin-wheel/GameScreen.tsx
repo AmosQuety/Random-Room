@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { FlagIcon, PlayIcon } from "../../components/icons";
+import { RefereeNote } from "../../components/RefereeNote";
 import { Scoreboard } from "../../components/Scoreboard";
 import { Button, Eyebrow } from "../../components/ui";
 import { GameOver, HostBar, HostScoreNotes, NotJoinedNote } from "../rounds/parts";
@@ -25,7 +26,7 @@ function useLanded(hasResult: boolean): boolean {
   return landed;
 }
 
-function Turn({ payload, players, me, isHost, live, busy, onAction }: { payload: WheelPayload; players: GameScreenProps<WheelPayload>["players"]; me: string; isHost: boolean; live: boolean; busy: boolean; onAction: GameScreenProps<WheelPayload>["onAction"] }) {
+function Turn({ payload, players, me, isHost, referee, live, busy, onAction }: { payload: WheelPayload; players: GameScreenProps<WheelPayload>["players"]; me: string; isHost: boolean; referee: boolean; live: boolean; busy: boolean; onAction: GameScreenProps<WheelPayload>["onAction"] }) {
   const landed = useLanded(payload.last !== null);
   const myTurn = payload.spinner === me;
   const lastSpin = payload.round >= payload.totalRounds;
@@ -44,7 +45,9 @@ function Turn({ payload, players, me, isHost, live, busy, onAction }: { payload:
 
       {payload.phase === "ready" && !myTurn && <NotJoinedNote name={payload.spinner} players={players} />}
 
-      {payload.phase === "ready" && (
+      {payload.phase === "ready" && referee && <p className="font-semibold text-muted">Waiting for {payload.spinner} to spin.</p>}
+
+      {payload.phase === "ready" && !referee && (
         <Button variant="accent" size="lg" disabled={!myTurn || !live || busy} onClick={() => onAction("spin")}>
           <PlayIcon className="size-4" /> {myTurn ? "Spin the wheel" : `Waiting for ${payload.spinner}`}
         </Button>
@@ -97,12 +100,14 @@ function Turn({ payload, players, me, isHost, live, busy, onAction }: { payload:
   );
 }
 
-export function SpinWheelGameScreen({ me, isHost, players, session, payload, busy, onAction }: GameScreenProps<WheelPayload>) {
+export function SpinWheelGameScreen({ me, isHost, referee, players, session, payload, busy, onAction }: GameScreenProps<WheelPayload>) {
   const live = session.status === "Active";
   const over = session.status === "Completed" || payload.phase === "complete";
 
   return (
     <>
+      {referee && <RefereeNote>Give the point after each spin, then move to the next spin.</RefereeNote>}
+
       {session.status === "Waiting" && (
         <section className="rounded-xl border-2 border-dashed border-ink bg-card p-6 text-center">
           <Eyebrow>Ready when you are</Eyebrow>
@@ -112,7 +117,7 @@ export function SpinWheelGameScreen({ me, isHost, players, session, payload, bus
       )}
 
       {(payload.phase === "ready" || payload.phase === "spun") && !over && (
-        <Turn key={payload.round} payload={payload} players={players} me={me} isHost={isHost} live={live} busy={busy} onAction={onAction} />
+        <Turn key={payload.round} payload={payload} players={players} me={me} isHost={isHost} referee={referee} live={live} busy={busy} onAction={onAction} />
       )}
 
       {over && <GameOver scoreboard={payload.scoreboard} />}

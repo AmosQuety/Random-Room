@@ -1,4 +1,5 @@
 import { FlagIcon, PlayIcon } from "../../components/icons";
+import { RefereeNote } from "../../components/RefereeNote";
 import { Scoreboard } from "../../components/Scoreboard";
 import { Button, Eyebrow } from "../../components/ui";
 import { GameOver, HostBar, HostScoreNotes } from "../rounds/parts";
@@ -74,12 +75,14 @@ function Round({ payload, me, isHost, live, busy, onAction }: { payload: BuzzerP
   );
 }
 
-export function BuzzerGameScreen({ me, isHost, session, payload, busy, onAction }: GameScreenProps<BuzzerPayload>) {
+export function BuzzerGameScreen({ me, isHost, referee, session, payload, busy, onAction }: GameScreenProps<BuzzerPayload>) {
   const live = session.status === "Active";
   const over = session.status === "Completed" || payload.phase === "complete";
 
   return (
     <>
+      {referee && <RefereeNote>Open the buzzers, then judge each answer.</RefereeNote>}
+
       {session.status === "Waiting" && (
         <section className="rounded-xl border-2 border-dashed border-ink bg-card p-6 text-center">
           <Eyebrow>Ready when you are</Eyebrow>
