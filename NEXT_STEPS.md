@@ -11,8 +11,7 @@ choices are in `DECISIONS.md`; known gaps are in `Gaps_Bugs.md`; the research th
 |---|---|---|---|---|
 | 1 | Serve the game facts from the API instead of keeping a frontend copy (the contract tests that guard the copy are done) | S | none | **yes: wanted at all?** |
 | 3 | Referee host, phase 1: the host does not play by default | S | none (two review follow-ups left) | answer the Buzzer question below |
-| 5 | Data model: a game session owns its game type and setup | M-L | none (the bot tests are in) | **go-ahead (migration on live data)** |
-| 6 | Host "Change game" between games, including the "play again or choose another game" choice on Start new game | M | 5 | who may choose |
+| 6 | Host "Change game" between games, including the "play again or choose another game" choice on Start new game | M | none (item 5 is done) | who may choose |
 | 7 | Add a player to a room | S-M | none (more useful after 6) | wanted at all? |
 | 8 | "Tonight's scoreboard" across games | M | 5 | scoring rule, reset scope |
 | 9 | Next-game vote | M | 6 | host override, repeats |
@@ -24,7 +23,7 @@ choices are in `DECISIONS.md`; known gaps are in `Gaps_Bugs.md`; the research th
 | 15 | Before real use: content review, database, deploy settings, load test, real devices | tasks | none | several |
 
 Recommended order: 3 (item 4, the host choosing to play, is done; the referee model changes how every game counts players, so do it before the
-multi-game work), then 5, 6, 7, 8, 9. Item 1 is optional and Items 10 to 13 can go in any gap.
+multi-game work), then 6, 7, 8, 9. Item 5, the session owning its game type and setup, is done. Item 1 is optional and Items 10 to 13 can go in any gap.
 
 ## Ground rules for every item
 
@@ -100,36 +99,6 @@ Optional: a referee bot in `backend/RandomRoom.Tests/EndToEnd`.
 **Watch out.** Player-count rules show up in three places that must agree (server validation, `playerCountIssue`, the
 engine `MinPlayers`/`MinPlayersWithReferee`); the server-facts contract tests help.
 
-## 5. Data model: a game session owns its game type and setup (M-L)
-
-**Why.** A room is locked to one game for its whole life, so changing games means a new room, new invites and new PINs.
-Players get bored of one game; the owner wants to change games in the same room. The research found one working pattern in
-the studied ecosystem: the people layer outlives the game, and only the game layer is replaced. That means moving game type
-and setup from the room to the session. Full reasoning and the alternative (linking rooms) are in
-`docs/plan-switch-games-in-a-room.md`; the research report confirms option A. **This is the risky step: a migration on live
-data. It ships alone, with no behaviour change.**
-
-**Today.** `Room.GameType` is fixed. Setup lives in `RoomGameSetups` (unique on `RoomId`), `RoomChoices` (Random Picker) and
-`TriviaQuestions` (Trivia), all keyed by `RoomId`. Every engine reads setup with `GameStore.GetSetupAsync(roomId)` or its own
-room-keyed table. `IGameEngine.ConfigureRoomAsync(roomId, setup)` runs once at room creation.
-
-**Build.**
-1. Migration: `GameSession.GameType` (string; backfill from the room); `RoomGameSetup.SessionId` and drop the unique index
-   on `RoomId` (new unique index on `SessionId`); `RoomChoice.SessionId`; `TriviaQuestion.SessionId`. Backfill by copying each
-   room's rows to each of its sessions so nothing in flight changes. Keep it reversible.
-2. `Room.GameType` becomes "the current game" (the latest session's); the join page and room preview read the latest session.
-3. Change `IGameEngine.ConfigureRoomAsync(roomId, setup)` to configure a **session**, and change all 19 engines from
-   `GetSetupAsync(roomId)` to `GetSetupAsync(sessionId)`. It is mechanical; the existing per-game tests cover it once updated.
-4. "Start new game" of the **same** game copies the previous session's setup, so behaviour is exactly as today.
-5. `GameSessionService.StartNewSessionAsync` (and room creation) create the session with its game type and setup.
-6. Frontend: `RoomScreen` reads the game from the current session (`snapshot.session.gameType`), not the room.
-
-**Tests.** The whole existing suite unchanged and green; a migration test run against a copy of realistic data (rooms with
-several sessions, each game type); run the end-to-end bots across a "Start new game" to prove nothing changed; a concurrency
-test: end game at the same instant as an action still ends cleanly.
-
-**Needs from the owner:** go-ahead for option A. Fallback if it proves too large: linked rooms (plan document).
-
 ## 6. Host "Change game" between games (M)
 
 **Why.** The feature the owner wants: pick a different game in the same room, same invites, same PINs.
@@ -160,8 +129,8 @@ test: end game at the same instant as an action still ends cleanly.
      centred popup (reachable with a thumb, no keyboard fight). If you use a modal dialog it needs a proper focus trap,
      Escape to close, focus returned to the button on close, and `aria-modal`. The existing `ConfirmButton` is inline on
      purpose (no focus trap, light on slow phones); keep that spirit unless a modal is clearly better.
-   - Until item 5 (data model) exists, only the first option can work; ship the panel with just "Play again" hidden
-     behind the same call, so nothing changes for users, then add the second option when the server supports it.
+   - The data model (done, see `DECISIONS.md` "A game session owns its game type and setup") already supports both
+     options: a new session can carry a different game type and its own setup rows.
 
 **Tests for the choice:** pressing "Start new game" shows both options and starts nothing; "Play again" calls the old
 request with no body; "Choose a different game" lists only games that fit and shows the reason for the others; cancelling
