@@ -96,6 +96,16 @@ Notes:
   Room history lives in Postgres and is unaffected. Render's free Postgres expires after 30 days - use a
   paid instance if you need it to last.
 
+## The host is a referee
+
+The host runs the game and, by default, does not play. Rooms made in the app start this way: the host holds a seat (and
+an invite link) but is not one of the players, so the player count, the scoreboard and every turn leave the host out.
+The host keeps the controls that run a game (start, reveal, next, skip, award, end) and sees no answer, vote, buzz or
+draw controls. In Forbidden Words the referee also sees the card and can flag a slip. The server enforces all of this
+(a referee's play action is refused with a 403); the screens just do not offer it. Rooms made before this change, or
+through the API without `hostPlays: false`, keep a host who plays. Player ranges below count the people who play, not the
+host.
+
 ## Games
 
 | Game | Category | Notes |

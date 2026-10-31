@@ -85,32 +85,18 @@ draw and a loading and error state to the create flow, which matters on slow con
 copy keeps causing friction. Item 3 and later add more per-game facts (for example whether a game can run with a referee),
 which is the moment to reconsider.
 
-## 3. Referee host, phase 1: the host does not play by default (L) - frontend still to do
+## 3. Referee host, phase 1: the host does not play by default (S) - follow-ups only
 
-**Backend done** (see `DECISIONS.md`, "Referee host (phase 1, backend)"): `Room.HostPlays` (migration, existing rooms
-`true`), optional `hostPlays` on create (default `true`), participants instead of seats in every engine, ranges checked
-against participants (seat cap 12), `RoomSnapshot.HostPlays` and `PlayerView.Plays`, the central referee check
-(`IGameEngine.RefereeActions`, 403 "You are refereeing this game"), Forbidden Words card and flag for a referee, and the
-backend tests (`RefereeHostTests`, `RefereeApiTests`).
+Backend and frontend are done (see `DECISIONS.md`, "Referee host (phase 1, backend)" and "Referee host (phase 1,
+frontend)"). Two follow-ups from the independent review remain:
 
-**Still to do (frontend):**
-1. `lib/types.ts`: `RoomSnapshot.hostPlays`, `PlayerView.plays`. `lib/players.ts` `playerCountIssue` takes the participant
-   count; Buzzer needs only 2 participants with a referee (`MinPlayersWithReferee`), which the server-facts fixture does
-   not carry yet (`ServerFactsTests` and the fixture need that fact added).
-2. `GameScreenProps` gets `referee: boolean` (`isHost && !hostPlays`). Every game screen: hide answer/vote/buzz/mark/draw
-   controls, show a short "You are refereeing" line, keep the host controls, keep the scoreboard to participants. Batches:
-   the round games first; then Wheel, Bingo, Buzzer, story games, Two Truths, Guess Who, Word Spies, Forbidden Words
-   (show the card for `role: "referee"` and a flag button), Sketch Guess, Random Picker.
-3. `CreateRoomScreen.tsx`: send `hostPlays: false`; the Players step explains "You are the host and referee. Add the people
-   who will play." and shows the participant count against the game's range. The host seat is still entered first.
-4. Update `README.md` ("the host runs the game and, by default, does not play") once the UI ships.
+1. **A test per engine that the referee can still run it.** Nothing proves a referee can still *run* every game, so a typo
+   in an engine's `RefereeActions` would lock the referee out without a failing test. Add one test per engine in which the
+   referee sends each allowed control action, and assert each set only names actions that engine handles.
+2. **Open question for the owner:** in a Buzzer room where the host plays, the snapshot says `Plays=true` for a host who
+   never buzzes; intended?
 
-**Tests still to do:** frontend, for each screen, render as referee and assert no play controls and the host controls
-present. Optional backend: a referee bot in `backend/RandomRoom.Tests/EndToEnd`.
-Also from the independent review (low severity): nothing proves a referee can still *run* every game, so a typo in an
-engine's `RefereeActions` would lock the referee out without a failing test. Add one test per engine in which the referee
-sends each allowed control action, and assert each set only names actions that engine handles. Open question for the
-owner: in a Buzzer room where the host plays, the snapshot says `Plays=true` for a host who never buzzes; intended?
+Optional: a referee bot in `backend/RandomRoom.Tests/EndToEnd`.
 
 **Watch out.** Player-count rules show up in three places that must agree (server validation, `playerCountIssue`, the
 engine `MinPlayers`/`MinPlayersWithReferee`); the server-facts contract tests help.

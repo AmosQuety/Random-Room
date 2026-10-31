@@ -132,6 +132,15 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - `tick` only asks the server whether a deadline has passed, so a referee's screen may send it.
 - **Hidden information.** Forbidden Words is the only game where a referee sees more than a guesser: the card (`role: "referee"`), so the referee can flag a slip; it shows in "Host decisions about scores" as "The referee flagged a slip". The describer and judge still rotate among participants (making the referee the permanent judge was optional and is not done). In every other game the referee gets the same view as a participant who holds no secret: no Bingo card, no Word Spies key, no Sketch Guess word, no Two Truths lie, no Guess Who authorship, no answers before a reveal. Spin the Wheel: the referee never spins, so `awardMode` is always `"host"`.
 
+## Referee host (phase 1, frontend)
+
+- **One flag, wired once.** `RoomScreen` computes `referee = isHost && hostPlays === false` and passes it to every game screen as `GameScreenProps.referee`. A snapshot with no `hostPlays` (an older server) means the host plays.
+- **Screens get participants only.** `RoomScreen` filters the player list with `participants()` (players whose `plays` is not `false`) before handing it to a game, so every "N players" count, progress list and scoreboard leaves the referee out without per-screen filtering. `SeatControls` still gets every seat.
+- **What a referee sees.** The shared `RefereeNote` ("You are refereeing: you run the game and do not play", plus one sentence of what they can do) on every game. No answer, vote, buzz, mark, guess, draw or write control; the host controls stay (start/end in `HostControls`, and reveal, next, skip, award, call, end per game, matching the server's `RefereeActions` table). Trivia shows the options as plain text. Two Truths shows the statements read-only. Forbidden Words shows the card and a "Flag a slip" button for `role: "referee"`.
+- **The create flow** always sends `hostPlays: false`. The Players step counts participants as the names entered minus the host, and checks them against the game's range; Buzzer uses `minPlayersWithReferee` (2). `withReferee()` swaps that minimum into the range so `playerCountIssue` stays a plain function. A duplicate-name message now wins over the count message, because it is the more specific fix.
+- **Server facts** now include `minPlayersWithReferee`; `serverFacts.test.ts` compares it with the registry.
+- **Decision for the owner:** the Create flow offers no choice yet (that is item 4, "the host can choose to play"). The host select still lets the creator name someone else as host; that person then referees.
+
 ## Server facts the frontend copies
 
 - **Some facts are written twice, once on the server and once in the frontend**: the game keys, each game's player range, the trivia limits and the starter-pack sizes. Removing the copy would put a request in front of the game picker, so the copy stays and is guarded instead. A mismatch has caused bugs before (the accent-duplicate checks, three times).
