@@ -1,7 +1,7 @@
 import type { HostScoreNote, RoundScore, TimerView } from "../rounds/types";
 
 export type ForbiddenPhase = "lobby" | "playing" | "revealed" | "complete";
-export type ForbiddenRole = "describer" | "judge" | "guesser";
+export type ForbiddenRole = "describer" | "judge" | "guesser" | "referee";
 export type Outcome = "guessed" | "flagged" | "skipped" | "time" | "ended";
 
 export interface CardView {
