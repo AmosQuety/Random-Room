@@ -109,6 +109,7 @@ public sealed class WordSpiesEngine(GameStore store, IRandomChoiceSource random)
         (GivingClue, Phases.Complete));
 
     public string GameType => Key;
+    public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "end" };
     public int MinPlayers => 4;
 
     public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)

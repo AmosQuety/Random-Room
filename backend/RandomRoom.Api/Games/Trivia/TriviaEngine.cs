@@ -46,6 +46,7 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
     private readonly IRandomChoiceSource choices = random ?? new CryptoRandomChoiceSource();
 
     public string GameType => Key;
+    public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "tick" };
 
     // ---- setup ----
 

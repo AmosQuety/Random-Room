@@ -19,6 +19,7 @@ public sealed class RoundGameEngine<TPrompt>(IRoundRules<TPrompt> rules, GameSto
     private const int MaxTimeLimit = 300;
 
     public string GameType => rules.GameType;
+    public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "reveal", "next", "tick" };
     public int MinPlayers => rules.MinPlayers;
     public int MaxPlayers => rules.MaxPlayers;
 

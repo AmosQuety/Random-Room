@@ -65,6 +65,7 @@ public sealed class TwoTruthsEngine(GameStore store, IRandomChoiceSource random)
         (Submitting, Phases.Complete));
 
     public string GameType => Key;
+    public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "reveal", "next", "skip" };
     public int MinPlayers => 3;
 
     public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct) => Task.CompletedTask;

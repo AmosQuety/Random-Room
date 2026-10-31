@@ -68,6 +68,7 @@ public sealed class StoryChainEngine(IChainRules rules, GameStore store, IRandom
     private static readonly PhaseGuard Guard = new((Phases.Lobby, Writing), (Writing, Phases.Complete));
 
     public string GameType => rules.GameType;
+    public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "skip", "end" };
 
     public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
     {

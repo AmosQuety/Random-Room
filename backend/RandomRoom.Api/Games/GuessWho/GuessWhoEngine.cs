@@ -65,6 +65,7 @@ public sealed class GuessWhoEngine(GameStore store, IRandomChoiceSource random) 
         (Phases.Revealed, Phases.Complete));
 
     public string GameType => Key;
+    public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "begin", "reveal", "next" };
     public int MinPlayers => 3;
 
     public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct) => Task.CompletedTask;
