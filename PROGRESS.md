@@ -1,5 +1,32 @@
 # Progress
 
+Last updated: 2026-10-31 13:43
+
+## Now
+Branch `add-shuffle-tests` holds finished work, not pushed: Shuffle tests and the server-facts contract tests (NEXT_STEPS item 1). Waiting on you to choose the next item.
+
+## Next
+1. NEXT_STEPS item 2: bot end-to-end tests (`backend/RandomRoom.Tests/EndToEnd/`, real SignalR clients, a secret-leak scan, configurable rate limits). Start with Would You Rather, Trivia and Bingo.
+2. Then item 3, the referee host (`Room.HostPlays`); it needs your confirmation of the design in NEXT_STEPS.
+3. Decide whether `GET /api/games` (item 1, optional) is wanted at all.
+
+## Done recently
+- 2026-10-31: `b2cff3d` Shuffle tests committed (7 tests; checked they fail when Shuffle is broken two ways).
+- 2026-10-31: `408a33a` server-facts contract tests: backend `ServerFactsTests` + committed fixture + frontend `games/serverFacts.test.ts` (checked red for each kind of drift, a missing fixture and an empty one).
+- 2026-10-31: `81de11a` fixed the stale RoomSnapshot comment; `d2e3840` DECISIONS and NEXT_STEPS updated.
+
+## Open questions / blockers
+- Local `main` is stale (`af65b99` vs `origin/main` `c2536f8`); branch `docs/manual-test-plan` (2 doc commits) is not merged. Left alone until you say.
+- Decide: is `GET /api/games` wanted (NEXT_STEPS item 1)?
+- This file was the build-phase checklist before; the tracker sections above were added on top and everything below is unchanged.
+
+## Context to remember
+- Tests need Postgres. Port 5433 is taken by another project's container (`xemora-dev-postgres`), so a throwaway one runs as `randomroom-pg-test` on 5434. Run tests with `RANDOMROOM_TEST_SERVER="Host=localhost;Port=5434;Username=postgres;Password=postgres;Database=postgres"` and `DOTNET_ROOT=/usr/share/dotnet`.
+- Refresh the contract fixture after a deliberate change: `UPDATE_SERVER_FACTS=1 dotnet test backend/RandomRoom.slnx --filter ServerFactsTests`.
+- Last full runs: backend 594 passed; frontend 349 passed, `tsc -b` clean, contrast 44/44, build ok, lint shows only the known `useRoom.ts` warning.
+
+---
+
 ## Summary (updated at the end of each phase)
 
 **Status: Phase 1 (design overhaul) done. Phase 2 (shared primitives) done. Phase 3 (games): every game in the brief is built as a registered plugin, see the checklist. Nothing is blocked.**
