@@ -105,6 +105,32 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **Host decisions about scores are shown to everyone**, not hidden: a short "Host decisions about scores" list under the scoreboard in those three games (`HostScoreNote`: round, player, points, reason). It includes a decision to give no point (the host moving on without awarding), because withholding is also a way to tilt a board.
 - **This is not the end state.** The intended model is a referee host who does not play by default, with an option to play (see `NEXT_STEPS.md`, items 3 and 4). These rules stay in force whenever a host does play.
 
+## Referee host (phase 1, backend)
+
+- **`Room.HostPlays`**, a bool. The migration adds it as `NOT NULL DEFAULT true`, so every existing room keeps a host who plays. The model sets no default on purpose: with an EF default of `true`, a `false` would be treated as "not set" and silently written as `true`. The service-level `CreateRoomRequest.HostPlays` and the HTTP `hostPlays` field both default to `true`; the frontend will send `false` for new rooms.
+- **A participant is a seat that plays**: every seat, minus the host when `!HostPlays` (`Games/Shared/Participants.cs`). `GameStore.PlayerNamesAsync` now returns participants, so every engine that lists players, rotates turns, deals cards, forms teams, counts answers or builds a scoreboard leaves the referee out without per-engine changes. The direct `RoomPlayers` counts in Random Picker (completion) and Trivia (all answered, the answered list) use participants too.
+- **Seat places stay on seats**: the snapshot's player list (presence, `Claimed`, and the new `Plays` flag), the room preview, sign-in, seat reset, recovery, deletion and audit still read `RoomPlayers`. No caller needed a separate `AllSeatNamesAsync`, so it was not added.
+- **Player ranges apply to participants**; the seat cap stays 12, the referee included (11 participants plus a referee). Checked at room creation and again when a game or a new session starts (`ParticipantRange`). Buzzer is the one game where a host who plays never plays either, so it has `MinPlayersWithReferee = 2` (3 seats when the host plays, 2 participants with a referee). The server-facts fixture does not carry this yet: that is the frontend half.
+- **One central check, deny by default.** `GameSessionService.PerformActionAsync` refuses (403, "You are refereeing this game, so you do not play.") any action from a referee host that the engine has not listed in `IGameEngine.RefereeActions`. The default is empty, so a new game lets a referee do nothing until it says otherwise. Engines keep their own host-only checks for those actions.
+
+| Game | Referee may send | Participants only (refused for a referee) |
+|---|---|---|
+| Random Picker | none | trigger |
+| Trivia | tick | answer |
+| Two Truths | reveal, next, skip | submit, vote |
+| Guess Who | begin, reveal, next | submit, guess |
+| Spin the Wheel | award, next | spin |
+| Buzzer | open, correct, wrong, skip, next | buzz |
+| Bingo | call, end | mark, bingo |
+| Word Spies | end | clue, guess, pass |
+| Forbidden Words | reveal, next, tick, flag | guess, skip |
+| Sketch Guess | reveal, next, tick | strokes, undo, clear, guess, skip |
+| One Word Story, Fortunately | skip, end | add |
+| Name That, Mad Libs, Would You Rather, This or That, Most Likely To, Never Have I Ever, Survey Showdown | reveal, next, tick | answer |
+
+- `tick` only asks the server whether a deadline has passed, so a referee's screen may send it.
+- **Hidden information.** Forbidden Words is the only game where a referee sees more than a guesser: the card (`role: "referee"`), so the referee can flag a slip; it shows in "Host decisions about scores" as "The referee flagged a slip". The describer and judge still rotate among participants (making the referee the permanent judge was optional and is not done). In every other game the referee gets the same view as a participant who holds no secret: no Bingo card, no Word Spies key, no Sketch Guess word, no Two Truths lie, no Guess Who authorship, no answers before a reveal. Spin the Wheel: the referee never spins, so `awardMode` is always `"host"`.
+
 ## Server facts the frontend copies
 
 - **Some facts are written twice, once on the server and once in the frontend**: the game keys, each game's player range, the trivia limits and the starter-pack sizes. Removing the copy would put a request in front of the game picker, so the copy stays and is guarded instead. A mismatch has caused bugs before (the accent-duplicate checks, three times).
