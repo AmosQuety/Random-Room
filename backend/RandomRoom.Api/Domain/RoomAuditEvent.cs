@@ -9,6 +9,7 @@ public sealed class RoomAuditEvent
     public const string SeatReset = "seat-reset";
     public const string HostRecovered = "host-recovered";
     public const string RecoveryCodeMade = "recovery-code-made";
+    public const string HostPlaysChanged = "host-plays-changed";
 
     public Guid Id { get; set; }
     public Guid RoomId { get; set; }

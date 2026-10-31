@@ -102,13 +102,29 @@ public sealed class GameSessionService(
 
     public async Task<RoomSnapshot> StartNewSessionAsync(Guid roomId, string actor, CancellationToken ct = default)
     {
-        var room = await RequireRoomAsync(roomId, ct);
-        var session = await CurrentSessionForHostAsync(roomId, actor, ct);
-        if (session.Status != SessionStatus.Completed)
+        await CurrentSessionForHostAsync(roomId, actor, ct);
+        var (room, next) = await CreateNextSessionAsync(roomId, ct);
+
+        var engine = EngineFor(room.GameType);
+        await engine.OnSessionCreatedAsync(roomId, next.Id, ct);
+        Activate(next);
+        await db.SaveChangesAsync(ct);
+        await engine.OnSessionStartedAsync(roomId, next.Id, ct);
+        return await GetSnapshotForAsync(roomId, actor, ct);
+    }
+
+    // Under the room lock, so SetHostPlaysAsync cannot change who plays between the range check and the new session.
+    // Once the new session is committed it is the latest and no longer Completed, so the toggle is refused until it ends.
+    private async Task<(Room Room, GameSession Next)> CreateNextSessionAsync(Guid roomId, CancellationToken ct)
+    {
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        var room = await LockRoomAsync(roomId, ct);
+        var latest = await LatestSessionAsync(roomId, ct);
+        if (latest.Status != SessionStatus.Completed)
             throw new RoomRuleException(RuleViolation.Conflict, "End the current game before starting a new one.");
         await RequireEnoughParticipantsAsync(room, ct);
 
-        var next = NewSession(roomId, session.Number + 1);
+        var next = NewSession(roomId, latest.Number + 1);
         db.GameSessions.Add(next);
         try
         {
@@ -118,14 +134,60 @@ public sealed class GameSessionService(
         {
             throw new RoomRuleException(RuleViolation.Conflict, "The room changed; please refresh.");
         }
+        await transaction.CommitAsync(ct);
+        return (room, next);
+    }
 
-        var engine = EngineFor(room.GameType);
-        await engine.OnSessionCreatedAsync(roomId, next.Id, ct);
-        Activate(next);
-        await db.SaveChangesAsync(ct);
-        await engine.OnSessionStartedAsync(roomId, next.Id, ct);
+    /// <summary>
+    /// Lets the host choose whether they play from the next game. Only between games (the current game is Completed),
+    /// because a game builds its turns, teams and cards from the participants. Audited and range-checked.
+    /// </summary>
+    public async Task<RoomSnapshot> SetHostPlaysAsync(Guid roomId, string actor, bool plays, CancellationToken ct = default)
+    {
+        await using (var transaction = await db.Database.BeginTransactionAsync(ct))
+        {
+            var room = await LockRoomAsync(roomId, ct);
+            if (actor != room.HostPlayer)
+                throw new RoomRuleException(RuleViolation.Forbidden, "Only the host can control the game.");
+            var latest = await LatestSessionAsync(roomId, ct);
+            if (latest.Status != SessionStatus.Completed)
+                throw new RoomRuleException(RuleViolation.Conflict, "You can change this only between games. End the current game first.");
+
+            var engine = EngineFor(room.GameType);
+            if (plays && engine.RequiresReferee)
+                throw new RoomRuleException(RuleViolation.InvalidInput, "In this game the host always judges, so the host cannot play.");
+
+            if (room.HostPlays != plays)
+            {
+                var seats = await db.RoomPlayers.CountAsync(p => p.RoomId == roomId, ct);
+                ParticipantRange.Require(engine, Participants.CountAmong(seats, plays), plays);
+                await db.Rooms.Where(r => r.Id == roomId).ExecuteUpdateAsync(set => set.SetProperty(r => r.HostPlays, plays), ct);
+                db.RoomAuditEvents.Add(HostPlaysAudit(roomId, actor, room.HostPlays, plays, latest.Number + 1));
+                await db.SaveChangesAsync(ct);
+            }
+            await transaction.CommitAsync(ct);
+        }
         return await GetSnapshotForAsync(roomId, actor, ct);
     }
+
+    private RoomAuditEvent HostPlaysAudit(Guid roomId, string actor, bool from, bool to, int fromGame) => new()
+    {
+        Id = Guid.NewGuid(),
+        RoomId = roomId,
+        Actor = actor,
+        Action = RoomAuditEvent.HostPlaysChanged,
+        // Fits the 32-character Target column: "referee->plays from game 12".
+        Target = $"{Role(from)}->{Role(to)} from game {fromGame}",
+        OccurredAt = clock.GetUtcNow(),
+    };
+
+    private static string Role(bool plays) => plays ? "plays" : "referee";
+
+    // A row lock on the room, held until the caller's transaction ends: serializes the host-plays toggle with the
+    // start of a new game. Untracked, so a long-lived context never returns a stale copy.
+    private async Task<Room> LockRoomAsync(Guid roomId, CancellationToken ct) =>
+        await db.Rooms.FromSql($"SELECT * FROM \"Rooms\" WHERE \"Id\" = {roomId} FOR UPDATE").AsNoTracking().FirstOrDefaultAsync(ct)
+        ?? throw new RoomRuleException(RuleViolation.NotFound, "Room not found.");
 
     // A referee runs the game but never plays it: anything the game has not listed as a referee action is refused.
     private static void RequirePlayingOrRefereeAction(Room room, IGameEngine engine, string actor, string action)

@@ -21,6 +21,8 @@ public sealed record RecoverHostResponse(string Player, string InviteToken, stri
 
 public sealed record RecoveryCodeResponse(string RecoveryCode);
 
+public sealed record HostPlaysRequest(bool Plays);
+
 public sealed record ActionRequest(string Action, JsonElement? Payload);
 
 public sealed record AppConfig(int RetentionDays);
@@ -61,6 +63,9 @@ public static class RoomEndpoints
             Act(http, broadcaster, (roomId, player) => rooms.EndSessionAsync(roomId, player, ct), ct));
         room.MapPost("/session/new", (HttpContext http, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
             Act(http, broadcaster, (roomId, player) => rooms.StartNewSessionAsync(roomId, player, ct), ct));
+        room.MapPost("/host-plays", (HttpContext http, HostPlaysRequest request, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
+            Act(http, broadcaster, (roomId, player) => rooms.SetHostPlaysAsync(roomId, player, request.Plays, ct), ct))
+            .RequireRateLimiting(RoomAdminRateLimitPolicy);
     }
 
     private static async Task<IResult> Join(JoinRequest request, PlayerTokenService tokens, CancellationToken ct)

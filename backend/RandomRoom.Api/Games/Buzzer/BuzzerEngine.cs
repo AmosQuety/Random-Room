@@ -75,6 +75,8 @@ public sealed class BuzzerEngine(GameStore store, IRandomChoiceSource random) : 
     // A host who plays only judges, so three seats give two buzzers; a referee is not a seat in the game.
     public int MinPlayersWithReferee => 2;
 
+    public bool RequiresReferee => true;
+
     public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
     {
         var prompts = SetupJson.OptionalArray(setup, "prompts", MaxPrompts, "Prompts")

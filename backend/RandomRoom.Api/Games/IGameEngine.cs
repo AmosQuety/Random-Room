@@ -25,6 +25,12 @@ public interface IGameEngine
     int MinPlayersWithReferee => MinPlayers;
 
     /// <summary>
+    /// Whether the host always referees this game, whatever the room's HostPlays says (Buzzer: the host judges). Such a
+    /// game refuses a request for the host to play.
+    /// </summary>
+    bool RequiresReferee => false;
+
+    /// <summary>
     /// The actions a referee host may send: running the game (reveal, next, end, award, judge), never playing it.
     /// Checked centrally before HandleActionAsync. Empty by default, so a referee can do nothing a game has not allowed.
     /// </summary>
