@@ -17,7 +17,7 @@ public class ServerFactsTests(ApiTests.Factory factory) : IClassFixture<ApiTests
     private const string UpdateVariable = "UPDATE_SERVER_FACTS";
     private const string FixtureRelativePath = "frontend/src/games/__fixtures__/server-facts.json";
 
-    private sealed record GameFact(string Key, int MinPlayers, int MaxPlayers);
+    private sealed record GameFact(string Key, int MinPlayers, int MinPlayersWithReferee, int MaxPlayers);
 
     private sealed record TriviaFacts(
         int MaxQuestions,
@@ -64,7 +64,7 @@ public class ServerFactsTests(ApiTests.Factory factory) : IClassFixture<ApiTests
     {
         using var scope = factory.Services.CreateScope();
         var games = scope.ServiceProvider.GetServices<IGameEngine>()
-            .Select(e => new GameFact(e.GameType, e.MinPlayers, e.MaxPlayers))
+            .Select(e => new GameFact(e.GameType, e.MinPlayers, e.MinPlayersWithReferee, e.MaxPlayers))
             .OrderBy(g => g.Key, StringComparer.Ordinal)
             .ToList();
 

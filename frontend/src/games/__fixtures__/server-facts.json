@@ -3,96 +3,115 @@
     {
       "key": "bingo",
       "minPlayers": 2,
+      "minPlayersWithReferee": 2,
       "maxPlayers": 12
     },
     {
       "key": "buzzer",
       "minPlayers": 3,
+      "minPlayersWithReferee": 2,
       "maxPlayers": 12
     },
     {
       "key": "forbidden-words",
       "minPlayers": 3,
+      "minPlayersWithReferee": 3,
       "maxPlayers": 12
     },
     {
       "key": "fortunately",
       "minPlayers": 2,
+      "minPlayersWithReferee": 2,
       "maxPlayers": 12
     },
     {
       "key": "guess-who",
       "minPlayers": 3,
+      "minPlayersWithReferee": 3,
       "maxPlayers": 12
     },
     {
       "key": "mad-libs",
       "minPlayers": 2,
+      "minPlayersWithReferee": 2,
       "maxPlayers": 12
     },
     {
       "key": "most-likely-to",
       "minPlayers": 3,
+      "minPlayersWithReferee": 3,
       "maxPlayers": 12
     },
     {
       "key": "name-that",
       "minPlayers": 2,
+      "minPlayersWithReferee": 2,
       "maxPlayers": 12
     },
     {
       "key": "never-have-i-ever",
       "minPlayers": 2,
+      "minPlayersWithReferee": 2,
       "maxPlayers": 12
     },
     {
       "key": "one-word-story",
       "minPlayers": 2,
+      "minPlayersWithReferee": 2,
       "maxPlayers": 12
     },
     {
       "key": "random-picker",
       "minPlayers": 2,
+      "minPlayersWithReferee": 2,
       "maxPlayers": 12
     },
     {
       "key": "sketch-guess",
       "minPlayers": 2,
+      "minPlayersWithReferee": 2,
       "maxPlayers": 12
     },
     {
       "key": "spin-wheel",
       "minPlayers": 2,
+      "minPlayersWithReferee": 2,
       "maxPlayers": 12
     },
     {
       "key": "survey-showdown",
       "minPlayers": 2,
+      "minPlayersWithReferee": 2,
       "maxPlayers": 12
     },
     {
       "key": "this-or-that",
       "minPlayers": 2,
+      "minPlayersWithReferee": 2,
       "maxPlayers": 12
     },
     {
       "key": "trivia",
       "minPlayers": 2,
+      "minPlayersWithReferee": 2,
       "maxPlayers": 12
     },
     {
       "key": "two-truths",
       "minPlayers": 3,
+      "minPlayersWithReferee": 3,
       "maxPlayers": 12
     },
     {
       "key": "word-spies",
       "minPlayers": 4,
+      "minPlayersWithReferee": 4,
       "maxPlayers": 12
     },
     {
       "key": "would-you-rather",
       "minPlayers": 2,
+      "minPlayersWithReferee": 2,
       "maxPlayers": 12
     }
   ],
