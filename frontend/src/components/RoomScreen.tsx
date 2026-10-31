@@ -169,7 +169,8 @@ export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
   }
 
   const errorMessage = currentError(error, snapshot);
-  const game = GAMES[snapshot.gameType];
+  const gameType = snapshot.session.gameType ?? snapshot.gameType;
+  const game = GAMES[gameType];
   if (!game) {
     return (
       <Shell width="wide" headerRight={headerRight}>
@@ -182,7 +183,7 @@ export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
             </Button>
           }
         >
-          <p>This room uses "{snapshot.gameType}", which this version of the app doesn't know. Try refreshing the page.</p>
+          <p>This room uses "{gameType}", which this version of the app doesn't know. Try refreshing the page.</p>
         </EmptyState>
       </Shell>
     );

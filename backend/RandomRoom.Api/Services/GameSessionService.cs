@@ -33,7 +33,7 @@ public sealed class GameSessionService(
         var room = await RequireRoomAsync(roomId, ct);
         var session = await LatestSessionAsync(roomId, ct);
         var players = await db.RoomPlayers.AsNoTracking().Where(p => p.RoomId == roomId).ToListAsync(ct);
-        var engine = EngineFor(room.GameType);
+        var engine = EngineFor(session.GameType);
 
         return new RoomSnapshot(
             room.Id,
@@ -42,7 +42,7 @@ public sealed class GameSessionService(
             room.HostPlayer,
             room.HostPlays,
             room.GameType,
-            new SessionView(session.Id, session.Number, session.Status, session.StartedAt, session.EndedAt),
+            new SessionView(session.Id, session.Number, session.Status, session.StartedAt, session.EndedAt, session.GameType),
             players.Select(p => new PlayerView(p.Name, presence.IsOnline(roomId, p.Name), p.IsClaimed, session.HostPlays || p.Name != room.HostPlayer)).ToList(),
             viewer is null
                 ? await engine.GetPayloadAsync(roomId, session.Id, ct)

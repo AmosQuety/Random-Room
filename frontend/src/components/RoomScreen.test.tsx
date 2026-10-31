@@ -175,3 +175,25 @@ describe("RoomScreen referee host", () => {
     expect(screen.getByText("screen players: Amos")).toBeInTheDocument();
   });
 });
+
+describe("RoomScreen game type", () => {
+  const render_ = () => render(<RoomScreen session={session} onLeave={vi.fn()} onSessionExpired={vi.fn()} />);
+
+  it("plays the game the current session names", () => {
+    mocks.snapshot = { ...snapshot(1), gameType: "other", session: { ...snapshot(1).session, gameType: "fake" } };
+    render_();
+    expect(screen.getByText("screen: not referee")).toBeInTheDocument();
+  });
+
+  it("falls back to the room's game when the server does not name the session's", () => {
+    mocks.snapshot = snapshot(1);
+    render_();
+    expect(screen.getByText("screen: not referee")).toBeInTheDocument();
+  });
+
+  it("names the session's game when this version does not know it", () => {
+    mocks.snapshot = { ...snapshot(1), session: { ...snapshot(1).session, gameType: "future-game" } };
+    render_();
+    expect(screen.getByText(/This room uses "future-game"/)).toBeInTheDocument();
+  });
+});

@@ -53,6 +53,16 @@ public class SessionSetupCopyTests
     }
 
     [Fact]
+    public async Task Snapshot_names_the_session_game()
+    {
+        using var game = new GameHarness(d => new RandomPickerEngine(d.Db, d.Random, d.Clock), RandomPickerEngine.Key, new { choices = new[] { "Pizza", "Tacos" } });
+
+        var snapshot = await game.SnapshotAsync(game.Host);
+
+        Assert.Equal(RandomPickerEngine.Key, snapshot.Session.GameType);
+    }
+
+    [Fact]
     public async Task Concurrent_start_new_game_makes_one_session_with_one_setup_copy()
     {
         using var game = new GameHarness(d => new SpinWheelEngine(d.Store, d.Random), SpinWheelEngine.Key, new { segments = new[] { "A", "B" } });
