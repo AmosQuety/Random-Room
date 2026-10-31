@@ -1,6 +1,7 @@
 import { unjoinedNames } from "../../lib/players";
 import type { ReactNode } from "react";
 import { CheckIcon, FlagIcon, PlayIcon } from "../../components/icons";
+import { RefereeNote } from "../../components/RefereeNote";
 import { Scoreboard } from "../../components/Scoreboard";
 import { Button, Eyebrow } from "../../components/ui";
 import type { GameScreenProps } from "../types";
@@ -36,6 +37,7 @@ interface Props<TPrompt, TResult, TAnswer> extends GameScreenProps<RoundPayload<
 export function RoundGameScreen<TPrompt, TResult, TAnswer>({
   me,
   isHost,
+  referee,
   players,
   session,
   payload,
@@ -63,6 +65,8 @@ export function RoundGameScreen<TPrompt, TResult, TAnswer>({
         {over ? "Game over" : revealed ? `Round ${payload.round} results are in` : collecting ? `Round ${payload.round} of ${payload.totalRounds}` : ""}
       </p>
 
+      {referee && <RefereeNote>Reveal the answers when you are ready, then move to the next round.</RefereeNote>}
+
       {session.status === "Waiting" && (
         <section className="rounded-xl border-2 border-dashed border-ink bg-card p-6 text-center">
           <Eyebrow>Ready when you are</Eyebrow>
@@ -89,6 +93,7 @@ export function RoundGameScreen<TPrompt, TResult, TAnswer>({
           <div>{renderPrompt(payload.prompt)}</div>
 
           {collecting &&
+            !referee &&
             (payload.myAnswer !== null ? (
               <div className="rounded-lg border-2 border-ink bg-leaf-soft px-4 py-3">
                 <p className="flex items-center gap-2 font-bold">
