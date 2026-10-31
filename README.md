@@ -106,6 +106,11 @@ draw controls. In Forbidden Words the referee also sees the card and can flag a 
 through the API without `hostPlays: false`, keep a host who plays. Player ranges below count the people who play, not the
 host.
 
+A host who wants to play can tick "I want to play too" when creating the room, or "Play in the next game" in the host
+controls between games (it takes effect from the next game). The fair-play rules still apply: in Spin the Wheel another
+player gives the host their point, and in Forbidden Words the host can flag a slip only as the judge. Buzzer always
+needs the host to judge, so there the choice is not offered.
+
 ## Games
 
 | Game | Category | Notes |

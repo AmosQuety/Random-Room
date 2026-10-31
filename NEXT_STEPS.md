@@ -11,7 +11,6 @@ choices are in `DECISIONS.md`; known gaps are in `Gaps_Bugs.md`; the research th
 |---|---|---|---|---|
 | 1 | Serve the game facts from the API instead of keeping a frontend copy (the contract tests that guard the copy are done) | S | none | **yes: wanted at all?** |
 | 3 | Referee host, phase 1: the host does not play by default | S | none (two review follow-ups left) | answer the Buzzer question below |
-| 4 | Referee host, phase 2: the host can choose to play | M | 3 | none |
 | 5 | Data model: a game session owns its game type and setup | M-L | none (the bot tests are in) | **go-ahead (migration on live data)** |
 | 6 | Host "Change game" between games, including the "play again or choose another game" choice on Start new game | M | 5 | who may choose |
 | 7 | Add a player to a room | S-M | none (more useful after 6) | wanted at all? |
@@ -24,7 +23,7 @@ choices are in `DECISIONS.md`; known gaps are in `Gaps_Bugs.md`; the research th
 | 14 | Spectator link (only if asked for) | M | none | wanted at all? |
 | 15 | Before real use: content review, database, deploy settings, load test, real devices | tasks | none | several |
 
-Recommended order: 3 and 4 (the referee model changes how every game counts players, so do it before the
+Recommended order: 3 (item 4, the host choosing to play, is done; the referee model changes how every game counts players, so do it before the
 multi-game work), then 5, 6, 7, 8, 9. Item 1 is optional and Items 10 to 13 can go in any gap.
 
 ## Ground rules for every item
@@ -101,24 +100,6 @@ Optional: a referee bot in `backend/RandomRoom.Tests/EndToEnd`.
 **Watch out.** Player-count rules show up in three places that must agree (server validation, `playerCountIssue`, the
 engine `MinPlayers`/`MinPlayersWithReferee`); the server-facts contract tests help.
 
-## 4. Referee host, phase 2: the host can choose to play (M)
-
-**Why.** Some groups want the host in the game. Keep the fair-play rules from item 3's "already built" list in force
-whenever the host plays.
-
-**Build.**
-1. Endpoint `POST /api/room/host-plays` with `{ "plays": true|false }`: host only, refused while a game is active
-   (`409`), audited (`host-plays-changed`), and broadcast so every screen refreshes. Takes effect from the next game.
-2. Host controls: a toggle "Play in the next game" in `HostControls` (or beside the seat panel), with a one-line
-   explanation of what changes (you appear on the scoreboard; another player gives you points in Spin the Wheel; you can
-   no longer flag in Forbidden Words unless you are the judge).
-3. Games that need a referee ignore the toggle (Buzzer: the host always judges): show it disabled with the reason.
-4. Participant-count check on the toggle: if turning it on pushes a game over its `MaxPlayers`, refuse with a clear message.
-5. Creation flow: add "I want to play too" (off by default) on the Players step, sending `hostPlays`.
-
-**Tests.** Toggle refused mid-game; audit row written; with the host playing, every safeguard holds (wheel: host cannot
-award themselves; Forbidden: host cannot flag unless judge; notes listed); Buzzer ignores the toggle.
-
 ## 5. Data model: a game session owns its game type and setup (M-L)
 
 **Why.** A room is locked to one game for its whole life, so changing games means a new room, new invites and new PINs.
@@ -173,7 +154,7 @@ test: end game at the same instant as an action still ends cleanly.
    - **Cancel** closes it and changes nothing.
    - A different game with a setup should not start on the instant the setup is submitted by accident: show a final
      "Start <game>" button on the setup step, then start.
-   - If the host-plays toggle exists (item 4), offer "Play in this game" in the same panel, since that choice also takes
+   - Offer the host-plays toggle ("Play in the next game", done) in the same panel, since that choice also takes
      effect from the next game.
    - **Presentation:** on a phone a bottom sheet or an inline panel that expands under the button is easier than a
      centred popup (reachable with a thumb, no keyboard fight). If you use a modal dialog it needs a proper focus trap,
