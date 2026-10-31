@@ -123,11 +123,14 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
             .Where(p => p.RoomId == room.Id)
             .Select(p => new RoomPreviewPlayer(p.Name, p.ClaimedAt != null))
             .ToListAsync(ct);
-        // The latest session holds the current game and its setup.
+        // The latest session holds the current game and its setup. A room without one (older data) still shows
+        // its title and seats, with no game teaser.
         var latest = await db.GameSessions.AsNoTracking()
-            .Where(s => s.RoomId == room.Id).OrderByDescending(s => s.Number).FirstAsync(ct);
-        var gamePreview = await EngineFor(latest.GameType).GetRoomPreviewAsync(room.Id, latest.Id, ct);
+            .Where(s => s.RoomId == room.Id).OrderByDescending(s => s.Number).FirstOrDefaultAsync(ct);
+        if (latest is null)
+            return new RoomPreview(room.Title, room.GameType, new { }, players, options?.Value.RetentionDays ?? 0);
 
+        var gamePreview = await EngineFor(latest.GameType).GetRoomPreviewAsync(room.Id, latest.Id, ct);
         return new RoomPreview(room.Title, latest.GameType, gamePreview, players, options?.Value.RetentionDays ?? 0);
     }
 

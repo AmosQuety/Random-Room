@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RandomRoom.Api.Games;
 using RandomRoom.Api.Games.RandomPicker;
 using RandomRoom.Api.Games.SpinWheel;
 using RandomRoom.Api.Games.Trivia;
@@ -50,6 +51,20 @@ public class SessionSetupCopyTests
 
         Assert.Equal(["Pizza", "Tacos"], await game.Db.RoomChoices.Where(c => c.SessionId == second).OrderBy(c => c.Position).Select(c => c.Label).ToListAsync());
         Assert.Equal(RandomPickerEngine.Key, (await game.Db.GameSessions.SingleAsync(s => s.Id == second)).GameType);
+    }
+
+    [Fact]
+    public async Task Preview_of_a_room_without_a_session_shows_the_room_game_and_no_teaser()
+    {
+        IGameEngine? engine = null;
+        using var game = new GameHarness(d => engine = new RandomPickerEngine(d.Db, d.Random, d.Clock), RandomPickerEngine.Key, new { choices = new[] { "Pizza", "Tacos" } });
+        await game.Db.GameSessions.Where(s => s.RoomId == game.RoomId).ExecuteDeleteAsync();
+        var slug = await game.Db.Rooms.Where(r => r.Id == game.RoomId).Select(r => r.Slug).SingleAsync();
+
+        var preview = await new RoomAdminService(game.Db, game.Clock, [engine!]).GetPreviewAsync(slug);
+
+        Assert.Equal(RandomPickerEngine.Key, preview.GameType);
+        Assert.Equal("{}", System.Text.Json.JsonSerializer.Serialize(preview.GamePreview));
     }
 
     [Fact]
