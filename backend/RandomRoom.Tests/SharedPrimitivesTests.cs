@@ -93,9 +93,9 @@ public sealed class SecretEngine(GameStore store) : IGameEngine
 
     public string GameType => "test-secret";
 
-    public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
+    public Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct)
     {
-        store.AddSetup(roomId, new { secret = "hunter2" });
+        store.AddSetup(roomId, sessionId, new { secret = "hunter2" });
         return Task.CompletedTask;
     }
 
@@ -115,7 +115,7 @@ public sealed class SecretEngine(GameStore store) : IGameEngine
     public Task<object> GetPayloadForAsync(Guid roomId, Guid sessionId, string viewer, CancellationToken ct) =>
         Task.FromResult<object>(new SecretPayload(viewer == "Amos" ? "hunter2" : null));
 
-    public Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) => Task.FromResult<object>(new { });
+    public Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct) => Task.FromResult<object>(new { });
 }
 
 public class PerViewerSnapshotTests
@@ -243,7 +243,7 @@ public class GameStoreTests
         using var h = Harness();
         var store = new GameStore(h.Db, h.Clock);
 
-        var setup = await store.GetSetupAsync<Dictionary<string, string>>(h.RoomId, default);
+        var setup = await store.GetSetupAsync<Dictionary<string, string>>(h.LatestSessionId, default);
 
         Assert.Equal("hunter2", setup["secret"]);
     }

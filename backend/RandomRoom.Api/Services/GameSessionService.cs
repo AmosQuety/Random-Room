@@ -127,6 +127,7 @@ public sealed class GameSessionService(
 
         var next = NewSession(roomId, latest.Number + 1, latest.GameType, room.HostPlays);
         db.GameSessions.Add(next);
+        await CopySetupAsync(latest, next, ct);
         try
         {
             await db.SaveChangesAsync(ct);
@@ -137,6 +138,30 @@ public sealed class GameSessionService(
         }
         await transaction.CommitAsync(ct);
         return (room, next);
+    }
+
+    // A new game of the same kind replays the previous one's setup. Added in the same save as the session, so a
+    // session never exists without its copy and a refused session leaves no copy behind.
+    private async Task CopySetupAsync(GameSession from, GameSession to, CancellationToken ct)
+    {
+        var setups = await db.RoomGameSetups.AsNoTracking().Where(s => s.SessionId == from.Id).ToListAsync(ct);
+        db.RoomGameSetups.AddRange(setups.Select(s => new RoomGameSetup { Id = Guid.NewGuid(), RoomId = s.RoomId, SessionId = to.Id, Json = s.Json }));
+
+        var choices = await db.RoomChoices.AsNoTracking().Where(c => c.SessionId == from.Id).ToListAsync(ct);
+        db.RoomChoices.AddRange(choices.Select(c => new RoomChoice { Id = Guid.NewGuid(), RoomId = c.RoomId, SessionId = to.Id, Label = c.Label, Position = c.Position }));
+
+        var questions = await db.TriviaQuestions.AsNoTracking().Where(q => q.SessionId == from.Id).ToListAsync(ct);
+        db.TriviaQuestions.AddRange(questions.Select(q => new TriviaQuestion
+        {
+            Id = Guid.NewGuid(),
+            RoomId = q.RoomId,
+            SessionId = to.Id,
+            Position = q.Position,
+            Text = q.Text,
+            Options = q.Options.ToList(),
+            CorrectIndex = q.CorrectIndex,
+            Category = q.Category,
+        }));
     }
 
     /// <summary>

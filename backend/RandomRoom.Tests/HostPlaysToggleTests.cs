@@ -26,7 +26,7 @@ public class HostPlaysToggleTests(ITestOutputHelper output)
         public string GameType => Key;
         public int MaxPlayers => maxPlayers;
 
-        public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct) => Task.CompletedTask;
+        public Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct) => Task.CompletedTask;
 
         public async Task OnSessionCreatedAsync(Guid roomId, Guid sessionId, CancellationToken ct) =>
             built[sessionId] = await store.PlayerNamesAsync(roomId, ct);
@@ -34,7 +34,7 @@ public class HostPlaysToggleTests(ITestOutputHelper output)
         public Task HandleActionAsync(Guid roomId, Guid sessionId, string actor, string action, JsonElement? payload, CancellationToken ct) => Task.CompletedTask;
         public Task<bool> IsSessionCompleteAsync(Guid sessionId, CancellationToken ct) => Task.FromResult(false);
         public Task<object> GetPayloadAsync(Guid roomId, Guid sessionId, CancellationToken ct) => Task.FromResult<object>(new { });
-        public Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) => Task.FromResult<object>(new { });
+        public Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct) => Task.FromResult<object>(new { });
     }
 
     private static GameHarness RecordingRoom(ConcurrentDictionary<Guid, IReadOnlyList<string>> built, bool hostPlays, string[]? seats = null, int maxPlayers = 12) =>

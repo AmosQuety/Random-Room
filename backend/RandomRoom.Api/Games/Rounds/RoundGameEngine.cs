@@ -25,7 +25,7 @@ public sealed class RoundGameEngine<TPrompt>(IRoundRules<TPrompt> rules, GameSto
 
     // ---- setup ----
 
-    public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
+    public Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct)
     {
         var prompts = new List<TPrompt>();
         if (SetupJson.Flag(setup, "useBuiltIn", fallback: false) && rules.BuiltInBank is not null)
@@ -38,7 +38,7 @@ public sealed class RoundGameEngine<TPrompt>(IRoundRules<TPrompt> rules, GameSto
         var rounds = SetupJson.OptionalInt(setup, "rounds", 1, prompts.Count, "The number of rounds") ?? Math.Min(DefaultRounds, prompts.Count);
         var timeLimit = SetupJson.OptionalInt(setup, "timeLimitSeconds", MinTimeLimit, MaxTimeLimit, "The time limit");
 
-        store.AddSetup(roomId, new RoundSetup<TPrompt>(prompts, rounds, timeLimit));
+        store.AddSetup(roomId, sessionId, new RoundSetup<TPrompt>(prompts, rounds, timeLimit));
         return Task.CompletedTask;
     }
 
@@ -154,7 +154,7 @@ public sealed class RoundGameEngine<TPrompt>(IRoundRules<TPrompt> rules, GameSto
 
     private async Task<object> BuildPayloadAsync(Guid roomId, Guid sessionId, string? viewer, CancellationToken ct)
     {
-        var setup = await store.GetSetupAsync<RoundSetup<TPrompt>>(roomId, ct);
+        var setup = await store.GetSetupAsync<RoundSetup<TPrompt>>(sessionId, ct);
         var state = await store.LoadStateAsync<RoundData>(sessionId, ct);
         var players = await store.PlayerNamesAsync(roomId, ct);
 
@@ -175,9 +175,9 @@ public sealed class RoundGameEngine<TPrompt>(IRoundRules<TPrompt> rules, GameSto
             setup.TimeLimitSeconds);
     }
 
-    public async Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct)
+    public async Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct)
     {
-        var setup = await store.GetSetupAsync<RoundSetup<TPrompt>>(roomId, ct);
+        var setup = await store.GetSetupAsync<RoundSetup<TPrompt>>(sessionId, ct);
         return new RoundPreview(setup.Prompts.Count, setup.Rounds, setup.TimeLimitSeconds);
     }
 
@@ -197,7 +197,7 @@ public sealed class RoundGameEngine<TPrompt>(IRoundRules<TPrompt> rules, GameSto
         store.InTransactionAsync(async () =>
         {
             await store.LockSessionAsync(sessionId, ct);
-            var setup = await store.GetSetupAsync<RoundSetup<TPrompt>>(roomId, ct);
+            var setup = await store.GetSetupAsync<RoundSetup<TPrompt>>(sessionId, ct);
             var state = await store.LoadStateAsync<RoundData>(sessionId, ct);
             var players = await store.PlayerNamesAsync(roomId, ct);
             await work(setup, state, players);

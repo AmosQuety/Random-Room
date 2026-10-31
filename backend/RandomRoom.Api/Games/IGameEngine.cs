@@ -39,11 +39,11 @@ public interface IGameEngine
     private static readonly IReadOnlySet<string> EmptyActions = new HashSet<string>();
 
     /// <summary>
-    /// Validates and persists this game's room-level setup (e.g. Random Picker's choices,
-    /// Trivia's question bank). Called once, at room creation. Throws RoomRuleException.InvalidInput
-    /// for a malformed or insufficient setup.
+    /// Validates and persists this game's setup for one session (e.g. Random Picker's choices, Trivia's question
+    /// bank). Called at room creation, for the first session; a new game of the same kind copies the previous
+    /// session's setup instead. Throws RoomRuleException.InvalidInput for a malformed or insufficient setup.
     /// </summary>
-    Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct);
+    Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct);
 
     /// <summary>Called right after a new session row is created, to set up any game-specific state for it.</summary>
     Task OnSessionCreatedAsync(Guid roomId, Guid sessionId, CancellationToken ct);
@@ -75,5 +75,5 @@ public interface IGameEngine
         GetPayloadAsync(roomId, sessionId, ct);
 
     /// <summary>A teaser shown on the public join screen, before anyone has authenticated - never answers/results.</summary>
-    Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct);
+    Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct);
 }

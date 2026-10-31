@@ -112,7 +112,7 @@ public sealed class WordSpiesEngine(GameStore store, IRandomChoiceSource random)
     public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "end" };
     public int MinPlayers => 4;
 
-    public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
+    public Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct)
     {
         var words = SetupJson.OptionalArray(setup, "words", MaxCustomWords, "Words")
             .Select((e, i) => e.ValueKind == JsonValueKind.String ? e.GetString()!.Trim() : throw new RoomRuleException(RuleViolation.InvalidInput, $"Word {i + 1} must be text."))
@@ -130,7 +130,7 @@ public sealed class WordSpiesEngine(GameStore store, IRandomChoiceSource random)
         if (Pool(setupValue).Count < Cells)
             throw new RoomRuleException(RuleViolation.InvalidInput, $"The board needs at least {Cells} different words, or use the built-in ones.");
 
-        store.AddSetup(roomId, setupValue);
+        store.AddSetup(roomId, sessionId, setupValue);
         return Task.CompletedTask;
     }
 
@@ -150,7 +150,7 @@ public sealed class WordSpiesEngine(GameStore store, IRandomChoiceSource random)
 
     public async Task OnSessionStartedAsync(Guid roomId, Guid sessionId, CancellationToken ct)
     {
-        var setup = await store.GetSetupAsync<WordSpiesSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<WordSpiesSetup>(sessionId, ct);
         var players = await store.PlayerNamesAsync(roomId, ct);
         await store.InSessionAsync<WordSpiesData>(sessionId, async state =>
         {
@@ -374,6 +374,6 @@ public sealed class WordSpiesEngine(GameStore store, IRandomChoiceSource random)
             players.Select(p => new SpyScore(p, data.Winner is not null && data.Teams.GetValueOrDefault(p) == data.Winner ? 1 : 0)).ToList());
     }
 
-    public Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) =>
+    public Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct) =>
         Task.FromResult<object>(new WordSpiesPreview("Two teams, one grid of words, and a spymaster on each side who knows where everything is."));
 }

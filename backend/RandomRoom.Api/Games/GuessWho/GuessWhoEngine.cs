@@ -68,7 +68,7 @@ public sealed class GuessWhoEngine(GameStore store, IRandomChoiceSource random) 
     public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "begin", "reveal", "next" };
     public int MinPlayers => 3;
 
-    public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct) => Task.CompletedTask;
+    public Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct) => Task.CompletedTask;
 
     public Task OnSessionCreatedAsync(Guid roomId, Guid sessionId, CancellationToken ct)
     {
@@ -227,6 +227,6 @@ public sealed class GuessWhoEngine(GameStore store, IRandomChoiceSource random) 
             players.Select(p => new GuessWhoScore(p, state.Data.Scores.GetValueOrDefault(p))).ToList());
     }
 
-    public Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) =>
+    public Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct) =>
         Task.FromResult<object>(new GuessWhoPreview("Everyone writes a fact about themselves; the group guesses who wrote which."));
 }

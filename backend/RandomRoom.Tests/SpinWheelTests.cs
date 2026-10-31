@@ -254,7 +254,7 @@ public class SpinWheelTests
         using var game = NewGame();
         var engine = new SpinWheelEngine(new GameStore(game.Db, game.Clock), new ScriptedRandom());
 
-        var json = JsonSerializer.Serialize(await engine.GetRoomPreviewAsync(game.RoomId, default));
+        var json = JsonSerializer.Serialize(await engine.GetRoomPreviewAsync(game.RoomId, game.LatestSessionId, default));
 
         Assert.DoesNotContain("Sing a song", json);
     }

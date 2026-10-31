@@ -66,7 +66,7 @@ public sealed class BingoEngine(GameStore store, IRandomChoiceSource random) : I
     public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "call", "end" };
     public int MinPlayers => 2;
 
-    public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
+    public Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct)
     {
         var items = SetupJson.OptionalArray(setup, "items", MaxItems, "Bingo items")
             .Select((e, i) => e.ValueKind == JsonValueKind.String ? e.GetString()!.Trim() : throw new RoomRuleException(RuleViolation.InvalidInput, $"Item {i + 1} must be text."))
@@ -83,7 +83,7 @@ public sealed class BingoEngine(GameStore store, IRandomChoiceSource random) : I
         if (Pool(new BingoSetup(items, useBuiltIn)).Count < MinPool)
             throw new RoomRuleException(RuleViolation.InvalidInput, $"Bingo needs at least {MinPool} different items, or use the built-in ones.");
 
-        store.AddSetup(roomId, new BingoSetup(items, useBuiltIn));
+        store.AddSetup(roomId, sessionId, new BingoSetup(items, useBuiltIn));
         return Task.CompletedTask;
     }
 
@@ -103,7 +103,7 @@ public sealed class BingoEngine(GameStore store, IRandomChoiceSource random) : I
 
     public async Task OnSessionStartedAsync(Guid roomId, Guid sessionId, CancellationToken ct)
     {
-        var setup = await store.GetSetupAsync<BingoSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<BingoSetup>(sessionId, ct);
         var players = await store.PlayerNamesAsync(roomId, ct);
         await store.InSessionAsync<BingoData>(sessionId, async state =>
         {
@@ -242,6 +242,6 @@ public sealed class BingoEngine(GameStore store, IRandomChoiceSource random) : I
             players.Select(p => new BingoScore(p, p == state.Data.Winner ? 1 : 0)).ToList());
     }
 
-    public Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) =>
+    public Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct) =>
         Task.FromResult<object>(new BingoPreview("Everyone gets their own bingo card. Mark what is called and shout bingo first."));
 }

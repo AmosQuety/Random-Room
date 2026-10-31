@@ -70,7 +70,7 @@ public sealed class StoryChainEngine(IChainRules rules, GameStore store, IRandom
     public string GameType => rules.GameType;
     public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "skip", "end" };
 
-    public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
+    public Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct)
     {
         var openers = SetupJson.OptionalArray(setup, "openers", MaxOpeners, "Story openers")
             .Select((e, i) => e.ValueKind == JsonValueKind.String ? e.GetString()!.Trim() : throw new RoomRuleException(RuleViolation.InvalidInput, $"Opener {i + 1} must be text."))
@@ -86,7 +86,7 @@ public sealed class StoryChainEngine(IChainRules rules, GameStore store, IRandom
             throw new RoomRuleException(RuleViolation.InvalidInput, "Add at least one opener, or use the built-in ones.");
 
         var length = SetupJson.OptionalInt(setup, "length", rules.MinLength, rules.MaxLength, "The story length") ?? rules.DefaultLength;
-        store.AddSetup(roomId, new ChainSetup(openers, useBuiltIn, length));
+        store.AddSetup(roomId, sessionId, new ChainSetup(openers, useBuiltIn, length));
         return Task.CompletedTask;
     }
 
@@ -98,7 +98,7 @@ public sealed class StoryChainEngine(IChainRules rules, GameStore store, IRandom
 
     public async Task OnSessionStartedAsync(Guid roomId, Guid sessionId, CancellationToken ct)
     {
-        var setup = await store.GetSetupAsync<ChainSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<ChainSetup>(sessionId, ct);
         await store.InSessionAsync<ChainData>(sessionId, async state =>
         {
             var pool = setup.Openers.Concat(setup.UseBuiltIn ? ContentBank.Load<string>(rules.OpenerBank) : []).ToList();
@@ -116,7 +116,7 @@ public sealed class StoryChainEngine(IChainRules rules, GameStore store, IRandom
 
         var players = await store.PlayerNamesAsync(roomId, ct);
         var host = await store.HostOfAsync(roomId, ct);
-        var setup = await store.GetSetupAsync<ChainSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<ChainSetup>(sessionId, ct);
         await store.InSessionAsync<ChainData>(sessionId, async state =>
         {
             switch (action)
@@ -179,7 +179,7 @@ public sealed class StoryChainEngine(IChainRules rules, GameStore store, IRandom
     {
         var state = await store.LoadStateAsync<ChainData>(sessionId, ct);
         var players = await store.PlayerNamesAsync(roomId, ct);
-        var setup = await store.GetSetupAsync<ChainSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<ChainSetup>(sessionId, ct);
         var writing = state.Phase == Writing;
         return new ChainPayload(
             state.Phase,
@@ -192,6 +192,6 @@ public sealed class StoryChainEngine(IChainRules rules, GameStore store, IRandom
             players.Select(p => new ChainScore(p, state.Data.Entries.Count(e => e.Player == p))).ToList());
     }
 
-    public Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) =>
+    public Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct) =>
         Task.FromResult<object>(new ChainPreview("Take turns adding to a story, one piece at a time."));
 }
