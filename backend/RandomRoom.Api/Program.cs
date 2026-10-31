@@ -32,6 +32,11 @@ builder.Services.AddOptions<RoomOptions>()
     .Validate(RoomOptions.IsValid, "Room settings need a 32+ char JwtSigningKey and a RetentionDays of 0 or more.")
     .ValidateOnStart();
 
+builder.Services.AddOptions<RateLimitOptions>()
+    .BindConfiguration(RateLimitOptions.SectionName)
+    .Validate(RateLimitOptions.IsValid, "Rate limits must be 1 or more requests a minute.")
+    .ValidateOnStart();
+
 var databaseConnection = DatabaseConnection.Resolve(builder.Configuration.GetConnectionString("Default"));
 builder.Services.AddDbContext<RoomDbContext>(o => o.UseNpgsql(databaseConnection));
 
@@ -73,6 +78,10 @@ builder.Services.AddSignalR().AddJsonProtocol(o => o.PayloadSerializerOptions.Co
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ProblemExceptionHandler>();
 
+// Read per request, so the limits follow configuration (the end-to-end tests raise them).
+static RateLimitOptions Limits(HttpContext http) =>
+    http.RequestServices.GetRequiredService<Microsoft.Extensions.Options.IOptions<RateLimitOptions>>().Value;
+
 // Brute-forcing a short PIN is the main attack on identity, so joining is throttled per client address.
 builder.Services.AddRateLimiter(o =>
 {
@@ -90,13 +99,13 @@ builder.Services.AddRateLimiter(o =>
     o.AddPolicy(RoomEndpoints.JoinRateLimitPolicy, http =>
         RateLimitPartition.GetFixedWindowLimiter(
             http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1) }));
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = Limits(http).JoinPerMinute, Window = TimeSpan.FromMinutes(1) }));
     // Looser than join: creating rooms and claiming invites aren't credential-guessing targets,
     // but several players behind one home/office IP can legitimately set up a room in quick succession.
     o.AddPolicy(RoomEndpoints.RoomAdminRateLimitPolicy, http =>
         RateLimitPartition.GetFixedWindowLimiter(
             http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions { PermitLimit = 40, Window = TimeSpan.FromMinutes(1) }));
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = Limits(http).RoomAdminPerMinute, Window = TimeSpan.FromMinutes(1) }));
 });
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
