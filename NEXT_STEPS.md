@@ -10,10 +10,9 @@ choices are in `DECISIONS.md`; known gaps are in `Gaps_Bugs.md`; the research th
 | # | Item | Size | Needs first | Owner decision? |
 |---|---|---|---|---|
 | 1 | Serve the game facts from the API instead of keeping a frontend copy (the contract tests that guard the copy are done) | S | none | **yes: wanted at all?** |
-| 2 | Bot end-to-end tests over the real API | M | none | run on every PR, or nightly |
 | 3 | Referee host, phase 1: the host does not play by default | L | none (the contract tests are in) | confirm the design below |
 | 4 | Referee host, phase 2: the host can choose to play | M | 3 | none |
-| 5 | Data model: a game session owns its game type and setup | M-L | 2 | **go-ahead (migration on live data)** |
+| 5 | Data model: a game session owns its game type and setup | M-L | none (the bot tests are in) | **go-ahead (migration on live data)** |
 | 6 | Host "Change game" between games, including the "play again or choose another game" choice on Start new game | M | 5 | who may choose |
 | 7 | Add a player to a room | S-M | none (more useful after 6) | wanted at all? |
 | 8 | "Tonight's scoreboard" across games | M | 5 | scoring rule, reset scope |
@@ -25,7 +24,7 @@ choices are in `DECISIONS.md`; known gaps are in `Gaps_Bugs.md`; the research th
 | 14 | Spectator link (only if asked for) | M | none | wanted at all? |
 | 15 | Before real use: content review, database, deploy settings, load test, real devices | tasks | none | several |
 
-Recommended order: 2, then 3 and 4 (the referee model changes how every game counts players, so do it before the
+Recommended order: 3 and 4 (the referee model changes how every game counts players, so do it before the
 multi-game work), then 5, 6, 7, 8, 9. Item 1 is optional and Items 10 to 13 can go in any gap.
 
 ## Ground rules for every item
@@ -86,34 +85,6 @@ draw and a loading and error state to the create flow, which matters on slow con
 copy keeps causing friction. Item 3 and later add more per-game facts (for example whether a game can run with a referee),
 which is the moment to reconsider.
 
-## 2. Bot end-to-end tests over the real API (M)
-
-**Why.** Unit tests per game are strong, but the bugs that cost days were in the joins between parts (for example the
-End-game-versus-answer race). The studied ecosystem found the same: most of its real bugs came from suites that run a
-real server and several real clients. This is also the safety net for the multi-game work (items 5 to 9).
-
-**Build.**
-1. New folder `backend/RandomRoom.Tests/EndToEnd/` using `WebApplicationFactory<Program>` (as `ApiTests` does) and real
-   SignalR clients (`Microsoft.AspNetCore.SignalR.Client`, a test-only package; match the .NET 10 version).
-2. A `Bot` class: creates a room through `POST /api/rooms`, claims each invite, joins, opens a hub connection with its
-   token, keeps its latest snapshot (respecting `sequence`), and exposes `Act(action, payload)` over `POST /api/room/action`.
-3. One strategy per game that plays a whole game to Completed using only what that bot is allowed to see. Start with
-   three (Would You Rather, Trivia, Bingo), then the hidden-information games (Word Spies, Sketch Guess), then all 19.
-4. Assertions every run: the game reaches Completed; every bot ends on the same session status (this catches the stale
-   screen race); **no bot ever received another player's secret** (scan every pushed snapshot for the spymaster key, the
-   drawer's word, other players' Bingo cards, the lie); reconnecting mid-game restores the same state.
-5. Add race tests: End game at the same instant as an answer (many repetitions); a player joining while the host acts.
-6. Rate limits: the join limit (20 a minute per address) blocks a many-bot run. Make the permit limits configurable
-   (for example options `RateLimits:JoinPerMinute`, `RoomAdminPerMinute`, default unchanged) so the harness can raise them.
-   This is a small production change; keep defaults exactly as today.
-7. CI: run a small subset (3 games) on every pull request and everything nightly. Add the job to
-   `.github/workflows/ci.yml`; mark long tests with a trait so they can be filtered.
-
-**Test the harness.** Break one thing on purpose (return another player's key in a payload) and confirm the secret scan
-fails; remove the sequence check in the bot's snapshot handling and confirm the stale-state assertion fails.
-
-**Open decision.** Every PR, or nightly only. Recommended: subset per PR, full nightly.
-
 ## 3. Referee host, phase 1: the host does not play by default (L)
 
 **Why.** Today the host is also a player in every game (the host is one of the seats). That gives a host who plays small
@@ -173,7 +144,7 @@ and a visible "Host decisions about scores" list in Spin the Wheel, Forbidden Wo
 - Existing-room behaviour: `HostPlays=true` rooms play exactly as before (the existing suite is the proof).
 - API: create with `hostPlays:false`, then check snapshot flags; migration test against a database with an existing room.
 - Frontend: for each screen, render as referee and assert no play controls and the host controls present.
-- Item 2's bots: add a referee bot to the end-to-end runs.
+- The end-to-end bots (`backend/RandomRoom.Tests/EndToEnd`): add a referee bot to the runs.
 
 **Watch out.** Player-count rules show up in three places that must agree (server validation, `playerCountIssue`, the
 engine `MinPlayers`); the server-facts contract tests help. A referee who is also the only person who knows the setup (trivia
@@ -222,7 +193,7 @@ room-keyed table. `IGameEngine.ConfigureRoomAsync(roomId, setup)` runs once at r
 6. Frontend: `RoomScreen` reads the game from the current session (`snapshot.session.gameType`), not the room.
 
 **Tests.** The whole existing suite unchanged and green; a migration test run against a copy of realistic data (rooms with
-several sessions, each game type); run the item 2 bots across a "Start new game" to prove nothing changed; a concurrency
+several sessions, each game type); run the end-to-end bots across a "Start new game" to prove nothing changed; a concurrency
 test: end game at the same instant as an action still ends cleanly.
 
 **Needs from the owner:** go-ahead for option A. Fallback if it proves too large: linked rooms (plan document).
@@ -348,7 +319,7 @@ works without it) and offer "Use my last [game] setup". Never store anything sen
 
 **Build.** A host-created spectator link (a secret token, revocable, audited) that joins as a viewer who receives only the
 public payload and never counts toward votes or player minimums. **Risk:** the link is a shared secret; decide whether
-anyone holding it can watch or only people the host admits. **Tests:** a spectator never receives a secret (reuse item 2's
+anyone holding it can watch or only people the host admits. **Tests:** a spectator never receives a secret (reuse the end-to-end bots'
 secret scan); revoking the link disconnects them.
 
 ## 15. Before real use: tasks that are not code

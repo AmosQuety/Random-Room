@@ -113,3 +113,13 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **Refreshing is a deliberate act**: `UPDATE_SERVER_FACTS=1 dotnet test backend/RandomRoom.slnx --filter ServerFactsTests` rewrites the fixture, and the change shows in the diff for review. The environment variable is the only way the test ever writes a file.
 - **`TriviaEngine.MaxCategoryLength` became public** (it was private) so the test can read it instead of repeating the number a third time.
 - **Whether to serve the facts from `GET /api/games` instead is still open**, see `NEXT_STEPS.md` item 1.
+
+## Bot end-to-end tests
+
+- **Bots are real clients.** A `Bot` signs in over HTTP, listens on `/hubs/room` (WebSocket through the test server, token in the query string as a browser sends it), acts over `POST /api/room/action`, and keeps the newest snapshot by `sequence`, as `useRoom.ts` does. The suite lives in `backend/RandomRoom.Tests/EndToEnd`.
+- **A strategy per game, not a script per test.** `IGameStrategy` plays one step of a game and says what is secret in it, so adding a game (Word Spies, Sketch Guess, the rest) means adding a strategy; `Bot`, `GameTable` and `GamePlay` do not change. Three exist: Would You Rather (a player's pick until the reveal), Trivia (the right option until its question closes), Bingo (other players' cards and the internal call order).
+- **The secret scan reads everything a bot was ever sent**, including snapshots it ignored as stale, not just the last one.
+- **Every run checks** that the game completes, that every bot ends on the same status after a short quiet period, that nothing secret arrived, and that reconnecting restores the room.
+- **Rate limits are options** (`RateLimits:JoinPerMinute`, `RateLimits:RoomAdminPerMinute`), defaults 20 and 40 as before, read per request. The harness raises them because every bot shares one address; a test pins the defaults.
+- **Pull requests run a subset, the nightly run runs everything.** Tests carry `Category=EndToEnd`; the long ones (race repetitions, twelve-player games) also carry `Suite=Nightly`. CI runs `--filter "Suite!=Nightly"` on pull requests and `.github/workflows/nightly.yml` runs all tests on a schedule and on demand.
+- **Finding:** without the sequence check in the bot, ordinary games hang on a stale screen, because a response to a player's own action often arrives after the newer push. That confirms why snapshots carry a sequence.

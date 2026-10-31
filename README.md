@@ -45,6 +45,8 @@ that folder first. To build somewhere else without touching it: `npm run build -
 ## Test
 
     cd backend && dotnet test          # needs the Postgres container above; each test uses a throwaway database
+    cd backend && dotnet test --filter "Suite!=Nightly"   # what a pull request runs (skips the long end-to-end runs)
+    cd backend && dotnet test --filter "Category=EndToEnd"  # bots playing whole games over the real API
     cd frontend && npx vitest run && npx tsc -b
 
 ## Database encryption
