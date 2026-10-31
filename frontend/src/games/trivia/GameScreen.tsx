@@ -1,4 +1,5 @@
 import { CheckIcon, CloseIcon } from "../../components/icons";
+import { RefereeNote } from "../../components/RefereeNote";
 import { Scoreboard } from "../../components/Scoreboard";
 import { Eyebrow } from "../../components/ui";
 import { formatTime } from "../../lib/format";
@@ -57,7 +58,7 @@ function ActivityLog({ activity }: { activity: TriviaActivityView[] }) {
   );
 }
 
-export function TriviaGameScreen({ me, players, session, payload, busy, onAction }: GameScreenProps<TriviaPayload>) {
+export function TriviaGameScreen({ me, referee, players, session, payload, busy, onAction }: GameScreenProps<TriviaPayload>) {
   const myAnswered = payload.answered[me] ?? false;
   const secondsLeft = useCountdown(payload.timer ?? null, session.status === "Active" && payload.currentQuestion !== null, () => onAction("tick"));
   const answeredCount = Object.values(payload.answered).filter(Boolean).length;
@@ -65,6 +66,8 @@ export function TriviaGameScreen({ me, players, session, payload, busy, onAction
 
   return (
     <>
+      {referee && <RefereeNote>Watch the answers come in. The quiz moves on by itself.</RefereeNote>}
+
       {payload.lastReveal && <RevealCard reveal={payload.lastReveal} />}
 
       {payload.currentQuestion ? (
@@ -90,7 +93,13 @@ export function TriviaGameScreen({ me, players, session, payload, busy, onAction
           </div>
           <h2 className="mt-4 font-display text-2xl font-black leading-tight sm:text-3xl">{payload.currentQuestion.text}</h2>
           <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {payload.currentQuestion.options.map((option, i) => (
+            {payload.currentQuestion.options.map((option, i) =>
+              referee ? (
+                <p key={i} className="flex min-h-14 items-center gap-3 rounded-lg border-2 border-ink bg-paper px-3 text-lg font-bold">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-md border-2 border-ink bg-card font-mono text-sm font-bold">{LETTERS[i]}</span>
+                  {option}
+                </p>
+              ) : (
               <button
                 key={i}
                 type="button"
@@ -103,10 +112,11 @@ export function TriviaGameScreen({ me, players, session, payload, busy, onAction
                 </span>
                 {option}
               </button>
-            ))}
+              ),
+            )}
           </div>
           <p aria-live="polite" className="mt-4 text-sm text-muted">
-            {myAnswered ? "Answer locked in - waiting on the others." : session.status === "Active" ? "Pick one." : "Waiting for the host to start."} ·{" "}
+            {referee ? "Players are answering." : myAnswered ? "Answer locked in - waiting on the others." : session.status === "Active" ? "Pick one." : "Waiting for the host to start."} ·{" "}
             {answeredCount}/{players.length} answered
           </p>
         </section>
