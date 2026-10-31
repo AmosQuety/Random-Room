@@ -134,8 +134,12 @@ public sealed class GameSessionService(
             throw new RoomRuleException(RuleViolation.Forbidden, "You are refereeing this game, so you do not play.");
     }
 
+    // Rooms where the host plays were range-checked at creation and behave as before; only a referee room needs the
+    // check here, because its participant count differs from its seat count.
     private async Task RequireEnoughParticipantsAsync(Room room, CancellationToken ct)
     {
+        if (room.HostPlays) return;
+
         var participants = await db.ParticipantCountAsync(room.Id, ct);
         ParticipantRange.Require(EngineFor(room.GameType), participants, room.HostPlays);
     }
