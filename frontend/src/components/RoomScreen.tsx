@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { GAMES } from "../games/registry";
-import { ApiError, deleteRoom, endSession, makeRecoveryCode, performAction, resetPin, startNewSession, startSession } from "../lib/api";
+import { ApiError, deleteRoom, endSession, makeRecoveryCode, performAction, resetPin, setHostPlays, startNewSession, startSession } from "../lib/api";
 import { participants } from "../lib/players";
 import type { RoomSnapshot, Session, SessionStatus } from "../lib/types";
 import { currentError, type RoomError } from "../lib/snapshots";
@@ -253,6 +253,9 @@ export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
             onStart={() => run(startSession)}
             onEnd={() => run(endSession)}
             onNewRound={() => run(startNewSession)}
+            hostPlays={snapshot.hostPlays !== false}
+            requiresReferee={game?.requiresReferee ?? false}
+            onHostPlaysChange={(plays) => run((token) => setHostPlays(token, plays))}
           />
         )}
 

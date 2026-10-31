@@ -69,3 +69,7 @@ export const resetPin = (token: string, player: string) =>
 export const startSession = (token: string) => post("/api/room/session/start", token);
 export const endSession = (token: string) => post("/api/room/session/end", token);
 export const startNewSession = (token: string) => post("/api/room/session/new", token);
+
+/** Host only, between games: whether the host plays from the next game. */
+export const setHostPlays = (token: string, plays: boolean) =>
+  request<RoomSnapshot>("/api/room/host-plays", { method: "POST", body: JSON.stringify({ plays }) }, token);

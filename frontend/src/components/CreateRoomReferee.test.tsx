@@ -58,4 +58,33 @@ describe("creating a room where the host referees", () => {
     await screen.findByText("AAAA-BBBB");
     expect(api.createRoom).toHaveBeenCalledWith(expect.any(String), "random-picker", expect.anything(), ["Amos", "Lydia", "Ben"], "Amos", false);
   });
+
+  describe("when the host wants to play too", () => {
+    it("is off by default", async () => {
+      await openPlayersStep();
+
+      expect(screen.getByRole("checkbox", { name: "I want to play too" })).not.toBeChecked();
+    });
+
+    it("counts the host as a player", async () => {
+      await openPlayersStep();
+      enter("Player 1", "Amos");
+      enter("Player 2", "Lydia");
+      fireEvent.click(screen.getByRole("checkbox", { name: "I want to play too" }));
+
+      expect(screen.getByText(/^2 players so far\. Random Picker takes 2-12 players\./)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /create the room/i })).toBeEnabled();
+    });
+
+    it("asks the server for a room where the host plays", async () => {
+      await openPlayersStep();
+      enter("Player 1", "Amos");
+      enter("Player 2", "Lydia");
+      fireEvent.click(screen.getByRole("checkbox", { name: "I want to play too" }));
+      fireEvent.click(screen.getByRole("button", { name: /create the room/i }));
+
+      await screen.findByText("AAAA-BBBB");
+      expect(api.createRoom).toHaveBeenCalledWith(expect.any(String), "random-picker", expect.anything(), ["Amos", "Lydia"], "Amos", true);
+    });
+  });
 });

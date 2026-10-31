@@ -44,6 +44,8 @@ export interface GameModule<TSetup, TPayload> {
   minPlayers: number;
   /** Fewer are needed when the host referees, because the host is not one of the participants (Buzzer only). */
   minPlayersWithReferee?: number;
+  /** The host always referees this game, so a host cannot choose to play (Buzzer only). */
+  requiresReferee?: boolean;
   maxPlayers: number;
   defaultSetup: TSetup;
   isSetupValid: (setup: TSetup) => boolean;

@@ -14,6 +14,7 @@ export const buzzerModule: GameModule<BuzzerSetup, BuzzerPayload> = {
   Glyph: BuzzerGlyph,
   minPlayers: 3,
   minPlayersWithReferee: 2,
+  requiresReferee: true,
   maxPlayers: 12,
   defaultSetup: { prompts: [""], useBuiltIn: true, rounds: 8 },
   isSetupValid: isBuzzerSetupValid,
