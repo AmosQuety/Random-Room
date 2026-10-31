@@ -3,7 +3,8 @@ using RandomRoom.Api.Domain;
 namespace RandomRoom.Api.Services;
 
 /// <summary>
-/// Everything a client needs to render the room. The same view is sent to every participant.
+/// Everything a client needs to render the room, built per viewer: GamePayload is the game's view for that one player
+/// (hidden information such as a secret word or a card is stripped for everyone not entitled to it).
 /// GamePayload is whatever shape the room's IGameEngine returns - generic here on purpose.
 /// Sequence orders snapshots of one room: a client keeps the highest it has seen and ignores older ones.
 /// </summary>
