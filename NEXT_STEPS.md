@@ -101,6 +101,9 @@ engine `MinPlayers`/`MinPlayersWithReferee`); the server-facts contract tests he
 
 ## 6. Host "Change game" between games (M)
 
+**Prerequisite.** Read the game from the session everywhere (GameSessionService still reads room.GameType at several sites;
+RoomAdminService reads the latest session) and update Room.GameType and the session together.
+
 **Why.** The feature the owner wants: pick a different game in the same room, same invites, same PINs.
 
 **Build.**
