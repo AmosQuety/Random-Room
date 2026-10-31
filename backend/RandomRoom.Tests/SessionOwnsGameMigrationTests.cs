@@ -24,6 +24,8 @@ public sealed class SessionOwnsGameMigrationTests : IAsyncLifetime
     private readonly List<Guid> pickerChoices = [], triviaQuestions = [];
     private Guid triviaOptions, wheelSetup, forbiddenSetup;
 
+    private const string YesNo = "[\"Yes\",\"No\"]";
+
     public async Task InitializeAsync()
     {
         db = new RoomDbContext(new DbContextOptionsBuilder<RoomDbContext>().UseNpgsql(database.ConnectionString).Options);
@@ -49,12 +51,11 @@ public sealed class SessionOwnsGameMigrationTests : IAsyncLifetime
 
         foreach (var (label, position) in new[] { ("Pizza", 0), ("Tacos", 1), ("Sushi", 2) })
             pickerChoices.Add(await InsertAsync(id =>
-                $"INSERT INTO \"RoomChoices\" (\"Id\", \"RoomId\", \"Label\", \"Position\") VALUES ('{id}', '{picker}', '{label}', {position})"));
+                $"INSERT INTO \"RoomChoices\" (\"Id\", \"RoomId\", \"Label\", \"Position\") VALUES ({id}, {picker}, {label}, {position})"));
 
         foreach (var position in Enumerable.Range(0, 3))
             triviaQuestions.Add(await InsertAsync(id =>
-                $"INSERT INTO \"TriviaQuestions\" (\"Id\", \"RoomId\", \"Position\", \"Text\", \"Options\", \"CorrectIndex\", \"Category\") " +
-                $"VALUES ('{id}', '{trivia}', {position}, 'Question {position}', '[\"Yes\",\"No\"]', 0, 'Science')"));
+                $"INSERT INTO \"TriviaQuestions\" (\"Id\", \"RoomId\", \"Position\", \"Text\", \"Options\", \"CorrectIndex\", \"Category\") VALUES ({id}, {trivia}, {position}, {"Question " + position}, {YesNo}, 0, 'Science')"));
         triviaOptions = await AddSetupAsync(trivia, "{\"timeLimitSeconds\": 20}");
         wheelSetup = await AddSetupAsync(wheel, "{\"segments\": [\"A\", \"B\"]}");
         forbiddenSetup = await AddSetupAsync(forbidden, "{\"rounds\": 4}");
@@ -64,31 +65,29 @@ public sealed class SessionOwnsGameMigrationTests : IAsyncLifetime
         foreach (var session in sessions[trivia])
             foreach (var (question, option) in new[] { (triviaQuestions[0], 0), (triviaQuestions[1], 1) })
                 await InsertAsync(id =>
-                    $"INSERT INTO \"TriviaAnswers\" (\"Id\", \"SessionId\", \"QuestionId\", \"TriggeredBy\", \"OptionIndex\", \"Timestamp\") " +
-                    $"VALUES ('{id}', '{session}', '{question}', 'Amos', {option}, now())");
+                    $"INSERT INTO \"TriviaAnswers\" (\"Id\", \"SessionId\", \"QuestionId\", \"TriggeredBy\", \"OptionIndex\", \"Timestamp\") VALUES ({id}, {session}, {question}, 'Amos', {option}, now())");
     }
 
     private async Task AddRoomAsync(Guid roomId, string slug, string gameType, int sessionCount)
     {
-        await db.Database.ExecuteSqlRawAsync(
-            $"INSERT INTO \"Rooms\" (\"Id\", \"Slug\", \"Title\", \"GameType\", \"HostPlayer\", \"CreatedAt\") VALUES ('{roomId}', '{slug}', 'Room', '{gameType}', 'Amos', now())");
+        await db.Database.ExecuteSqlAsync(
+            $"INSERT INTO \"Rooms\" (\"Id\", \"Slug\", \"Title\", \"GameType\", \"HostPlayer\", \"CreatedAt\") VALUES ({roomId}, {slug}, 'Room', {gameType}, 'Amos', now())");
         sessions[roomId] = [];
         for (var number = 1; number <= sessionCount; number++)
         {
             var status = number == sessionCount ? "Active" : "Completed";
             sessions[roomId].Add(await InsertAsync(id =>
-                $"INSERT INTO \"GameSessions\" (\"Id\", \"RoomId\", \"Number\", \"Status\", \"CreatedAt\") VALUES ('{id}', '{roomId}', {number}, '{status}', now())"));
+                $"INSERT INTO \"GameSessions\" (\"Id\", \"RoomId\", \"Number\", \"Status\", \"CreatedAt\") VALUES ({id}, {roomId}, {number}, {status}, now())"));
         }
     }
 
     private Task<Guid> AddSetupAsync(Guid roomId, string json) =>
-        InsertAsync(id => $"INSERT INTO \"RoomGameSetups\" (\"Id\", \"RoomId\", \"Json\") VALUES ('{id}', '{roomId}', '{json}'::jsonb)");
+        InsertAsync(id => $"INSERT INTO \"RoomGameSetups\" (\"Id\", \"RoomId\", \"Json\") VALUES ({id}, {roomId}, {json}::jsonb)");
 
-    private async Task<Guid> InsertAsync(Func<Guid, string> sql)
+    private async Task<Guid> InsertAsync(Func<Guid, FormattableString> sql)
     {
         var id = Guid.NewGuid();
-        // Raw SQL formats braces as placeholders, and the JSON literals here have them.
-        await db.Database.ExecuteSqlRawAsync(sql(id).Replace("{", "{{").Replace("}", "}}"));
+        await db.Database.ExecuteSqlAsync(sql(id));
         return id;
     }
 
@@ -170,9 +169,9 @@ public sealed class SessionOwnsGameMigrationTests : IAsyncLifetime
 
         var counts = await RoomScopedCountsAsync();
         Assert.Equal((3, 3, 1, 4), (counts.Choices, counts.Questions, counts.TriviaSetups, counts.Answers));
-        Assert.Equal(4, await db.Database.SqlQueryRaw<int>(
-            "SELECT count(*)::int AS \"Value\" FROM \"TriviaAnswers\" a JOIN \"TriviaQuestions\" q ON q.\"Id\" = a.\"QuestionId\" WHERE q.\"Id\" IN (" +
-            string.Join(", ", triviaQuestions.Select(id => $"'{id}'")) + ")").SingleAsync());
+        var originals = triviaQuestions.ToArray();
+        Assert.Equal(4, await db.Database.SqlQuery<int>(
+            $"SELECT count(*)::int AS \"Value\" FROM \"TriviaAnswers\" WHERE \"QuestionId\" = ANY({originals})").SingleAsync());
 
         await migrator.MigrateAsync();
 
@@ -185,11 +184,11 @@ public sealed class SessionOwnsGameMigrationTests : IAsyncLifetime
     // Raw SQL, because after rolling back the current model has columns the database no longer has.
     private async Task<(int Choices, int Questions, int TriviaSetups, int Answers)> RoomScopedCountsAsync()
     {
-        async Task<int> Count(string sql) => await db.Database.SqlQueryRaw<int>($"SELECT count(*)::int AS \"Value\" FROM {sql}").SingleAsync();
+        async Task<int> Count(FormattableString sql) => await db.Database.SqlQuery<int>(sql).SingleAsync();
         return (
-            await Count($"\"RoomChoices\" WHERE \"RoomId\" = '{picker}'"),
-            await Count($"\"TriviaQuestions\" WHERE \"RoomId\" = '{trivia}'"),
-            await Count($"\"RoomGameSetups\" WHERE \"RoomId\" = '{trivia}'"),
-            await Count("\"TriviaAnswers\""));
+            await Count($"SELECT count(*)::int AS \"Value\" FROM \"RoomChoices\" WHERE \"RoomId\" = {picker}"),
+            await Count($"SELECT count(*)::int AS \"Value\" FROM \"TriviaQuestions\" WHERE \"RoomId\" = {trivia}"),
+            await Count($"SELECT count(*)::int AS \"Value\" FROM \"RoomGameSetups\" WHERE \"RoomId\" = {trivia}"),
+            await Count($"SELECT count(*)::int AS \"Value\" FROM \"TriviaAnswers\""));
     }
 }
