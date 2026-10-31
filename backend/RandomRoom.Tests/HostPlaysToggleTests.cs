@@ -410,4 +410,19 @@ public class HostPlaysToggleTests(ITestOutputHelper output)
         Assert.True(next.Players.Single(p => p.Name == Host).Plays);
         Assert.Contains(((WheelPayload)next.GamePayload).Scoreboard, s => s.Player == Host);
     }
+
+    // Rooms made through the API keep the old default, so a Buzzer room can have HostPlays true: asking for the
+    // value it already has is a no-op, not a refusal.
+    [Fact]
+    public async Task Buzzer_room_that_already_has_the_host_playing_accepts_the_same_value()
+    {
+        using var room = new GameHarness(d => new BuzzerEngine(d.Store, d.Random), BuzzerEngine.Key,
+            new { prompts = new[] { "Name a fruit" }, useBuiltIn = false, rounds = 1 }, Seats, hostPlays: true);
+        await BetweenGamesAsync(room);
+
+        var snapshot = await ToggleAsync(room, plays: true);
+
+        Assert.True(snapshot.HostPlays);
+        Assert.Empty(await room.Db.RoomAuditEvents.AsNoTracking().Where(e => e.Action == RoomAuditEvent.HostPlaysChanged).ToListAsync());
+    }
 }

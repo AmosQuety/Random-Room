@@ -155,11 +155,12 @@ public sealed class GameSessionService(
                 throw new RoomRuleException(RuleViolation.Conflict, "You can change this only between games. End the current game first.");
 
             var engine = EngineFor(room.GameType);
-            if (plays && engine.RequiresReferee)
-                throw new RoomRuleException(RuleViolation.InvalidInput, "In this game the host always judges, so the host cannot play.");
-
+            // Asking for the current value is a no-op, even in a game that requires a referee: a Buzzer room made
+            // through the API may already have HostPlays true.
             if (room.HostPlays != plays)
             {
+                if (plays && engine.RequiresReferee)
+                    throw new RoomRuleException(RuleViolation.InvalidInput, "In this game the host always judges, so the host cannot play.");
 
                 var seats = await db.RoomPlayers.CountAsync(p => p.RoomId == roomId, ct);
                 ParticipantRange.Require(engine, Participants.CountAmong(seats, plays), plays);
