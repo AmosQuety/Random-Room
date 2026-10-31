@@ -107,6 +107,10 @@ backend tests (`RefereeHostTests`, `RefereeApiTests`).
 
 **Tests still to do:** frontend, for each screen, render as referee and assert no play controls and the host controls
 present. Optional backend: a referee bot in `backend/RandomRoom.Tests/EndToEnd`.
+Also from the independent review (low severity): nothing proves a referee can still *run* every game, so a typo in an
+engine's `RefereeActions` would lock the referee out without a failing test. Add one test per engine in which the referee
+sends each allowed control action, and assert each set only names actions that engine handles. Open question for the
+owner: in a Buzzer room where the host plays, the snapshot says `Plays=true` for a host who never buzzes; intended?
 
 **Watch out.** Player-count rules show up in three places that must agree (server validation, `playerCountIssue`, the
 engine `MinPlayers`/`MinPlayersWithReferee`); the server-facts contract tests help.
