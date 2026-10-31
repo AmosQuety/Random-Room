@@ -32,7 +32,7 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
 
     private const string DefaultPack = "general";
 
-    private const int MaxCategoryLength = 40;
+    public const int MaxCategoryLength = 40;
     public const int MaxQuestionLength = 300;
     public const int MaxOptionLength = 100;
     public const int MaxOptionsPerQuestion = 6;
