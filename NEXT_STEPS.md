@@ -9,11 +9,11 @@ choices are in `DECISIONS.md`; known gaps are in `Gaps_Bugs.md`; the research th
 
 | # | Item | Size | Needs first | Owner decision? |
 |---|---|---|---|---|
-| 1 | Contract tests: server and frontend facts cannot drift | S | none | only for the optional endpoint |
+| 1 | Serve the game facts from the API instead of keeping a frontend copy (the contract tests that guard the copy are done) | S | none | **yes: wanted at all?** |
 | 2 | Bot end-to-end tests over the real API | M | none | run on every PR, or nightly |
-| 3 | Referee host, phase 1: the host does not play by default | L | 1 | confirm the design below |
+| 3 | Referee host, phase 1: the host does not play by default | L | none (the contract tests are in) | confirm the design below |
 | 4 | Referee host, phase 2: the host can choose to play | M | 3 | none |
-| 5 | Data model: a game session owns its game type and setup | M-L | 1, 2 | **go-ahead (migration on live data)** |
+| 5 | Data model: a game session owns its game type and setup | M-L | 2 | **go-ahead (migration on live data)** |
 | 6 | Host "Change game" between games, including the "play again or choose another game" choice on Start new game | M | 5 | who may choose |
 | 7 | Add a player to a room | S-M | none (more useful after 6) | wanted at all? |
 | 8 | "Tonight's scoreboard" across games | M | 5 | scoring rule, reset scope |
@@ -25,8 +25,8 @@ choices are in `DECISIONS.md`; known gaps are in `Gaps_Bugs.md`; the research th
 | 14 | Spectator link (only if asked for) | M | none | wanted at all? |
 | 15 | Before real use: content review, database, deploy settings, load test, real devices | tasks | none | several |
 
-Recommended order: 1, 2, then 3 and 4 (the referee model changes how every game counts players, so do it before the
-multi-game work), then 5, 6, 7, 8, 9. Items 10 to 13 can go in any gap.
+Recommended order: 2, then 3 and 4 (the referee model changes how every game counts players, so do it before the
+multi-game work), then 5, 6, 7, 8, 9. Item 1 is optional and Items 10 to 13 can go in any gap.
 
 ## Ground rules for every item
 
@@ -71,38 +71,20 @@ multi-game work), then 5, 6, 7, 8, 9. Items 10 to 13 can go in any gap.
 
 ---
 
-## 1. Contract tests: server and frontend facts cannot drift (S)
+## 1. Serve the game facts from the API (S, optional)
 
-**Why.** The same facts are written twice, once on the server and once in the frontend: the list of game keys, each
-game's player range, the trivia limits (6 options, 100 characters per option, 300 per question, 50 questions) and the
-starter-pack sizes. A change to one copy that misses the other has caused bugs before (accent-duplicate checks, three
-times). The research found the same disease in the studied ecosystem, and also that their own comparison test silently
-passed when it could not compare. Ours must fail instead.
+**Done already:** contract tests keep the frontend's copy of the server's facts honest (game keys, player ranges, trivia
+limits, starter-pack sizes). Backend `ServerFactsTests` writes what the engines say to
+`frontend/src/games/__fixtures__/server-facts.json` and fails if the committed file is out of date; the frontend's
+`games/serverFacts.test.ts` compares its own copies with that file and fails, never skips, when it cannot compare. To
+refresh the fixture after a deliberate change: `UPDATE_SERVER_FACTS=1 dotnet test backend/RandomRoom.slnx --filter ServerFactsTests`.
+The reasoning is in `DECISIONS.md` ("Server facts the frontend copies").
 
-**Where.** Server: `Program.cs` (registered engines), each engine's `GameType`/`MinPlayers`/`MaxPlayers`,
-`Games/Trivia/TriviaEngine.cs` (limits, `StarterPacks`). Frontend: `games/registry.ts` (`GAME_LIST`, each module's `key`,
-`minPlayers`, `maxPlayers`), `games/trivia/setup.ts` (limits, `STARTER_PACKS`).
-
-**Build.**
-1. Backend test that builds the service provider the way `Program.cs` does (or lists `IGameEngine` registrations via
-   `WebApplicationFactory`), and writes a JSON file of `{ key, minPlayers, maxPlayers }` for every engine, plus the trivia
-   limits and pack sizes read from `TriviaEngine`/`ContentBank`. Write it to a path the frontend test can read
-   (for example `frontend/src/games/__fixtures__/server-facts.json`, committed).
-2. Frontend Vitest test that loads the fixture and compares it with `GAME_LIST`, `trivia/setup.ts` and
-   `STARTER_PACKS`: same keys (no extras either way), same ranges, same limits, same pack sizes.
-3. **The test must fail when it cannot compare:** missing fixture, empty fixture, or a game present on one side only.
-   Never skip, never pass an empty comparison.
-4. A backend check that the committed fixture matches what the engines say now (regenerate-and-diff), so an engine change
-   makes the build go red until the fixture is updated.
-5. Fix the stale doc comment in `Services/RoomSnapshot.cs` (it says one view is sent to every participant; it is per
-   viewer now).
-6. Optional, needs a decision: `GET /api/games` returning those facts, with the frontend reading it instead of keeping
-   its own copy. Do this only after the tests exist.
-
-**Test the test.** Change `maxPlayers` on one side and see red; delete the fixture and see red; add a game on one side
-only and see red.
-
-**Done when** changing any of those numbers on only one side fails CI.
+**What is left, and needs a decision.** `GET /api/games` returning those facts, with the frontend reading them instead of
+keeping its own copy. That removes the duplication instead of guarding it, but it adds a request before the picker can
+draw and a loading and error state to the create flow, which matters on slow connections. Only worth it if the guarded
+copy keeps causing friction. Item 3 and later add more per-game facts (for example whether a game can run with a referee),
+which is the moment to reconsider.
 
 ## 2. Bot end-to-end tests over the real API (M)
 
@@ -194,7 +176,7 @@ and a visible "Host decisions about scores" list in Spin the Wheel, Forbidden Wo
 - Item 2's bots: add a referee bot to the end-to-end runs.
 
 **Watch out.** Player-count rules show up in three places that must agree (server validation, `playerCountIssue`, the
-engine `MinPlayers`); item 1's contract tests help. A referee who is also the only person who knows the setup (trivia
+engine `MinPlayers`); the server-facts contract tests help. A referee who is also the only person who knows the setup (trivia
 answers, Name That) is fine: that is the point.
 
 ## 4. Referee host, phase 2: the host can choose to play (M)
@@ -374,7 +356,7 @@ secret scan); revoking the link disconnects them.
 1. **Review the East Africa trivia pack.** It is wired in (Trivia setup > Question set > East Africa, 20 questions) but
    nobody has checked the questions. Play it, check every answer, swap in questions your players know. Source:
    `backend/RandomRoom.Api/Games/Content/trivia-east-africa.json`; notes in `docs/trivia-east-africa-draft.md`. If you
-   change the count, update `STARTER_PACKS` in `frontend/src/games/trivia/setup.ts` too (item 1 will check this).
+   change the count, update `STARTER_PACKS` in `frontend/src/games/trivia/setup.ts` too (the server-facts contract test checks this).
 2. **Choose the database host.** Suggested: Render Postgres on a paid plan if the API runs on Render (same region, internal
    URL, backups), or Neon's free tier if cost matters most (it sleeps when idle). Put the API and database in the same
    region. Check current prices first. Keep the host's backup retention no longer than `Room__RetentionDays`.
