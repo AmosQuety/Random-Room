@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describePlayerRange, playerCountIssue } from "./players";
+import { describePlayerRange, participants, playerCountIssue, withReferee } from "./players";
 
 const game = { name: "Codenames", minPlayers: 4, maxPlayers: 10 };
 
@@ -27,5 +27,26 @@ describe("playerCountIssue", () => {
 describe("describePlayerRange", () => {
   it("summarises the range", () => {
     expect(describePlayerRange(game)).toBe("4-10 players");
+  });
+});
+
+describe("participants", () => {
+  it("leaves out only a host who referees", () => {
+    const seats = [{ name: "Amos", plays: false }, { name: "Lydia", plays: true }, { name: "Ben" }];
+
+    expect(participants(seats).map((p) => p.name)).toEqual(["Lydia", "Ben"]);
+  });
+});
+
+describe("withReferee", () => {
+  it("lowers the minimum for a game that allows it", () => {
+    const buzzer = { name: "Buzzer", minPlayers: 3, minPlayersWithReferee: 2, maxPlayers: 12 };
+
+    expect(playerCountIssue(2, buzzer)).toBe("Buzzer needs at least 3 players. Add 1 more.");
+    expect(playerCountIssue(2, withReferee(buzzer))).toBeNull();
+  });
+
+  it("keeps the minimum for a game that does not", () => {
+    expect(withReferee(game).minPlayers).toBe(4);
   });
 });

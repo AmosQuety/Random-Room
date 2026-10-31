@@ -39,7 +39,7 @@ describe("Never Have I Ever screen", () => {
       timeLimitSeconds: null,
     } as unknown as NeverHaveIEverPayload;
 
-    render(<NeverHaveIEverGameScreen me="Amos" isHost={false} players={players} session={session} payload={payload} busy={false} onAction={vi.fn()} />);
+    render(<NeverHaveIEverGameScreen me="Amos" isHost={false} referee={false} players={players} session={session} payload={payload} busy={false} onAction={vi.fn()} />);
 
     expect(screen.getByText("Never have I ever...")).toBeInTheDocument();
     expect(screen.getByText("been on a boat")).toBeInTheDocument();

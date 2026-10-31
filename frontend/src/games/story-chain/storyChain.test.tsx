@@ -27,7 +27,7 @@ function payload(overrides: Partial<ChainPayload> = {}): ChainPayload {
 
 function renderScreen(config: ChainConfig, p: ChainPayload, me = "Amos", isHost = false) {
   const onAction = vi.fn();
-  render(<ChainGameScreen config={config} me={me} isHost={isHost} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
+  render(<ChainGameScreen config={config} me={me} isHost={isHost} referee={false} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
   return onAction;
 }
 
@@ -98,7 +98,7 @@ describe("Story screen", () => {
 
   it("says when the player whose turn it is has not opened their invite link", () => {
     const players = PLAYERS.map((p) => (p.name === "Lydia" ? { ...p, claimed: false } : p));
-    render(<ChainGameScreen config={oneWordConfig} me="Amos" isHost={false} players={players} session={ACTIVE} payload={payload({ currentPlayer: "Lydia" })} busy={false} onAction={vi.fn()} />);
+    render(<ChainGameScreen config={oneWordConfig} me="Amos" isHost={false} referee={false} players={players} session={ACTIVE} payload={payload({ currentPlayer: "Lydia" })} busy={false} onAction={vi.fn()} />);
     expect(screen.getByText("Lydia has not opened their invite link yet.")).toBeInTheDocument();
   });
 

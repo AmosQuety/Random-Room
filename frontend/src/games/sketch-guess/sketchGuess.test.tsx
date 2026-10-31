@@ -22,7 +22,7 @@ const base: SketchPayload = {
   timeLimitSeconds: null,
   scoreboard: PLAYERS.map((p) => ({ player: p.name, score: 0 })),
 };
-const props = { isHost: false, players: PLAYERS, session: ACTIVE, busy: false };
+const props = { isHost: false, referee: false, players: PLAYERS, session: ACTIVE, busy: false };
 
 const fakeContext = () => new Proxy({}, { get: () => vi.fn(), set: () => true });
 

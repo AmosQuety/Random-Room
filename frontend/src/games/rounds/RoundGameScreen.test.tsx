@@ -30,7 +30,7 @@ function renderScreen(p: TwoWayPayload, options: { me?: string; isHost?: boolean
     <TwoWayGameScreen
       lead="Would you rather..."
       me={options.me ?? "Amos"}
-      isHost={options.isHost ?? false}
+      isHost={options.isHost ?? false} referee={false}
       players={PLAYERS}
       session={session(options.status ?? "Active")}
       payload={p}
@@ -83,7 +83,7 @@ describe("RoundGameScreen (through Would You Rather)", () => {
       { name: "James", online: false, claimed: false },
     ];
     render(
-      <TwoWayGameScreen lead="Would you rather..." me="Amos" isHost players={players} session={session("Active")} payload={payload()} busy={false} onAction={vi.fn()} />,
+      <TwoWayGameScreen lead="Would you rather..." me="Amos" isHost referee={false} players={players} session={session("Active")} payload={payload()} busy={false} onAction={vi.fn()} />,
     );
 
     expect(screen.getByText(/waiting for james to open their invite link/i)).toBeInTheDocument();

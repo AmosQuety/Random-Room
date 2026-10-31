@@ -33,7 +33,7 @@ function payload(overrides: Partial<SpyPayload> = {}): SpyPayload {
 
 function renderScreen(p: SpyPayload, me: string, isHost = false) {
   const onAction = vi.fn();
-  render(<WordSpiesGameScreen me={me} isHost={isHost} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
+  render(<WordSpiesGameScreen me={me} isHost={isHost} referee={false} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
   return onAction;
 }
 

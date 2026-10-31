@@ -13,6 +13,7 @@ export const buzzerModule: GameModule<BuzzerSetup, BuzzerPayload> = {
   accent: "mustard",
   Glyph: BuzzerGlyph,
   minPlayers: 3,
+  minPlayersWithReferee: 2,
   maxPlayers: 12,
   defaultSetup: { prompts: [""], useBuiltIn: true, rounds: 8 },
   isSetupValid: isBuzzerSetupValid,

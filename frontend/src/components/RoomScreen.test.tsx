@@ -19,8 +19,10 @@ vi.mock("../games/registry", () => ({
       name: "Fake game",
       accent: "sky",
       Glyph: () => null,
-      GameScreen: ({ onAction, busy }: { onAction: (a: string) => void; busy: boolean }) => (
+      GameScreen: ({ onAction, busy, referee, players }: { onAction: (a: string) => void; busy: boolean; referee: boolean; players: { name: string }[] }) => (
         <>
+          <span>{referee ? "screen: referee" : "screen: not referee"}</span>
+          <span>{`screen players: ${players.map((p) => p.name).join(",")}`}</span>
           <button onClick={() => onAction("answer")}>answer</button>
           <button onClick={() => onAction("tick")}>tick</button>
           <span>{busy ? "busy" : "idle"}</span>
@@ -128,5 +130,48 @@ describe("RoomScreen errors", () => {
 
     expect(await screen.findByText("Something went wrong.")).toBeInTheDocument();
     expect(onSessionExpired).not.toHaveBeenCalled();
+  });
+});
+
+describe("RoomScreen referee host", () => {
+  const seats = [
+    { name: "Lydia", online: true, claimed: true, plays: false },
+    { name: "Amos", online: true, claimed: true, plays: true },
+  ];
+  const showSeats = (hostPlays: boolean | undefined) => {
+    mocks.snapshot = { ...snapshot(1), hostPlays, players: hostPlays === false ? seats : seats.map((p) => ({ ...p, plays: true })) };
+  };
+  const hostLydia: Session = { ...hostSession, player: "Lydia" };
+
+  it("tells the host's game screen they are the referee", () => {
+    showSeats(false);
+    render(<RoomScreen session={hostLydia} onLeave={vi.fn()} onSessionExpired={vi.fn()} />);
+
+    expect(screen.getByText("screen: referee")).toBeInTheDocument();
+  });
+
+  it("does not make a player a referee because the host is", () => {
+    showSeats(false);
+    render(<RoomScreen session={session} onLeave={vi.fn()} onSessionExpired={vi.fn()} />);
+
+    expect(screen.getByText("screen: not referee")).toBeInTheDocument();
+  });
+
+  it("keeps a host who plays a player, and treats a server that sends no flag the same way", () => {
+    showSeats(true);
+    const { unmount } = render(<RoomScreen session={hostLydia} onLeave={vi.fn()} onSessionExpired={vi.fn()} />);
+    expect(screen.getByText("screen: not referee")).toBeInTheDocument();
+    unmount();
+
+    showSeats(undefined);
+    render(<RoomScreen session={hostLydia} onLeave={vi.fn()} onSessionExpired={vi.fn()} />);
+    expect(screen.getByText("screen: not referee")).toBeInTheDocument();
+  });
+
+  it("gives the game screen the participants only", () => {
+    showSeats(false);
+    render(<RoomScreen session={hostLydia} onLeave={vi.fn()} onSessionExpired={vi.fn()} />);
+
+    expect(screen.getByText("screen players: Amos")).toBeInTheDocument();
   });
 });

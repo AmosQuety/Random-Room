@@ -25,7 +25,7 @@ function payload(overrides: Partial<WheelPayload> = {}): WheelPayload {
 
 function renderScreen(p: WheelPayload, me = "Amos", isHost = false) {
   const onAction = vi.fn();
-  render(<SpinWheelGameScreen me={me} isHost={isHost} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
+  render(<SpinWheelGameScreen me={me} isHost={isHost} referee={false} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
   return onAction;
 }
 
@@ -56,7 +56,7 @@ describe("Spin the Wheel screen", () => {
 
     function renderAsHost(p: WheelPayload) {
       const ui = (next: WheelPayload) => (
-        <SpinWheelGameScreen me="Amos" isHost players={PLAYERS} session={ACTIVE} payload={next} busy={false} onAction={vi.fn()} />
+        <SpinWheelGameScreen me="Amos" isHost referee={false} players={PLAYERS} session={ACTIVE} payload={next} busy={false} onAction={vi.fn()} />
       );
       const view = render(ui(p));
       return (next: WheelPayload) => view.rerender(ui(next));

@@ -25,7 +25,7 @@ function payload(overrides: Partial<BingoPayload> = {}): BingoPayload {
 
 function renderScreen(p: BingoPayload, me = "Lydia", isHost = false) {
   const onAction = vi.fn();
-  render(<BingoGameScreen me={me} isHost={isHost} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
+  render(<BingoGameScreen me={me} isHost={isHost} referee={false} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
   return onAction;
 }
 

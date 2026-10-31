@@ -27,7 +27,7 @@ function payload(overrides: Partial<GuessWhoPayload> = {}): GuessWhoPayload {
 
 function renderScreen(p: GuessWhoPayload, me = "Amos", isHost = false) {
   const onAction = vi.fn();
-  render(<GuessWhoGameScreen me={me} isHost={isHost} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
+  render(<GuessWhoGameScreen me={me} isHost={isHost} referee={false} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
   return onAction;
 }
 

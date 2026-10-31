@@ -4,10 +4,22 @@ export const ROOM_MAX_PLAYERS = 12;
 
 export interface PlayerRange {
   minPlayers: number;
+  /** Defaults to minPlayers; set when a referee host lowers the minimum. */
+  minPlayersWithReferee?: number;
   maxPlayers: number;
 }
 
-/** A friendly explanation when the player list doesn't fit the game, or null when it fits. */
+/** The people who play: every seat except a host who referees. */
+export function participants<T extends { plays?: boolean }>(players: readonly T[]): T[] {
+  return players.filter((p) => p.plays !== false);
+}
+
+/** The game's range as it applies when the host referees: Buzzer then needs one fewer, since the host is not playing. */
+export function withReferee<G extends PlayerRange>(game: G): G {
+  return { ...game, minPlayers: game.minPlayersWithReferee ?? game.minPlayers };
+}
+
+/** A friendly explanation when the participant count doesn't fit the game, or null when it fits. */
 export function playerCountIssue(count: number, game: PlayerRange & { name: string }): string | null {
   const min = Math.max(game.minPlayers, ROOM_MIN_PLAYERS);
   const max = Math.min(game.maxPlayers, ROOM_MAX_PLAYERS);

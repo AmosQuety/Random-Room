@@ -6,6 +6,8 @@ export interface PlayerView {
   online: boolean;
   /** False until the player has opened their invite link and set a PIN. */
   claimed: boolean;
+  /** False only for a host who referees: they hold a seat but do not play. Absent from older servers, meaning true. */
+  plays?: boolean;
 }
 
 export interface SessionView {
@@ -22,6 +24,8 @@ export interface RoomSnapshot {
   roomTitle: string;
   hostPlayer: string;
   gameType: string;
+  /** False when the host referees instead of playing. Absent from older servers, meaning true. */
+  hostPlays?: boolean;
   session: SessionView;
   players: PlayerView[];
   // Opaque here on purpose - each game module (see src/games) knows its own payload shape.
