@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { FlagIcon, PlayIcon } from "../../components/icons";
+import { RefereeNote } from "../../components/RefereeNote";
 import { Scoreboard } from "../../components/Scoreboard";
 import { fieldInputClass } from "../../components/styles";
 import { Button, Eyebrow } from "../../components/ui";
@@ -38,7 +39,7 @@ function GuessForm({ disabled, left, onGuess }: { disabled: boolean; left: numbe
   );
 }
 
-export function SketchGuessGameScreen({ me, isHost, players, session, payload, busy, onAction }: GameScreenProps<SketchPayload>) {
+export function SketchGuessGameScreen({ me, isHost, referee, players, session, payload, busy, onAction }: GameScreenProps<SketchPayload>) {
   const live = session.status === "Active";
   const over = session.status === "Completed" || payload.phase === "complete";
   const drawing = live && payload.phase === "drawing";
@@ -52,6 +53,8 @@ export function SketchGuessGameScreen({ me, isHost, players, session, payload, b
 
   return (
     <>
+      {referee && <RefereeNote>Watch the drawing and the guesses. Reveal the round when you are ready.</RefereeNote>}
+
       <p role="status" aria-live="polite" className="sr-only">
         {over ? "Game over" : drawing ? `Round ${payload.round}. ${payload.drawer} is drawing.` : ""}
       </p>
@@ -93,7 +96,7 @@ export function SketchGuessGameScreen({ me, isHost, players, session, payload, b
             onClear={clear}
           />
 
-          {drawing && !isDrawer && <GuessForm disabled={busy} left={payload.myGuessesLeft} onGuess={(text) => onAction("guess", { text })} />}
+          {drawing && !isDrawer && !referee && <GuessForm disabled={busy} left={payload.myGuessesLeft} onGuess={(text) => onAction("guess", { text })} />}
 
           {payload.guesses.length > 0 && (
             <div>
