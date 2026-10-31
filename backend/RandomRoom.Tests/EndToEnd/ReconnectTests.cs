@@ -31,11 +31,17 @@ public sealed class ReconnectTests(EndToEndFactory factory) : IClassFixture<EndT
         var strategy = GameStrategies.Create(game, size: 4);
         await using var table = await GameTable.OpenAsync(factory, strategy, playerCount: 4);
         var player = table.Bots[^1];
+        long sequenceWhenOffline = 0;
 
         await GamePlay.PlayToCompletionAsync(table, strategy, async step =>
         {
-            if (step == 1) await player.DisconnectAsync();
-            if (step == 2) await AssertCatchesUpAsync(table, player);
+            if (step == 1)
+            {
+                await player.DisconnectAsync();
+                sequenceWhenOffline = table.Host.Latest!.Sequence;
+            }
+
+            if (step == 2) await AssertCatchesUpAsync(table, player, sequenceWhenOffline);
         });
 
         await GamePlay.AssertFinishedCleanlyAsync(table, strategy);
@@ -52,13 +58,17 @@ public sealed class ReconnectTests(EndToEndFactory factory) : IClassFixture<EndT
         Assert.Equal(before, GamePlay.Stable(player.Latest!));
     }
 
-    private static async Task AssertCatchesUpAsync(GameTable table, Bot player)
+    private static async Task AssertCatchesUpAsync(GameTable table, Bot player, long sequenceWhenOffline)
     {
-        Assert.NotEqual(GamePlay.StablePublicView(table.Host.Latest!), GamePlay.StablePublicView(player.Latest!));
+        // The room moved on while the player was away. The player's own view is not compared here: their last
+        // action's response may already have shown them the newest state, so whether it differs is a matter of timing.
+        Assert.False(player.IsConnected);
+        Assert.True(table.Host.Latest!.Sequence > sequenceWhenOffline, "the room should have changed while the player was offline");
 
         await player.ConnectAsync();
-        await Task.Delay(Quiet);
 
-        Assert.Equal(GamePlay.StablePublicView(table.Host.Latest!), GamePlay.StablePublicView(player.Latest!));
+        await player.WaitForAsync(
+            s => GamePlay.StablePublicView(s) == GamePlay.StablePublicView(table.Host.Latest!),
+            "the reconnected player to show what the host shows");
     }
 }
