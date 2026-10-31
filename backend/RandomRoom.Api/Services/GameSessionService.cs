@@ -102,8 +102,7 @@ public sealed class GameSessionService(
 
     public async Task<RoomSnapshot> StartNewSessionAsync(Guid roomId, string actor, CancellationToken ct = default)
     {
-        await CurrentSessionForHostAsync(roomId, actor, ct);
-        var (room, next) = await CreateNextSessionAsync(roomId, ct);
+        var (room, next) = await CreateNextSessionAsync(roomId, actor, ct);
 
         var engine = EngineFor(room.GameType);
         await engine.OnSessionCreatedAsync(roomId, next.Id, ct);
@@ -115,10 +114,12 @@ public sealed class GameSessionService(
 
     // Under the room lock, so SetHostPlaysAsync cannot change who plays between the range check and the new session.
     // Once the new session is committed it is the latest and no longer Completed, so the toggle is refused until it ends.
-    private async Task<(Room Room, GameSession Next)> CreateNextSessionAsync(Guid roomId, CancellationToken ct)
+    private async Task<(Room Room, GameSession Next)> CreateNextSessionAsync(Guid roomId, string actor, CancellationToken ct)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
         var room = await LockRoomAsync(roomId, ct);
+        if (actor != room.HostPlayer)
+            throw new RoomRuleException(RuleViolation.Forbidden, "Only the host can control the game.");
         var latest = await LatestSessionAsync(roomId, ct);
         if (latest.Status != SessionStatus.Completed)
             throw new RoomRuleException(RuleViolation.Conflict, "End the current game before starting a new one.");
