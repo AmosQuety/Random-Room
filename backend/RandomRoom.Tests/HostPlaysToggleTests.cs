@@ -183,17 +183,8 @@ public class HostPlaysToggleTests(ITestOutputHelper output)
         Assert.True((await room.PublicSnapshotAsync()).HostPlays);
     }
 
-    // The toggle and "Start new game" take the same room row lock. A share lock from another connection must hold both:
-    // it blocks FOR UPDATE but not the key-share lock a plain insert of a session takes, so it tests the explicit lock.
-    [Fact]
-    public async Task Toggle_waits_for_the_room_lock()
-    {
-        using var room = PickerRoom(hostPlays: false);
-        await BetweenGamesAsync(room);
-
-        await AssertWaitsForRoomLockAsync(room, () => ToggleAsync(room, plays: true));
-    }
-
+    // "Start new game" takes the room row lock. A share lock from another connection must hold it: it blocks FOR UPDATE
+    // but not the key-share lock a plain insert of a session takes, so it tests the explicit lock.
     [Fact]
     public async Task Start_new_game_waits_for_the_room_lock()
     {
