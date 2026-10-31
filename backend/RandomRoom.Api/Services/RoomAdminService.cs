@@ -97,6 +97,7 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
             Id = Guid.NewGuid(),
             RoomId = room.Id,
             Number = 1,
+            HostPlays = request.HostPlays,
             Status = SessionStatus.Waiting,
             CreatedAt = clock.GetUtcNow(),
         };

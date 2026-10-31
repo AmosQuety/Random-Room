@@ -21,4 +21,10 @@ public sealed class GameSession
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? StartedAt { get; set; }
     public DateTimeOffset? EndedAt { get; set; }
+
+    /// <summary>
+    /// Whether the host played this game, copied from Room.HostPlays when the session is made. Room.HostPlays is the
+    /// setting for the next game; this keeps a finished game's participants as they were.
+    /// </summary>
+    public bool HostPlays { get; set; } = true;
 }

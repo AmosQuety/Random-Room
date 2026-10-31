@@ -156,7 +156,9 @@ public sealed class GameStore(RoomDbContext db, TimeProvider clock)
 
     /// <summary>The host when the host referees rather than plays; null when the host plays.</summary>
     public async Task<string?> RefereeOfAsync(Guid roomId, CancellationToken ct) =>
-        await db.Rooms.AsNoTracking().Where(r => r.Id == roomId && !r.HostPlays).Select(r => r.HostPlayer).SingleOrDefaultAsync(ct);
+        await db.LatestSessionHostPlays(roomId).AnyAsync(plays => !plays, ct)
+            ? await db.Rooms.AsNoTracking().Where(r => r.Id == roomId).Select(r => r.HostPlayer).SingleAsync(ct)
+            : null;
 
     public async Task<Guid> RoomIdOfAsync(Guid sessionId, CancellationToken ct) =>
         await db.GameSessions.AsNoTracking().Where(s => s.Id == sessionId).Select(s => s.RoomId).SingleAsync(ct);

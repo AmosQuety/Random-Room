@@ -5,6 +5,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.Extensions.DependencyInjection;
 using RandomRoom.Api.Data;
 using RandomRoom.Api.Endpoints;
 using RandomRoom.Api.Services;
@@ -83,5 +84,34 @@ public sealed class RefereeApiTests(ApiTests.Factory factory) : IClassFixture<Ap
         await migrator.MigrateAsync();
 
         Assert.True(await db.Rooms.AsNoTracking().Where(r => r.Slug == "oldroom").Select(r => r.HostPlays).SingleAsync());
+    }
+
+    [Fact]
+    public async Task Migration_gives_each_existing_session_its_room_setting_and_rolls_back()
+    {
+        using var database = new TestDatabase();
+        await using var db = new RoomDbContext(new DbContextOptionsBuilder<RoomDbContext>().UseNpgsql(database.ConnectionString).Options);
+        var migrator = db.GetService<IMigrator>();
+        await migrator.MigrateAsync("20261031114639_AddRoomHostPlays");
+        var (refereeRoom, playingRoom) = (Guid.NewGuid(), Guid.NewGuid());
+        foreach (var (id, slug, plays) in new[] { (refereeRoom, "refroom", false), (playingRoom, "playroom", true) })
+        {
+            await db.Database.ExecuteSqlRawAsync(
+                "INSERT INTO \"Rooms\" (\"Id\", \"Slug\", \"Title\", \"GameType\", \"HostPlayer\", \"CreatedAt\", \"HostPlays\") VALUES ({0}, {1}, 'Room', 'random-picker', 'Amos', now(), {2})",
+                id, slug, plays);
+            for (var number = 1; number <= 3; number++)
+                await db.Database.ExecuteSqlRawAsync(
+                    "INSERT INTO \"GameSessions\" (\"Id\", \"RoomId\", \"Number\", \"Status\", \"CreatedAt\") VALUES ({0}, {1}, {2}, 'Completed', now())",
+                    Guid.NewGuid(), id, number);
+        }
+
+        await migrator.MigrateAsync();
+        await migrator.MigrateAsync("20261031114639_AddRoomHostPlays");
+        await migrator.MigrateAsync();
+
+        var flags = await db.GameSessions.AsNoTracking().GroupBy(s => s.RoomId).Select(g => new { g.Key, Values = g.Select(s => s.HostPlays).Distinct().ToList() }).ToListAsync();
+        Assert.Equal([false], flags.Single(f => f.Key == refereeRoom).Values);
+        Assert.Equal([true], flags.Single(f => f.Key == playingRoom).Values);
+        Assert.Equal(6, await db.GameSessions.CountAsync());
     }
 }

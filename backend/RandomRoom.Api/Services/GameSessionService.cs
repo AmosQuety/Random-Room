@@ -43,7 +43,7 @@ public sealed class GameSessionService(
             room.HostPlays,
             room.GameType,
             new SessionView(session.Id, session.Number, session.Status, session.StartedAt, session.EndedAt),
-            players.Select(p => new PlayerView(p.Name, presence.IsOnline(roomId, p.Name), p.IsClaimed, room.HostPlays || p.Name != room.HostPlayer)).ToList(),
+            players.Select(p => new PlayerView(p.Name, presence.IsOnline(roomId, p.Name), p.IsClaimed, session.HostPlays || p.Name != room.HostPlayer)).ToList(),
             viewer is null
                 ? await engine.GetPayloadAsync(roomId, session.Id, ct)
                 : await engine.GetPayloadForAsync(roomId, session.Id, viewer, ct),
@@ -63,7 +63,7 @@ public sealed class GameSessionService(
             throw new RoomRuleException(RuleViolation.Conflict, "This game is not active.");
 
         var engine = EngineFor(room.GameType);
-        RequirePlayingOrRefereeAction(room, engine, actor, action);
+        RequirePlayingOrRefereeAction(room, session, engine, actor, action);
         await engine.HandleActionAsync(roomId, session.Id, actor, action, payload, ct);
 
         if (await engine.IsSessionCompleteAsync(session.Id, ct))
@@ -125,7 +125,7 @@ public sealed class GameSessionService(
             throw new RoomRuleException(RuleViolation.Conflict, "End the current game before starting a new one.");
         await RequireEnoughParticipantsAsync(room, ct);
 
-        var next = NewSession(roomId, latest.Number + 1);
+        var next = NewSession(roomId, latest.Number + 1, room.HostPlays);
         db.GameSessions.Add(next);
         try
         {
@@ -160,6 +160,7 @@ public sealed class GameSessionService(
 
             if (room.HostPlays != plays)
             {
+
                 var seats = await db.RoomPlayers.CountAsync(p => p.RoomId == roomId, ct);
                 ParticipantRange.Require(engine, Participants.CountAmong(seats, plays), plays);
                 await db.Rooms.Where(r => r.Id == roomId).ExecuteUpdateAsync(set => set.SetProperty(r => r.HostPlays, plays), ct);
@@ -191,9 +192,9 @@ public sealed class GameSessionService(
         ?? throw new RoomRuleException(RuleViolation.NotFound, "Room not found.");
 
     // A referee runs the game but never plays it: anything the game has not listed as a referee action is refused.
-    private static void RequirePlayingOrRefereeAction(Room room, IGameEngine engine, string actor, string action)
+    private static void RequirePlayingOrRefereeAction(Room room, GameSession session, IGameEngine engine, string actor, string action)
     {
-        if (!room.HostPlays && actor == room.HostPlayer && !engine.RefereeActions.Contains(action))
+        if (!session.HostPlays && actor == room.HostPlayer && !engine.RefereeActions.Contains(action))
             throw new RoomRuleException(RuleViolation.Forbidden, "You are refereeing this game, so you do not play.");
     }
 
@@ -203,16 +204,18 @@ public sealed class GameSessionService(
     {
         if (room.HostPlays) return;
 
-        var participants = await db.ParticipantCountAsync(room.Id, ct);
-        ParticipantRange.Require(EngineFor(room.GameType), participants, room.HostPlays);
+        // The room's flag, not the latest session's: this checks the game about to be played.
+        var seats = await db.RoomPlayers.CountAsync(p => p.RoomId == room.Id, ct);
+        ParticipantRange.Require(EngineFor(room.GameType), Participants.CountAmong(seats, room.HostPlays), room.HostPlays);
     }
 
     private IGameEngine EngineFor(string gameType) =>
         engines.FirstOrDefault(e => e.GameType == gameType)
         ?? throw new InvalidOperationException($"No IGameEngine registered for game type '{gameType}'.");
 
-    private GameSession NewSession(Guid roomId, int number) => new()
+    private GameSession NewSession(Guid roomId, int number, bool hostPlays) => new()
     {
+        HostPlays = hostPlays,
         Id = Guid.NewGuid(),
         RoomId = roomId,
         Number = number,

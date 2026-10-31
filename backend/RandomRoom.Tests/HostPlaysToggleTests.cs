@@ -63,7 +63,8 @@ public class HostPlaysToggleTests(ITestOutputHelper output)
         var next = await room.NewRoundAsync();
 
         Assert.True(toggled.HostPlays);
-        Assert.True(toggled.Players.Single(p => p.Name == Host).Plays);
+        Assert.False(toggled.Players.Single(p => p.Name == Host).Plays);
+        Assert.True(next.Players.Single(p => p.Name == Host).Plays);
         Assert.Contains(Host, built[next.Session.Id]);
     }
 
@@ -342,5 +343,71 @@ public class HostPlaysToggleTests(ITestOutputHelper output)
 
         Assert.True(refused);
         Assert.True(flaggedAsJudge);
+    }
+
+    // A finished game keeps the participants it was played with: the toggle is about the next game only.
+    private static GameHarness WheelRoom(bool hostPlays) =>
+        new(d => new SpinWheelEngine(d.Store, d.Random), SpinWheelEngine.Key,
+            new { segments = new[] { "Sing", "Dance" }, useBuiltIn = false, spins = 3 }, Seats, new SeededRandom(), hostPlays: hostPlays);
+
+    private static GameHarness ForbiddenRoom(bool hostPlays) =>
+        new(d => new ForbiddenWordsEngine(d.Store, d.Random, d.Clock), ForbiddenWordsEngine.Key,
+            new { cards = new[] { new { word = "Apple", forbidden = new[] { "Fruit", "Red", "Tree" } } }, useBuiltIn = false, rounds = 1, timeLimitSeconds = 60 },
+            Seats, new SeededRandom(), hostPlays: hostPlays);
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Toggle_does_not_change_the_finished_spin_wheel_scoreboard(bool hostPlayed)
+    {
+        using var room = WheelRoom(hostPlayed);
+        await BetweenGamesAsync(room);
+        await ToggleAsync(room, plays: !hostPlayed);
+
+        var scoreboard = (await room.PayloadAsync<WheelPayload>("Lydia")).Scoreboard;
+
+        Assert.Equal(hostPlayed, scoreboard.Any(s => s.Player == Host));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Toggle_does_not_change_the_finished_forbidden_words_scoreboard(bool hostPlayed)
+    {
+        using var room = ForbiddenRoom(hostPlayed);
+        await BetweenGamesAsync(room);
+        await ToggleAsync(room, plays: !hostPlayed);
+
+        var scoreboard = (await room.PayloadAsync<ForbiddenPayload>("Lydia")).Scoreboard;
+
+        Assert.Equal(hostPlayed, scoreboard.Any(s => s.Player == Host));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Toggle_does_not_change_who_played_the_finished_game_but_says_what_comes_next(bool hostPlayed)
+    {
+        using var room = PickerRoom(hostPlayed);
+        await BetweenGamesAsync(room);
+        await ToggleAsync(room, plays: !hostPlayed);
+
+        var snapshot = await room.PublicSnapshotAsync();
+
+        Assert.Equal(hostPlayed, snapshot.Players.Single(p => p.Name == Host).Plays);
+        Assert.Equal(!hostPlayed, snapshot.HostPlays);
+    }
+
+    [Fact]
+    public async Task After_the_next_game_starts_the_host_plays_as_chosen()
+    {
+        using var room = WheelRoom(hostPlays: false);
+        await BetweenGamesAsync(room);
+        await ToggleAsync(room, plays: true);
+
+        var next = await room.NewRoundAsync();
+
+        Assert.True(next.Players.Single(p => p.Name == Host).Plays);
+        Assert.Contains(((WheelPayload)next.GamePayload).Scoreboard, s => s.Player == Host);
     }
 }
