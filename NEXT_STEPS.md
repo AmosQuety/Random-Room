@@ -10,7 +10,7 @@ choices are in `DECISIONS.md`; known gaps are in `Gaps_Bugs.md`; the research th
 | # | Item | Size | Needs first | Owner decision? |
 |---|---|---|---|---|
 | 1 | Serve the game facts from the API instead of keeping a frontend copy (the contract tests that guard the copy are done) | S | none | **yes: wanted at all?** |
-| 3 | Referee host, phase 1: the host does not play by default | L | none (the contract tests are in) | confirm the design below |
+| 3 | Referee host, phase 1: the host does not play by default | S | none (two review follow-ups left) | answer the Buzzer question below |
 | 4 | Referee host, phase 2: the host can choose to play | M | 3 | none |
 | 5 | Data model: a game session owns its game type and setup | M-L | none (the bot tests are in) | **go-ahead (migration on live data)** |
 | 6 | Host "Change game" between games, including the "play again or choose another game" choice on Start new game | M | 5 | who may choose |
