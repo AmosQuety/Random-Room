@@ -42,6 +42,8 @@ namespace RandomRoom.Api.Data.Migrations
 
             DROP TABLE "TriviaCopies";
             DROP TABLE "LatestSessions";
+
+            ALTER TABLE "GameSessions" ALTER COLUMN "GameType" DROP DEFAULT;
             """;
 
         // Back to one set of setup rows per room: each room keeps the rows of its latest session that has any, and
@@ -102,7 +104,7 @@ namespace RandomRoom.Api.Data.Migrations
                 type: "character varying(32)",
                 maxLength: 32,
                 nullable: false,
-                // A placeholder until the backfill below; the model sets no default, so EF always writes the value.
+                // A placeholder until the backfill below, then dropped: the model sets no default, so a missing value fails.
                 defaultValue: "");
 
             // The unique index on RoomId goes first: every session of a room is about to get its own row.

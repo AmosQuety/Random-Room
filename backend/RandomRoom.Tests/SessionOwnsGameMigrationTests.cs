@@ -105,6 +105,16 @@ public sealed class SessionOwnsGameMigrationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task After_the_move_a_session_without_a_game_type_is_refused()
+    {
+        await migrator.MigrateAsync();
+
+        var ex = await Assert.ThrowsAsync<Npgsql.PostgresException>(() => db.Database.ExecuteSqlAsync(
+            $"INSERT INTO \"GameSessions\" (\"Id\", \"RoomId\", \"Number\", \"Status\", \"CreatedAt\") VALUES ({Guid.NewGuid()}, {picker}, 9, 'Waiting', now())"));
+        Assert.Equal("23502", ex.SqlState);
+    }
+
+    [Fact]
     public async Task Every_session_gets_a_copy_of_its_room_choices_and_the_latest_keeps_the_originals()
     {
         await migrator.MigrateAsync();
