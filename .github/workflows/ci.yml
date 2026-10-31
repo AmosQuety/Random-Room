@@ -23,7 +23,8 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - run: dotnet test backend/RandomRoom.slnx
+      # Pull requests skip the long end-to-end runs; the nightly workflow runs everything.
+      - run: dotnet test backend/RandomRoom.slnx --filter "Suite!=Nightly"
 
   frontend:
     runs-on: ubuntu-latest
