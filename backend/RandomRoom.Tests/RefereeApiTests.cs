@@ -87,6 +87,37 @@ public sealed class RefereeApiTests(ApiTests.Factory factory) : IClassFixture<Ap
     }
 
     [Fact]
+    public async Task Host_plays_without_a_value_is_a_400_and_changes_nothing()
+    {
+        var host = await CreateAndJoinAsHostAsync(hostPlays: false);
+        (await host.PostAsync("/api/room/session/start", null)).EnsureSuccessStatusCode();
+        (await host.PostAsync("/api/room/session/end", null)).EnsureSuccessStatusCode();
+        var roomId = (await SnapshotAsync(host)).GetProperty("roomId").GetGuid();
+
+        var response = await host.PostAsJsonAsync("/api/room/host-plays", new { });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.False((await SnapshotAsync(host)).GetProperty("hostPlays").GetBoolean());
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<RoomDbContext>();
+        Assert.False(await db.RoomAuditEvents.AnyAsync(e => e.RoomId == roomId));
+    }
+
+    [Fact]
+    public async Task Host_plays_toggle_works_over_http_between_games()
+    {
+        var host = await CreateAndJoinAsHostAsync(hostPlays: false);
+        (await host.PostAsync("/api/room/session/start", null)).EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.Conflict, (await host.PostAsJsonAsync("/api/room/host-plays", new { plays = true })).StatusCode);
+        (await host.PostAsync("/api/room/session/end", null)).EnsureSuccessStatusCode();
+
+        var response = await host.PostAsJsonAsync("/api/room/host-plays", new { plays = true });
+
+        response.EnsureSuccessStatusCode();
+        Assert.True((await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("hostPlays").GetBoolean());
+    }
+
+    [Fact]
     public async Task Migration_gives_each_existing_session_its_room_setting_and_rolls_back()
     {
         using var database = new TestDatabase();

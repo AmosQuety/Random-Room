@@ -21,7 +21,8 @@ public sealed record RecoverHostResponse(string Player, string InviteToken, stri
 
 public sealed record RecoveryCodeResponse(string RecoveryCode);
 
-public sealed record HostPlaysRequest(bool Plays);
+/// <param name="Plays">Required; nullable so a missing value is a 400 rather than a silent false.</param>
+public sealed record HostPlaysRequest(bool? Plays);
 
 public sealed record ActionRequest(string Action, JsonElement? Payload);
 
@@ -64,7 +65,9 @@ public static class RoomEndpoints
         room.MapPost("/session/new", (HttpContext http, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
             Act(http, broadcaster, (roomId, player) => rooms.StartNewSessionAsync(roomId, player, ct), ct));
         room.MapPost("/host-plays", (HttpContext http, HostPlaysRequest request, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
-            Act(http, broadcaster, (roomId, player) => rooms.SetHostPlaysAsync(roomId, player, request.Plays, ct), ct))
+            Act(http, broadcaster, (roomId, player) => request.Plays is bool plays
+                ? rooms.SetHostPlaysAsync(roomId, player, plays, ct)
+                : throw new RoomRuleException(RuleViolation.InvalidInput, "Say whether the host plays: send plays as true or false."), ct))
             .RequireRateLimiting(RoomAdminRateLimitPolicy);
     }
 
