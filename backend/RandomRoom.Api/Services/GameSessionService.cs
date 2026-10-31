@@ -125,7 +125,7 @@ public sealed class GameSessionService(
             throw new RoomRuleException(RuleViolation.Conflict, "End the current game before starting a new one.");
         await RequireEnoughParticipantsAsync(room, ct);
 
-        var next = NewSession(roomId, latest.Number + 1, room.HostPlays);
+        var next = NewSession(roomId, latest.Number + 1, latest.GameType, room.HostPlays);
         db.GameSessions.Add(next);
         try
         {
@@ -214,8 +214,9 @@ public sealed class GameSessionService(
         engines.FirstOrDefault(e => e.GameType == gameType)
         ?? throw new InvalidOperationException($"No IGameEngine registered for game type '{gameType}'.");
 
-    private GameSession NewSession(Guid roomId, int number, bool hostPlays) => new()
+    private GameSession NewSession(Guid roomId, int number, string gameType, bool hostPlays) => new()
     {
+        GameType = gameType,
         HostPlays = hostPlays,
         Id = Guid.NewGuid(),
         RoomId = roomId,

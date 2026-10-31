@@ -82,6 +82,11 @@ namespace RandomRoom.Api.Data.Migrations
                     b.Property<DateTimeOffset?>("EndedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("GameType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
                     b.Property<bool>("HostPlays")
                         .HasColumnType("boolean");
 
@@ -274,9 +279,14 @@ namespace RandomRoom.Api.Data.Migrations
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("RoomId");
+
+                    b.HasIndex("SessionId");
 
                     b.ToTable("RoomChoices");
                 });
@@ -294,9 +304,14 @@ namespace RandomRoom.Api.Data.Migrations
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("RoomId")
+                    b.HasIndex("RoomId");
+
+                    b.HasIndex("SessionId")
                         .IsUnique();
 
                     b.ToTable("RoomGameSetups");
@@ -401,6 +416,9 @@ namespace RandomRoom.Api.Data.Migrations
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Text")
                         .IsRequired()
                         .HasMaxLength(300)
@@ -409,6 +427,8 @@ namespace RandomRoom.Api.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("RoomId");
+
+                    b.HasIndex("SessionId");
 
                     b.ToTable("TriviaQuestions");
                 });
@@ -490,6 +510,11 @@ namespace RandomRoom.Api.Data.Migrations
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("RandomRoom.Api.Domain.GameSession", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("RandomRoom.Api.Domain.RoomGameSetup", b =>
@@ -499,6 +524,11 @@ namespace RandomRoom.Api.Data.Migrations
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("RandomRoom.Api.Domain.GameSession", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("RandomRoom.Api.Domain.RoomPlayer", b =>
@@ -534,6 +564,11 @@ namespace RandomRoom.Api.Data.Migrations
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("RandomRoom.Api.Domain.GameSession", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("RandomRoom.Api.Domain.TriviaSessionState", b =>

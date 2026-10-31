@@ -1,10 +1,13 @@
 namespace RandomRoom.Api.Domain;
 
-/// <summary>One host-curated question, set at room creation. Room-level: every session in the room replays the same set.</summary>
+/// <summary>One host-curated question. Per session: a new game of the same kind copies the previous session's set.</summary>
 public sealed class TriviaQuestion
 {
     public Guid Id { get; set; }
     public Guid RoomId { get; set; }
+
+    /// <summary>The session this question belongs to; see RoomGameSetup.SessionId.</summary>
+    public Guid? SessionId { get; set; }
     public int Position { get; set; }
     public required string Text { get; set; }
     public required List<string> Options { get; set; }
