@@ -24,8 +24,8 @@ at once (PASS / FAIL / NOTE, with what was seen), then flush to disk. Never redo
 | S10 | Turn the toggle on: the FINISHED game's scoreboard does not change; then "Start new game" | PASS |
 | S11 | New game: host now plays (answer controls, on the scoreboard) | PASS |
 | S12 | Buzzer: the toggle is disabled with a reason for a game that needs a referee (or note why not testable) | BLOCKED (not testable with one room) |
-| S13 | Host deletes the test room; players see "The host deleted this room"; the room no longer loads | not run |
-| S14 | Layout at phone size on each screen visited: readable, nothing cut off; note anything confusing in plain words | not run |
+| S13 | Host deletes the test room; players see "The host deleted this room"; the room no longer loads | PASS |
+| S14 | Layout at phone size on each screen visited: readable, nothing cut off; note anything confusing in plain words | PASS (one layout FAIL at S3) |
 
 ## Findings log (newest at the bottom)
 
@@ -52,3 +52,5 @@ at once (PASS / FAIL / NOTE, with what was seen), then flush to disk. Never redo
 - 18:51 S10 PASS: START NEW GAME pressed on the phone after ticking the toggle: finished game's scoreboard stayed Ann 7 / Ben 7 with Smoke not on it until the new game began; during the new game the button and checkbox were disabled. API: session number 2 Active.
 - 18:51 S11 PASS: Game 2 on the host phone: badge 'GAME 2 . LIVE', no referee box any more, answer buttons 'A live without music' and 'B live without movies', '0 of 3 answered' with chips Smoke, Ann, Ben, 'HOST' row with 'REVEAL NOW', scoreboard starts with 'Smoke (YOU) 0'. API snapshot: hostPlays true, Smoke plays=true, scoreboard Smoke/Ann/Ben at 0.
 - 18:51 S12 NOTE: NOT TESTED: needs a Buzzer room, and the brief allows only one test room (Would You Rather). The 'toggle disabled for Buzzer' rule was not observed in the UI.
+- 18:52 S13 PASS: Host pressed DELETE ROOM, confirm panel 'Delete this room for everyone?' (YES, DELETE THE ROOM / KEEP IT). Host phone then showed yellow banner 'The host deleted this room, so it is gone for everyone.' and 'No room at "h3zhc3g2"' with BACK TO HOME. API: Ann's token GET /api/room 401; GET /api/rooms/{slug} 404 'Room not found.'; join as Ben 401. A PLAYER's screen was not looked at, so the players' 'The host deleted this room' text is unverified.
+- 18:52 S14 NOTE: Layout summary at about 411 CSS px: landing, game pick, setup, players, set-PIN, referee room, running round, game over, host controls and delete confirm all readable and not cut off; the only layout defect found is the room-created card (S3). Confusing copy: Players step shows 'Player 1/Player 2' while the first must be the host ('Type your own name first'); the host-plays hint does not say it applies from the next game only. Not tested: player-side UI, desktop Chrome, rotation, zoom.

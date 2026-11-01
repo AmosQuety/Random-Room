@@ -1,9 +1,9 @@
 # Progress
-
+Smoke test finished: S1 to S14 logged (S12 blocked, 1 minor layout finding on the room-created card); see docs/smoke-test-2026-11-01.md.
 Last updated: 2026-11-01 17:45
-
+Smoke test finished: S1 to S14 logged (S12 blocked, 1 minor layout finding on the room-created card); see docs/smoke-test-2026-11-01.md.
 ## Now
-NEXT_STEPS items 1 to 5 are merged to `main` (PRs #10 to #12) and LIVE on Render at https://random-room.onrender.com since 2026-11-01 (about 15:11 UTC), on a new empty Neon Postgres. The deploy log shows every migration applied cleanly, including `SessionOwnsGameAndSetup`, and the service started. The old Render database had been paused, so the previous rooms are gone. Not yet done: the human smoke test below.
+Smoke test finished: S1 to S14 logged (S12 blocked, 1 minor layout finding on the room-created card); see docs/smoke-test-2026-11-01.md.
 
 ## Next (in this order, and why)
 0a. ~~Fix production's database connection~~ DONE 2026-11-01: new Neon database, `ConnectionStrings__Default` set in Render to the direct (non-pooled) URL, `Database__AutoMigrate=true`, redeployed. Note: the Neon password was shown in a chat by mistake and should be reset in Neon and updated in Render and in the local `.env` (owner).
