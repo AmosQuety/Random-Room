@@ -26,7 +26,7 @@ describe("creating a room where the host referees", () => {
 
   it("tells the host they referee and counts only the people who play", async () => {
     await openPlayersStep();
-    enter("Player 1", "Amos");
+    enter("Your name (host)", "Amos");
     enter("Player 2", "Lydia");
 
     expect(screen.getByText(/you are the host and referee\. add the people who will play/i)).toBeInTheDocument();
@@ -35,7 +35,7 @@ describe("creating a room where the host referees", () => {
 
   it("needs the minimum number of players besides the host", async () => {
     await openPlayersStep();
-    enter("Player 1", "Amos");
+    enter("Your name (host)", "Amos");
     enter("Player 2", "Lydia");
 
     expect(screen.getByRole("button", { name: /create the room/i })).toBeDisabled();
@@ -49,7 +49,7 @@ describe("creating a room where the host referees", () => {
 
   it("asks the server for a room where the host does not play", async () => {
     await openPlayersStep();
-    enter("Player 1", "Amos");
+    enter("Your name (host)", "Amos");
     enter("Player 2", "Lydia");
     fireEvent.click(screen.getByRole("button", { name: /add a player/i }));
     enter("Player 3", "Ben");
@@ -68,7 +68,7 @@ describe("creating a room where the host referees", () => {
 
     it("counts the host as a player", async () => {
       await openPlayersStep();
-      enter("Player 1", "Amos");
+      enter("Your name (host)", "Amos");
       enter("Player 2", "Lydia");
       fireEvent.click(screen.getByRole("checkbox", { name: "I want to play too" }));
 
@@ -78,7 +78,7 @@ describe("creating a room where the host referees", () => {
 
     it("asks the server for a room where the host plays", async () => {
       await openPlayersStep();
-      enter("Player 1", "Amos");
+      enter("Your name (host)", "Amos");
       enter("Player 2", "Lydia");
       fireEvent.click(screen.getByRole("checkbox", { name: "I want to play too" }));
       fireEvent.click(screen.getByRole("button", { name: /create the room/i }));

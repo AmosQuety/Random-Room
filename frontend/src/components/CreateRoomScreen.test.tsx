@@ -37,7 +37,7 @@ describe("CreateRoomScreen", () => {
     fireEvent.change(screen.getByLabelText("Choice 2"), { target: { value: "B" } });
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
 
-    fireEvent.change(screen.getByLabelText("Player 1"), { target: { value: "Amos" } });
+    fireEvent.change(screen.getByLabelText("Your name (host)"), { target: { value: "Amos" } });
     fireEvent.change(screen.getByLabelText("Player 2"), { target: { value: "amos" } });
     expect(screen.getByText(/each player needs a different name/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /create the room/i })).toBeDisabled();
@@ -53,7 +53,7 @@ describe("CreateRoomScreen", () => {
     fireEvent.change(screen.getByLabelText("Choice 2"), { target: { value: "B" } });
     fireEvent.click(screen.getByRole("button", { name: /next/i }));
 
-    expect(screen.getByLabelText("Player 1")).toHaveAttribute("maxlength", "32");
+    expect(screen.getByLabelText("Your name (host)")).toHaveAttribute("maxlength", "32");
   });
 
   it("says what is wrong with the setup instead of a generic message", async () => {

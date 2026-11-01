@@ -58,6 +58,12 @@ describe("HostControls", () => {
       expect(onHostPlaysChange).toHaveBeenCalledWith(true);
     });
 
+    it("says the choice applies from the next game, not the one on screen", () => {
+      renderControls("Completed");
+
+      expect(screen.getByRole("checkbox", { name: "Play in the next game" })).toHaveAccessibleDescription(/applies from the next game/i);
+    });
+
     it("asks to referee again when unticked", () => {
       const { onHostPlaysChange } = renderControls("Completed", { hostPlays: true });
 
