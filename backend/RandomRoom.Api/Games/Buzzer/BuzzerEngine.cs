@@ -77,7 +77,7 @@ public sealed class BuzzerEngine(GameStore store, IRandomChoiceSource random) : 
 
     public bool RequiresReferee => true;
 
-    public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
+    public Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct)
     {
         var prompts = SetupJson.OptionalArray(setup, "prompts", MaxPrompts, "Prompts")
             .Select((e, i) => e.ValueKind == JsonValueKind.String ? e.GetString()!.Trim() : throw new RoomRuleException(RuleViolation.InvalidInput, $"Prompt {i + 1} must be text."))
@@ -93,7 +93,7 @@ public sealed class BuzzerEngine(GameStore store, IRandomChoiceSource random) : 
             throw new RoomRuleException(RuleViolation.InvalidInput, "Add at least one prompt, or use the built-in ones.");
 
         var rounds = SetupJson.OptionalInt(setup, "rounds", 1, MaxPrompts * 2, "Number of rounds") ?? 8;
-        store.AddSetup(roomId, new BuzzerSetup(prompts, useBuiltIn, rounds));
+        store.AddSetup(roomId, sessionId, new BuzzerSetup(prompts, useBuiltIn, rounds));
         return Task.CompletedTask;
     }
 
@@ -105,7 +105,7 @@ public sealed class BuzzerEngine(GameStore store, IRandomChoiceSource random) : 
 
     public async Task OnSessionStartedAsync(Guid roomId, Guid sessionId, CancellationToken ct)
     {
-        var setup = await store.GetSetupAsync<BuzzerSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<BuzzerSetup>(sessionId, ct);
         await store.InSessionAsync<BuzzerData>(sessionId, async state =>
         {
             var pool = setup.Prompts.Concat(setup.UseBuiltIn ? ContentBank.Load<string>("buzzer") : []).ToList();
@@ -249,6 +249,6 @@ public sealed class BuzzerEngine(GameStore store, IRandomChoiceSource random) : 
             state.Data.HostScoring);
     }
 
-    public Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) =>
+    public Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct) =>
         Task.FromResult<object>(new BuzzerPreview("Quick-fire rounds: be first to buzz, then answer out loud."));
 }

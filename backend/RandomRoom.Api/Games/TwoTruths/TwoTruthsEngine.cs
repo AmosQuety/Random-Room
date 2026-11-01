@@ -68,7 +68,7 @@ public sealed class TwoTruthsEngine(GameStore store, IRandomChoiceSource random)
     public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "reveal", "next", "skip" };
     public int MinPlayers => 3;
 
-    public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct) => Task.CompletedTask;
+    public Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct) => Task.CompletedTask;
 
     public Task OnSessionCreatedAsync(Guid roomId, Guid sessionId, CancellationToken ct)
     {
@@ -244,6 +244,6 @@ public sealed class TwoTruthsEngine(GameStore store, IRandomChoiceSource random)
             players.Select(p => new TwoTruthsScore(p, state.Data.Scores.GetValueOrDefault(p))).ToList());
     }
 
-    public Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) =>
+    public Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct) =>
         Task.FromResult<object>(new TwoTruthsPreview("Everyone takes a turn telling two truths and a lie."));
 }

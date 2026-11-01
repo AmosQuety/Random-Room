@@ -77,7 +77,19 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
         };
         db.Rooms.Add(room);
 
-        await engine.ConfigureRoomAsync(room.Id, request.Setup, ct);
+        var firstSession = new GameSession
+        {
+            Id = Guid.NewGuid(),
+            RoomId = room.Id,
+            Number = 1,
+            GameType = request.GameType,
+            HostPlays = request.HostPlays,
+            Status = SessionStatus.Waiting,
+            CreatedAt = clock.GetUtcNow(),
+        };
+        db.GameSessions.Add(firstSession);
+        // The first session owns the setup; EF inserts the session before the rows that reference it.
+        await engine.ConfigureSessionAsync(room.Id, firstSession.Id, request.Setup, ct);
 
         var invites = players.Select(name => new
         {
@@ -92,16 +104,6 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
         }).ToList();
         db.RoomPlayers.AddRange(invites.Select(i => i.Player));
 
-        var firstSession = new GameSession
-        {
-            Id = Guid.NewGuid(),
-            RoomId = room.Id,
-            Number = 1,
-            HostPlays = request.HostPlays,
-            Status = SessionStatus.Waiting,
-            CreatedAt = clock.GetUtcNow(),
-        };
-        db.GameSessions.Add(firstSession);
         await engine.OnSessionCreatedAsync(room.Id, firstSession.Id, ct);
 
         await db.SaveChangesAsync(ct);
@@ -121,9 +123,15 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
             .Where(p => p.RoomId == room.Id)
             .Select(p => new RoomPreviewPlayer(p.Name, p.ClaimedAt != null))
             .ToListAsync(ct);
-        var gamePreview = await EngineFor(room.GameType).GetRoomPreviewAsync(room.Id, ct);
+        // The latest session holds the current game and its setup. A room without one (older data) still shows
+        // its title and seats, with no game teaser.
+        var latest = await db.GameSessions.AsNoTracking()
+            .Where(s => s.RoomId == room.Id).OrderByDescending(s => s.Number).FirstOrDefaultAsync(ct);
+        if (latest is null)
+            return new RoomPreview(room.Title, room.GameType, new { }, players, options?.Value.RetentionDays ?? 0);
 
-        return new RoomPreview(room.Title, room.GameType, gamePreview, players, options?.Value.RetentionDays ?? 0);
+        var gamePreview = await EngineFor(latest.GameType).GetRoomPreviewAsync(room.Id, latest.Id, ct);
+        return new RoomPreview(room.Title, latest.GameType, gamePreview, players, options?.Value.RetentionDays ?? 0);
     }
 
     public async Task<string> ClaimInviteAsync(string slug, string inviteToken, string pin, CancellationToken ct = default)

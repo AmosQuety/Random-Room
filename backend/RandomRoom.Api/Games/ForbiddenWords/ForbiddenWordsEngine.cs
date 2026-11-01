@@ -82,7 +82,7 @@ public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource ra
     public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "reveal", "next", "tick", "flag" };
     public int MinPlayers => 3;
 
-    public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
+    public Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct)
     {
         var cards = SetupJson.OptionalArray(setup, "cards", MaxCustomCards, "Cards").Select(ParseCard).ToList();
         if (cards.Select(c => AnswerNormalizer.Normalize(c.Word)).Distinct().Count() != cards.Count)
@@ -94,7 +94,7 @@ public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource ra
 
         var rounds = SetupJson.OptionalInt(setup, "rounds", 1, MaxRounds, "Number of rounds") ?? 6;
         var limit = SetupJson.OptionalInt(setup, "timeLimitSeconds", 15, 300, "The time limit");
-        store.AddSetup(roomId, new ForbiddenSetup(cards, useBuiltIn, rounds, limit));
+        store.AddSetup(roomId, sessionId, new ForbiddenSetup(cards, useBuiltIn, rounds, limit));
         return Task.CompletedTask;
     }
 
@@ -122,7 +122,7 @@ public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource ra
 
     public async Task OnSessionStartedAsync(Guid roomId, Guid sessionId, CancellationToken ct)
     {
-        var setup = await store.GetSetupAsync<ForbiddenSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<ForbiddenSetup>(sessionId, ct);
         await store.InSessionAsync<ForbiddenData>(sessionId, async state =>
         {
             var pool = setup.Cards.Concat(setup.UseBuiltIn ? ContentBank.Load<TabooCard>("forbidden-words") : []).ToList();
@@ -144,7 +144,7 @@ public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource ra
         var players = await store.PlayerNamesAsync(roomId, ct);
         var host = await store.HostOfAsync(roomId, ct);
         var referee = await store.RefereeOfAsync(roomId, ct);
-        var setup = await store.GetSetupAsync<ForbiddenSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<ForbiddenSetup>(sessionId, ct);
         await store.InSessionAsync<ForbiddenData>(sessionId, async state =>
         {
             switch (action)
@@ -266,7 +266,7 @@ public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource ra
 
     private async Task<object> BuildPayloadAsync(Guid roomId, Guid sessionId, string? viewer, CancellationToken ct)
     {
-        var setup = await store.GetSetupAsync<ForbiddenSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<ForbiddenSetup>(sessionId, ct);
         var state = await store.LoadStateAsync<ForbiddenData>(sessionId, ct);
         var players = await store.PlayerNamesAsync(roomId, ct);
         var referee = await store.RefereeOfAsync(roomId, ct);
@@ -297,6 +297,6 @@ public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource ra
             state.Data.HostScoring);
     }
 
-    public Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) =>
+    public Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct) =>
         Task.FromResult<object>(new ForbiddenPreview("Describe the secret word without saying the forbidden ones. Everyone else guesses."));
 }

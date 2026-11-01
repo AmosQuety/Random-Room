@@ -17,6 +17,13 @@ public sealed class GameSession
     public Guid Id { get; set; }
     public Guid RoomId { get; set; }
     public int Number { get; set; }
+
+    /// <summary>
+    /// Which IGameEngine runs this session. Copied from the previous session (the room's game at creation). Equal to
+    /// Room.GameType today, because nothing can change the game; a "change game" must update both together.
+    /// </summary>
+    public required string GameType { get; set; }
+
     public SessionStatus Status { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? StartedAt { get; set; }

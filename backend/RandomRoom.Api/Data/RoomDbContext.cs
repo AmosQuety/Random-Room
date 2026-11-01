@@ -36,6 +36,7 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
         {
             choice.Property(c => c.Label).HasMaxLength(80);
             choice.HasOne<Room>().WithMany().HasForeignKey(c => c.RoomId).OnDelete(DeleteBehavior.Cascade);
+            choice.HasOne<GameSession>().WithMany().HasForeignKey(c => c.SessionId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<RoomPlayer>(player =>
@@ -62,6 +63,7 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
         {
             session.HasIndex(s => new { s.RoomId, s.Number }).IsUnique();
             session.Property(s => s.Status).HasConversion<string>().HasMaxLength(16);
+            session.Property(s => s.GameType).HasMaxLength(32);
             session.HasOne<Room>().WithMany().HasForeignKey(s => s.RoomId).OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -88,6 +90,7 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
                     v => v.Aggregate(0, (h, s) => HashCode.Combine(h, s)),
                     v => v.ToList()));
             q.HasOne<Room>().WithMany().HasForeignKey(x => x.RoomId).OnDelete(DeleteBehavior.Cascade);
+            q.HasOne<GameSession>().WithMany().HasForeignKey(x => x.SessionId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<TriviaSessionState>(s =>
@@ -107,9 +110,12 @@ public sealed class RoomDbContext(DbContextOptions<RoomDbContext> options) : DbC
 
         modelBuilder.Entity<RoomGameSetup>(setup =>
         {
-            setup.HasIndex(x => x.RoomId).IsUnique();
+            // One setup per session. RoomId stays (indexed for the foreign key) so the move can be rolled back.
+            setup.HasIndex(x => x.SessionId).IsUnique();
+            setup.HasIndex(x => x.RoomId);
             setup.Property(x => x.Json).HasColumnType("jsonb");
             setup.HasOne<Room>().WithMany().HasForeignKey(x => x.RoomId).OnDelete(DeleteBehavior.Cascade);
+            setup.HasOne<GameSession>().WithMany().HasForeignKey(x => x.SessionId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<GameSessionState>(state =>

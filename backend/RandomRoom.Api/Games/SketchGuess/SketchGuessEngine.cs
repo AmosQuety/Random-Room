@@ -93,7 +93,7 @@ public sealed class SketchGuessEngine(GameStore store, IRandomChoiceSource rando
     public string GameType => Key;
     public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "reveal", "next", "tick" };
 
-    public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
+    public Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct)
     {
         var words = SetupJson.OptionalArray(setup, "words", MaxCustomWords, "Words")
             .Select((e, i) => e.ValueKind == JsonValueKind.String ? e.GetString()!.Trim() : throw new RoomRuleException(RuleViolation.InvalidInput, $"Word {i + 1} must be text."))
@@ -112,7 +112,7 @@ public sealed class SketchGuessEngine(GameStore store, IRandomChoiceSource rando
 
         var rounds = SetupJson.OptionalInt(setup, "rounds", 1, MaxRounds, "Number of rounds") ?? 6;
         var limit = SetupJson.OptionalInt(setup, "timeLimitSeconds", 30, 300, "The time limit") ?? 90;
-        store.AddSetup(roomId, new SketchSetup(words, useBuiltIn, rounds, limit));
+        store.AddSetup(roomId, sessionId, new SketchSetup(words, useBuiltIn, rounds, limit));
         return Task.CompletedTask;
     }
 
@@ -124,7 +124,7 @@ public sealed class SketchGuessEngine(GameStore store, IRandomChoiceSource rando
 
     public async Task OnSessionStartedAsync(Guid roomId, Guid sessionId, CancellationToken ct)
     {
-        var setup = await store.GetSetupAsync<SketchSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<SketchSetup>(sessionId, ct);
         await store.InSessionAsync<SketchData>(sessionId, async state =>
         {
             var pool = setup.Words.Concat(setup.UseBuiltIn ? ContentBank.Load<string>("sketch-guess") : []).ToList();
@@ -143,7 +143,7 @@ public sealed class SketchGuessEngine(GameStore store, IRandomChoiceSource rando
 
         var players = await store.PlayerNamesAsync(roomId, ct);
         var host = await store.HostOfAsync(roomId, ct);
-        var setup = await store.GetSetupAsync<SketchSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<SketchSetup>(sessionId, ct);
         await store.InSessionAsync<SketchData>(sessionId, async state =>
         {
             switch (action)
@@ -322,7 +322,7 @@ public sealed class SketchGuessEngine(GameStore store, IRandomChoiceSource rando
 
     private async Task<object> BuildPayloadAsync(Guid roomId, Guid sessionId, string? viewer, CancellationToken ct)
     {
-        var setup = await store.GetSetupAsync<SketchSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<SketchSetup>(sessionId, ct);
         var state = await store.LoadStateAsync<SketchData>(sessionId, ct);
         var players = await store.PlayerNamesAsync(roomId, ct);
         var inRound = state.Round >= 1 && state.Phase != Phases.Complete;
@@ -346,6 +346,6 @@ public sealed class SketchGuessEngine(GameStore store, IRandomChoiceSource rando
             players.Select(p => new SketchScore(p, state.Data.Scores.GetValueOrDefault(p))).ToList());
     }
 
-    public Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) =>
+    public Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct) =>
         Task.FromResult<object>(new SketchPreview("One player draws a secret word while everyone else guesses."));
 }

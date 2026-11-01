@@ -414,7 +414,7 @@ public class RoundGameSetupTests
             d => engine = new RoundGameEngine<TwoWayPrompt>(new WouldYouRatherRules(), d.Store, d.Random, d.Clock),
             "would-you-rather", new { prompts = RoundGames.TwoPrompts, rounds = 2 });
 
-        var preview = engine!.GetRoomPreviewAsync(game.RoomId, CancellationToken.None).GetAwaiter().GetResult();
+        var preview = engine!.GetRoomPreviewAsync(game.RoomId, game.LatestSessionId, CancellationToken.None).GetAwaiter().GetResult();
         var json = JsonSerializer.Serialize(preview, preview.GetType(), JsonSerializerOptions.Web);
 
         Assert.DoesNotContain("Pizza", json);

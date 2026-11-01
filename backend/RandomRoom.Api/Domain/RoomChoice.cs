@@ -5,6 +5,9 @@ public sealed class RoomChoice
 {
     public Guid Id { get; set; }
     public Guid RoomId { get; set; }
+
+    /// <summary>The session these choices belong to; see RoomGameSetup.SessionId.</summary>
+    public Guid? SessionId { get; set; }
     public required string Label { get; set; }
     public int Position { get; set; }
 }

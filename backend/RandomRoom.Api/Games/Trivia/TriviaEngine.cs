@@ -50,7 +50,7 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
 
     // ---- setup ----
 
-    public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
+    public Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct)
     {
         var useBuiltIn = SetupJson.Flag(setup, "useBuiltIn", fallback: false);
         var hasList = setup.TryGetProperty("questions", out var questionsElement) && questionsElement.ValueKind == JsonValueKind.Array;
@@ -74,13 +74,14 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
         {
             question.Id = Guid.NewGuid();
             question.RoomId = roomId;
+            question.SessionId = sessionId;
             question.Position = position++;
         }
         db.TriviaQuestions.AddRange(questions);
 
         var timeLimit = SetupJson.OptionalInt(setup, "timeLimitSeconds", MinTimeLimit, MaxTimeLimit, "The time limit");
         if (timeLimit is not null)
-            db.RoomGameSetups.Add(new RoomGameSetup { Id = Guid.NewGuid(), RoomId = roomId, Json = GameStore.Serialize(new TriviaOptions(timeLimit)) });
+            db.RoomGameSetups.Add(new RoomGameSetup { Id = Guid.NewGuid(), RoomId = roomId, SessionId = sessionId, Json = GameStore.Serialize(new TriviaOptions(timeLimit)) });
         return Task.CompletedTask;
     }
 
@@ -128,9 +129,9 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
 
     private sealed record TriviaOptions(int? TimeLimitSeconds);
 
-    private async Task<int?> TimeLimitAsync(Guid roomId, CancellationToken ct)
+    private async Task<int?> TimeLimitAsync(Guid sessionId, CancellationToken ct)
     {
-        var row = await db.RoomGameSetups.AsNoTracking().FirstOrDefaultAsync(s => s.RoomId == roomId, ct);
+        var row = await db.RoomGameSetups.AsNoTracking().FirstOrDefaultAsync(s => s.SessionId == sessionId, ct);
         return row is null ? null : GameStore.Deserialize<TriviaOptions>(row.Json).TimeLimitSeconds;
     }
 
@@ -144,7 +145,7 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
 
     public async Task OnSessionStartedAsync(Guid roomId, Guid sessionId, CancellationToken ct)
     {
-        var limit = await TimeLimitAsync(roomId, ct);
+        var limit = await TimeLimitAsync(sessionId, ct);
         if (limit is null) return;
 
         var state = await db.TriviaSessionStates.SingleAsync(s => s.SessionId == sessionId, ct);
@@ -181,7 +182,7 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
     {
         var state = await db.TriviaSessionStates.SingleAsync(s => s.SessionId == sessionId, ct);
         var questions = await db.TriviaQuestions.AsNoTracking()
-            .Where(q => q.RoomId == roomId).OrderBy(q => q.Position).ToListAsync(ct);
+            .Where(q => q.SessionId == sessionId).OrderBy(q => q.Position).ToListAsync(ct);
 
         if (state.CurrentQuestionIndex >= questions.Count)
             throw new RoomRuleException(RuleViolation.Conflict, "There is no active question.");
@@ -226,7 +227,7 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
     private async Task TickAsync(Guid roomId, Guid sessionId, CancellationToken ct)
     {
         var state = await db.TriviaSessionStates.SingleAsync(s => s.SessionId == sessionId, ct);
-        var total = await db.TriviaQuestions.CountAsync(q => q.RoomId == roomId, ct);
+        var total = await db.TriviaQuestions.CountAsync(q => q.SessionId == sessionId, ct);
         if (state.CurrentQuestionIndex >= total || !ServerTimer.HasPassed(clock, state.DeadlineAt)) return;
         await AdvanceAsync(roomId, state, total, ct);
     }
@@ -235,7 +236,7 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
     {
         state.CurrentQuestionIndex++;
         state.DeadlineAt = state.CurrentQuestionIndex < totalQuestions
-            ? ServerTimer.DeadlineIn(clock, await TimeLimitAsync(roomId, ct))
+            ? ServerTimer.DeadlineIn(clock, await TimeLimitAsync(state.SessionId, ct))
             : null;
         await db.SaveChangesAsync(ct);
     }
@@ -243,8 +244,7 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
     public async Task<bool> IsSessionCompleteAsync(Guid sessionId, CancellationToken ct)
     {
         var state = await db.TriviaSessionStates.AsNoTracking().SingleAsync(s => s.SessionId == sessionId, ct);
-        var session = await db.GameSessions.AsNoTracking().SingleAsync(s => s.Id == sessionId, ct);
-        var totalQuestions = await db.TriviaQuestions.CountAsync(q => q.RoomId == session.RoomId, ct);
+        var totalQuestions = await db.TriviaQuestions.CountAsync(q => q.SessionId == sessionId, ct);
         return state.CurrentQuestionIndex >= totalQuestions;
     }
 
@@ -254,10 +254,10 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
     {
         var state = await db.TriviaSessionStates.AsNoTracking().SingleAsync(s => s.SessionId == sessionId, ct);
         var questions = await db.TriviaQuestions.AsNoTracking()
-            .Where(q => q.RoomId == roomId).OrderBy(q => q.Position).ToListAsync(ct);
+            .Where(q => q.SessionId == sessionId).OrderBy(q => q.Position).ToListAsync(ct);
         var allAnswers = await db.TriviaAnswers.AsNoTracking().Where(a => a.SessionId == sessionId).ToListAsync(ct);
         var players = await db.ParticipantNamesAsync(roomId, ct);
-        var timeLimit = await TimeLimitAsync(roomId, ct);
+        var timeLimit = await TimeLimitAsync(sessionId, ct);
 
         TriviaQuestionView? current = null;
         var answered = new Dictionary<string, bool>();
@@ -305,6 +305,6 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
             timeLimit);
     }
 
-    public async Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) =>
-        new TriviaPreview(await db.TriviaQuestions.CountAsync(q => q.RoomId == roomId, ct));
+    public async Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct) =>
+        new TriviaPreview(await db.TriviaQuestions.CountAsync(q => q.SessionId == sessionId, ct));
 }

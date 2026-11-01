@@ -21,7 +21,8 @@ public sealed record RoomSnapshot(
     object GamePayload,
     long Sequence);
 
-public sealed record SessionView(Guid Id, int Number, SessionStatus Status, DateTimeOffset? StartedAt, DateTimeOffset? EndedAt);
+/// <summary>One session. GameType is the game this session plays; the room's GameType is the current game.</summary>
+public sealed record SessionView(Guid Id, int Number, SessionStatus Status, DateTimeOffset? StartedAt, DateTimeOffset? EndedAt, string GameType);
 
 /// <summary>
 /// Room-level presence only; whatever a player has done *in* the game lives in GamePayload.

@@ -22,7 +22,7 @@ public sealed class SessionState<TData>(GameSessionState row, TData data)
 public sealed record Entry<TValue>(Guid Id, int Round, string Kind, string Player, int Seq, TValue Value, DateTimeOffset ServerTime, long Ordinal);
 
 /// <summary>
-/// Persistence helpers shared by the round-based games: a room-level setup document, a per-session state
+/// Persistence helpers shared by the round-based games: a per-session setup document, a per-session state
 /// row with an optimistic concurrency token, and append-only player entries with a unique index. Keeping live
 /// state here (not in memory) is what lets a restart or a browser refresh land back on the same screen.
 /// </summary>
@@ -39,14 +39,14 @@ public sealed class GameStore(RoomDbContext db, TimeProvider clock)
     public static T Deserialize<T>(string json) =>
         JsonSerializer.Deserialize<T>(json, JsonOptions) ?? throw new InvalidOperationException("Stored game data was empty.");
 
-    // ---- room-level setup ----
+    // ---- per-session setup ----
 
-    public void AddSetup<T>(Guid roomId, T setup) =>
-        db.RoomGameSetups.Add(new RoomGameSetup { Id = Guid.NewGuid(), RoomId = roomId, Json = Serialize(setup) });
+    public void AddSetup<T>(Guid roomId, Guid sessionId, T setup) =>
+        db.RoomGameSetups.Add(new RoomGameSetup { Id = Guid.NewGuid(), RoomId = roomId, SessionId = sessionId, Json = Serialize(setup) });
 
-    public async Task<T> GetSetupAsync<T>(Guid roomId, CancellationToken ct)
+    public async Task<T> GetSetupAsync<T>(Guid sessionId, CancellationToken ct)
     {
-        var row = await db.RoomGameSetups.AsNoTracking().SingleAsync(s => s.RoomId == roomId, ct);
+        var row = await db.RoomGameSetups.AsNoTracking().SingleAsync(s => s.SessionId == sessionId, ct);
         return Deserialize<T>(row.Json);
     }
 

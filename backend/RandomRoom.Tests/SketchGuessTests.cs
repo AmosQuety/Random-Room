@@ -66,7 +66,7 @@ public class SketchGuessTests
         using var game = NewGame();
         var engine = new SketchGuessEngine(new GameStore(game.Db, game.Clock), new ScriptedRandom(), game.Clock);
 
-        var preview = JsonSerializer.Serialize(await engine.GetRoomPreviewAsync(game.RoomId, default));
+        var preview = JsonSerializer.Serialize(await engine.GetRoomPreviewAsync(game.RoomId, game.LatestSessionId, default));
 
         Assert.DoesNotContain("Sailboat", preview);
         Assert.DoesNotContain("Cactus", preview);

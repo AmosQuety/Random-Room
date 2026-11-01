@@ -88,7 +88,7 @@ public class ForbiddenWordsTests
         var view = Payload(await game.PublicSnapshotAsync());
         var json = JsonSerializer.Serialize(view, JsonSerializerOptions.Web);
         var engine = new ForbiddenWordsEngine(new GameStore(game.Db, game.Clock), new ScriptedRandom(), game.Clock);
-        var preview = JsonSerializer.Serialize(await engine.GetRoomPreviewAsync(game.RoomId, default));
+        var preview = JsonSerializer.Serialize(await engine.GetRoomPreviewAsync(game.RoomId, game.LatestSessionId, default));
 
         Assert.Null(view.Card);
         Assert.DoesNotContain(r.Word, json, StringComparison.OrdinalIgnoreCase);

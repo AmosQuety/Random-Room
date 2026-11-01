@@ -16,6 +16,8 @@ export interface SessionView {
   status: SessionStatus;
   startedAt: string | null;
   endedAt: string | null;
+  /** The game this session plays. Absent from older servers, meaning the room's gameType. */
+  gameType?: string;
 }
 
 export interface RoomSnapshot {
@@ -23,6 +25,7 @@ export interface RoomSnapshot {
   roomSlug: string;
   roomTitle: string;
   hostPlayer: string;
+  /** The current game. Prefer session.gameType, which says what the shown session plays. */
   gameType: string;
   /** False when the host referees instead of playing. Absent from older servers, meaning true. */
   hostPlays?: boolean;

@@ -33,7 +33,7 @@ public sealed class GameSessionService(
         var room = await RequireRoomAsync(roomId, ct);
         var session = await LatestSessionAsync(roomId, ct);
         var players = await db.RoomPlayers.AsNoTracking().Where(p => p.RoomId == roomId).ToListAsync(ct);
-        var engine = EngineFor(room.GameType);
+        var engine = EngineFor(session.GameType);
 
         return new RoomSnapshot(
             room.Id,
@@ -42,7 +42,7 @@ public sealed class GameSessionService(
             room.HostPlayer,
             room.HostPlays,
             room.GameType,
-            new SessionView(session.Id, session.Number, session.Status, session.StartedAt, session.EndedAt),
+            new SessionView(session.Id, session.Number, session.Status, session.StartedAt, session.EndedAt, session.GameType),
             players.Select(p => new PlayerView(p.Name, presence.IsOnline(roomId, p.Name), p.IsClaimed, session.HostPlays || p.Name != room.HostPlayer)).ToList(),
             viewer is null
                 ? await engine.GetPayloadAsync(roomId, session.Id, ct)
@@ -125,8 +125,9 @@ public sealed class GameSessionService(
             throw new RoomRuleException(RuleViolation.Conflict, "End the current game before starting a new one.");
         await RequireEnoughParticipantsAsync(room, ct);
 
-        var next = NewSession(roomId, latest.Number + 1, room.HostPlays);
+        var next = NewSession(roomId, latest.Number + 1, latest.GameType, room.HostPlays);
         db.GameSessions.Add(next);
+        await CopySetupAsync(latest, next, ct);
         try
         {
             await db.SaveChangesAsync(ct);
@@ -137,6 +138,30 @@ public sealed class GameSessionService(
         }
         await transaction.CommitAsync(ct);
         return (room, next);
+    }
+
+    // A new game of the same kind replays the previous one's setup. Added in the same save as the session, so a
+    // session never exists without its copy and a refused session leaves no copy behind.
+    private async Task CopySetupAsync(GameSession from, GameSession to, CancellationToken ct)
+    {
+        var setups = await db.RoomGameSetups.AsNoTracking().Where(s => s.SessionId == from.Id).ToListAsync(ct);
+        db.RoomGameSetups.AddRange(setups.Select(s => new RoomGameSetup { Id = Guid.NewGuid(), RoomId = s.RoomId, SessionId = to.Id, Json = s.Json }));
+
+        var choices = await db.RoomChoices.AsNoTracking().Where(c => c.SessionId == from.Id).ToListAsync(ct);
+        db.RoomChoices.AddRange(choices.Select(c => new RoomChoice { Id = Guid.NewGuid(), RoomId = c.RoomId, SessionId = to.Id, Label = c.Label, Position = c.Position }));
+
+        var questions = await db.TriviaQuestions.AsNoTracking().Where(q => q.SessionId == from.Id).ToListAsync(ct);
+        db.TriviaQuestions.AddRange(questions.Select(q => new TriviaQuestion
+        {
+            Id = Guid.NewGuid(),
+            RoomId = q.RoomId,
+            SessionId = to.Id,
+            Position = q.Position,
+            Text = q.Text,
+            Options = q.Options.ToList(),
+            CorrectIndex = q.CorrectIndex,
+            Category = q.Category,
+        }));
     }
 
     /// <summary>
@@ -214,8 +239,9 @@ public sealed class GameSessionService(
         engines.FirstOrDefault(e => e.GameType == gameType)
         ?? throw new InvalidOperationException($"No IGameEngine registered for game type '{gameType}'.");
 
-    private GameSession NewSession(Guid roomId, int number, bool hostPlays) => new()
+    private GameSession NewSession(Guid roomId, int number, string gameType, bool hostPlays) => new()
     {
+        GameType = gameType,
         HostPlays = hostPlays,
         Id = Guid.NewGuid(),
         RoomId = roomId,

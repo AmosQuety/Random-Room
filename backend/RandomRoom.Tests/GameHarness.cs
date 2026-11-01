@@ -102,6 +102,9 @@ public sealed class GameHarness : IDisposable
 
     private readonly bool ownsDatabase = true;
 
+    public Guid LatestSessionId =>
+        Db.GameSessions.AsNoTracking().Where(s => s.RoomId == RoomId).OrderByDescending(s => s.Number).Select(s => s.Id).First();
+
     public Task<RoomSnapshot> StartAsync() => Service.StartSessionAsync(RoomId, Host);
     public Task<RoomSnapshot> EndAsync() => Service.EndSessionAsync(RoomId, Host);
     public Task<RoomSnapshot> NewRoundAsync() => Service.StartNewSessionAsync(RoomId, Host);

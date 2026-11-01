@@ -70,7 +70,7 @@ public sealed class SpinWheelEngine(GameStore store, IRandomChoiceSource random)
     public string GameType => Key;
     public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "award", "next" };
 
-    public async Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
+    public async Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct)
     {
         var segments = SetupJson.OptionalArray(setup, "segments", MaxSegments, "Wheel segments")
             .Select((e, i) => e.ValueKind == JsonValueKind.String ? e.GetString()!.Trim() : throw new RoomRuleException(RuleViolation.InvalidInput, $"Segment {i + 1} must be text."))
@@ -88,7 +88,7 @@ public sealed class SpinWheelEngine(GameStore store, IRandomChoiceSource random)
             throw new RoomRuleException(RuleViolation.InvalidInput, $"Add at least {MinSegments} segments, or use the built-in challenges.");
 
         var spins = SetupJson.OptionalInt(setup, "spins", 1, MaxSpins, "Number of spins") ?? 6;
-        store.AddSetup(roomId, new WheelSetup(segments, useBuiltIn, spins));
+        store.AddSetup(roomId, sessionId, new WheelSetup(segments, useBuiltIn, spins));
         await Task.CompletedTask;
     }
 
@@ -100,7 +100,7 @@ public sealed class SpinWheelEngine(GameStore store, IRandomChoiceSource random)
 
     public async Task OnSessionStartedAsync(Guid roomId, Guid sessionId, CancellationToken ct)
     {
-        var setup = await store.GetSetupAsync<WheelSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<WheelSetup>(sessionId, ct);
         await store.InSessionAsync<WheelData>(sessionId, async state =>
         {
             state.Data.Wheel = BuildWheel(setup).ToList();
@@ -132,7 +132,7 @@ public sealed class SpinWheelEngine(GameStore store, IRandomChoiceSource random)
 
         var players = await store.PlayerNamesAsync(roomId, ct);
         var host = await store.HostOfAsync(roomId, ct);
-        var setup = await store.GetSetupAsync<WheelSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<WheelSetup>(sessionId, ct);
         await store.InSessionAsync<WheelData>(sessionId, async state =>
         {
             switch (action)
@@ -218,7 +218,7 @@ public sealed class SpinWheelEngine(GameStore store, IRandomChoiceSource random)
     {
         var state = await store.LoadStateAsync<WheelData>(sessionId, ct);
         var players = await store.PlayerNamesAsync(roomId, ct);
-        var setup = await store.GetSetupAsync<WheelSetup>(roomId, ct);
+        var setup = await store.GetSetupAsync<WheelSetup>(sessionId, ct);
         var host = await store.HostOfAsync(roomId, ct);
         var playing = state.Round >= 1 && state.Phase != Phases.Complete;
         return new WheelPayload(
@@ -234,6 +234,6 @@ public sealed class SpinWheelEngine(GameStore store, IRandomChoiceSource random)
             state.Data.HostScoring);
     }
 
-    public Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct) =>
+    public Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct) =>
         Task.FromResult<object>(new WheelPreview("Take turns spinning the wheel and do what it says."));
 }

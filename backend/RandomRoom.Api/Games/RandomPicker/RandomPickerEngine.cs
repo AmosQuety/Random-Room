@@ -22,7 +22,7 @@ public sealed class RandomPickerEngine(RoomDbContext db, IRandomChoiceSource ran
 
     public string GameType => Key;
 
-    public async Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
+    public async Task ConfigureSessionAsync(Guid roomId, Guid sessionId, JsonElement setup, CancellationToken ct)
     {
         if (!setup.TryGetProperty("choices", out var choicesElement) || choicesElement.ValueKind != JsonValueKind.Array)
             throw new RoomRuleException(RuleViolation.InvalidInput, "Random Picker needs a 'choices' list.");
@@ -43,6 +43,7 @@ public sealed class RandomPickerEngine(RoomDbContext db, IRandomChoiceSource ran
         {
             Id = Guid.NewGuid(),
             RoomId = roomId,
+            SessionId = sessionId,
             Label = label,
             Position = i,
         }));
@@ -62,7 +63,7 @@ public sealed class RandomPickerEngine(RoomDbContext db, IRandomChoiceSource ran
             throw new RoomRuleException(RuleViolation.Conflict, "You have already triggered the randomizer this round.");
 
         var choices = await db.RoomChoices.AsNoTracking()
-            .Where(c => c.RoomId == roomId).OrderBy(c => c.Position).ToListAsync(ct);
+            .Where(c => c.SessionId == sessionId).OrderBy(c => c.Position).ToListAsync(ct);
         var choice = choices[randomSource.PickIndex(choices.Count)];
 
         db.RandomPickerEvents.Add(new RandomPickerEvent
@@ -95,7 +96,7 @@ public sealed class RandomPickerEngine(RoomDbContext db, IRandomChoiceSource ran
     public async Task<object> GetPayloadAsync(Guid roomId, Guid sessionId, CancellationToken ct)
     {
         var choices = await db.RoomChoices.AsNoTracking()
-            .Where(c => c.RoomId == roomId).OrderBy(c => c.Position).Select(c => c.Label).ToListAsync(ct);
+            .Where(c => c.SessionId == sessionId).OrderBy(c => c.Position).Select(c => c.Label).ToListAsync(ct);
         var events = await db.RandomPickerEvents.AsNoTracking().Where(e => e.SessionId == sessionId).ToListAsync(ct);
 
         var players = events.ToDictionary(e => e.TriggeredBy, e => new RandomPickerPlayerState(true, e.Result));
@@ -110,10 +111,10 @@ public sealed class RandomPickerEngine(RoomDbContext db, IRandomChoiceSource ran
         return new RandomPickerPayload(choices, players, tally, activity);
     }
 
-    public async Task<object> GetRoomPreviewAsync(Guid roomId, CancellationToken ct)
+    public async Task<object> GetRoomPreviewAsync(Guid roomId, Guid sessionId, CancellationToken ct)
     {
         var choices = await db.RoomChoices.AsNoTracking()
-            .Where(c => c.RoomId == roomId).OrderBy(c => c.Position).Select(c => c.Label).ToListAsync(ct);
+            .Where(c => c.SessionId == sessionId).OrderBy(c => c.Position).Select(c => c.Label).ToListAsync(ct);
         return new RandomPickerPreview(choices);
     }
 }
