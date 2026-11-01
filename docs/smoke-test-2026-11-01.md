@@ -19,11 +19,11 @@ at once (PASS / FAIL / NOTE, with what was seen), then flush to disk. Never redo
 | S5 | Host's room screen: marked as referee, "You are refereeing" line, no answer controls, host controls present | PASS |
 | S6 | Players' screens: normal answer controls; scoreboard lists only Ann and Ben | PASS |
 | S7 | Play Would You Rather through: answer, reveal, next, finish; host never on the scoreboard | PASS |
-| S8 | Reload the host page mid-game: state restored | not run |
-| S9 | Game finished: scoreboard excludes the host; host sees "Play in the next game" with its explanation | not run |
-| S10 | Turn the toggle on: the FINISHED game's scoreboard does not change; then "Start new game" | not run |
-| S11 | New game: host now plays (answer controls, on the scoreboard) | not run |
-| S12 | Buzzer: the toggle is disabled with a reason for a game that needs a referee (or note why not testable) | not run |
+| S8 | Reload the host page mid-game: state restored | NOTE |
+| S9 | Game finished: scoreboard excludes the host; host sees "Play in the next game" with its explanation | PASS |
+| S10 | Turn the toggle on: the FINISHED game's scoreboard does not change; then "Start new game" | PASS |
+| S11 | New game: host now plays (answer controls, on the scoreboard) | PASS |
+| S12 | Buzzer: the toggle is disabled with a reason for a game that needs a referee (or note why not testable) | BLOCKED (not testable with one room) |
 | S13 | Host deletes the test room; players see "The host deleted this room"; the room no longer loads | not run |
 | S14 | Layout at phone size on each screen visited: readable, nothing cut off; note anything confusing in plain words | not run |
 
@@ -46,3 +46,9 @@ at once (PASS / FAIL / NOTE, with what was seen), then flush to disk. Never redo
 - 18:49 S7 NOTE: Round 1: host pressed START GAME on the phone (button disabled while starting, game became Active). Ann answered choice 0, Ben choice 1 by API. Reveal happened automatically once both answered (no host reveal needed). Host phone shows 'ROUND 1 OF 8', 'WOULD YOU RATHER...', 'only whisper 1 vote . 50%' with 'Ann', 'only shout 1 vote . 50%' with 'Ben', a 'HOST' row with 'NEXT ROUND', scoreboard Ann 0 / Ben 0 (no host), 'HOST CONTROLS: END GAME'. No answer buttons on the host screen. 1-1 tie gave no points (majority null).
 - 18:50 S7 PASS: All 8 rounds played: Ann and Ben answered by API (choice 0 each from round 2), reveal automatic, host pressed NEXT ROUND on the phone each time. Scores rose 1 per round with the majority; final Ann 7, Ben 7 (round 1 was a 1-1 tie, 0 points). Host never on the scoreboard. Host phone showed 'GAME OVER / Ann & Ben tie', last round result ('have a rewind button for your life' 2 votes 100% 'Majority Ann, Ben'; 'have a pause button for your life' 0 votes), scoreboard Ann 7 (place 1, star), Ben 7 (place 1, star).
 - 18:50 S9 NOTE: Finished state on the host phone: scoreboard Ann 7, Ben 7 only (host absent). HOST CONTROLS show 'START NEW GAME' (with 'Scores start again from zero.') and an unticked checkbox 'Play in the next game' with text 'If you play, you appear on the scoreboard, another player gives you points in Spin the Wheel, and in Forbidden Words you can flag a slip only when you are ...' (rest below the fold, to be read next). Both visible, so step is likely PASS; confirming the full text next.
+- 18:50 S8 NOTE: Reloaded the host page (F5) AFTER the game had finished, not mid-game (I had played the rounds through quickly): still signed in as 'You are Smoke (host)', header shows 'GAME 1 . COMPLETE' and LIVE, referee box and 'GAME OVER / Ann & Ben tie' restored. Mid-game reload not tested.
+- 18:51 S9 PASS: Finished game: scoreboard on the host phone lists only Ann 7 and Ben 7 (both rank 1). HOST CONTROLS: 'START NEW GAME' ('Scores start again from zero.') and checkbox 'Play in the next game' with hint 'If you play, you appear on the scoreboard, another player gives you points in Spin the Wheel, and in Forbidden Words you can flag a slip only when you are the judge.' Note: the hint does not say it applies from the next game only, although the label does.
+- 18:51 S10 NOTE: Ticked 'Play in the next game' on the phone: checkbox shows ticked, finished game's scoreboard on the phone unchanged (Ann 7, Ben 7, no host). API snapshot for Ann right after: hostPlays=true, session Completed, players plays: Ann true, Ben true, Smoke FALSE (still not a participant of the finished game), scoreboard Ann 7 / Ben 7. Now pressing START NEW GAME.
+- 18:51 S10 PASS: START NEW GAME pressed on the phone after ticking the toggle: finished game's scoreboard stayed Ann 7 / Ben 7 with Smoke not on it until the new game began; during the new game the button and checkbox were disabled. API: session number 2 Active.
+- 18:51 S11 PASS: Game 2 on the host phone: badge 'GAME 2 . LIVE', no referee box any more, answer buttons 'A live without music' and 'B live without movies', '0 of 3 answered' with chips Smoke, Ann, Ben, 'HOST' row with 'REVEAL NOW', scoreboard starts with 'Smoke (YOU) 0'. API snapshot: hostPlays true, Smoke plays=true, scoreboard Smoke/Ann/Ben at 0.
+- 18:51 S12 NOTE: NOT TESTED: needs a Buzzer room, and the brief allows only one test room (Would You Rather). The 'toggle disabled for Buzzer' rule was not observed in the UI.
