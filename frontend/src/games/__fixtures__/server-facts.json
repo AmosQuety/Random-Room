@@ -3,97 +3,135 @@
     {
       "key": "bingo",
       "minPlayers": 2,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 2,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "buzzer",
       "minPlayers": 3,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 2,
+      "maxPlayers": 12,
+      "requiresReferee": true
     },
     {
       "key": "forbidden-words",
       "minPlayers": 3,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 3,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "fortunately",
       "minPlayers": 2,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 2,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "guess-who",
       "minPlayers": 3,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 3,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "mad-libs",
       "minPlayers": 2,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 2,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "most-likely-to",
       "minPlayers": 3,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 3,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "name-that",
       "minPlayers": 2,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 2,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "never-have-i-ever",
       "minPlayers": 2,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 2,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "one-word-story",
       "minPlayers": 2,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 2,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "random-picker",
       "minPlayers": 2,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 2,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "sketch-guess",
       "minPlayers": 2,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 2,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "spin-wheel",
       "minPlayers": 2,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 2,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "survey-showdown",
       "minPlayers": 2,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 2,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "this-or-that",
       "minPlayers": 2,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 2,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "trivia",
       "minPlayers": 2,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 2,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "two-truths",
       "minPlayers": 3,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 3,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "word-spies",
       "minPlayers": 4,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 4,
+      "maxPlayers": 12,
+      "requiresReferee": false
     },
     {
       "key": "would-you-rather",
       "minPlayers": 2,
-      "maxPlayers": 12
+      "minPlayersWithReferee": 2,
+      "maxPlayers": 12,
+      "requiresReferee": false
     }
   ],
   "trivia": {

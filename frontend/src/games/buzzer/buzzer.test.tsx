@@ -24,7 +24,7 @@ function payload(overrides: Partial<BuzzerPayload> = {}): BuzzerPayload {
 
 function renderScreen(p: BuzzerPayload, me: string, isHost = false) {
   const onAction = vi.fn();
-  render(<BuzzerGameScreen me={me} isHost={isHost} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
+  render(<BuzzerGameScreen me={me} isHost={isHost} referee={false} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
   return onAction;
 }
 

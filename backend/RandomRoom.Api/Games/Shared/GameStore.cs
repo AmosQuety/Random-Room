@@ -150,9 +150,15 @@ public sealed class GameStore(RoomDbContext db, TimeProvider clock)
 
     // ---- room helpers ----
 
+    /// <summary>The participants: every seat that plays, ordered by seat. A referee host is not one of them.</summary>
     public async Task<IReadOnlyList<string>> PlayerNamesAsync(Guid roomId, CancellationToken ct) =>
-        await db.RoomPlayers.AsNoTracking().Where(p => p.RoomId == roomId).OrderBy(p => p.CreatedAt).ThenBy(p => p.Name)
-            .Select(p => p.Name).ToListAsync(ct);
+        await db.ParticipantNamesAsync(roomId, ct);
+
+    /// <summary>The host when the host referees rather than plays; null when the host plays.</summary>
+    public async Task<string?> RefereeOfAsync(Guid roomId, CancellationToken ct) =>
+        await db.LatestSessionHostPlays(roomId).AnyAsync(plays => !plays, ct)
+            ? await db.Rooms.AsNoTracking().Where(r => r.Id == roomId).Select(r => r.HostPlayer).SingleAsync(ct)
+            : null;
 
     public async Task<Guid> RoomIdOfAsync(Guid sessionId, CancellationToken ct) =>
         await db.GameSessions.AsNoTracking().Where(s => s.Id == sessionId).Select(s => s.RoomId).SingleAsync(ct);

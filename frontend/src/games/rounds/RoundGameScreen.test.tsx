@@ -24,13 +24,14 @@ function payload(overrides: Partial<TwoWayPayload> = {}): TwoWayPayload {
   };
 }
 
-function renderScreen(p: TwoWayPayload, options: { me?: string; isHost?: boolean; status?: SessionView["status"]; onAction?: () => void } = {}) {
+function renderScreen(p: TwoWayPayload, options: { me?: string; isHost?: boolean; referee?: boolean; status?: SessionView["status"]; onAction?: () => void } = {}) {
   const onAction = options.onAction ?? vi.fn();
   render(
     <TwoWayGameScreen
       lead="Would you rather..."
       me={options.me ?? "Amos"}
       isHost={options.isHost ?? false}
+      referee={options.referee ?? false}
       players={PLAYERS}
       session={session(options.status ?? "Active")}
       payload={p}
@@ -83,7 +84,7 @@ describe("RoundGameScreen (through Would You Rather)", () => {
       { name: "James", online: false, claimed: false },
     ];
     render(
-      <TwoWayGameScreen lead="Would you rather..." me="Amos" isHost players={players} session={session("Active")} payload={payload()} busy={false} onAction={vi.fn()} />,
+      <TwoWayGameScreen lead="Would you rather..." me="Amos" isHost referee={false} players={players} session={session("Active")} payload={payload()} busy={false} onAction={vi.fn()} />,
     );
 
     expect(screen.getByText(/waiting for james to open their invite link/i)).toBeInTheDocument();
@@ -157,5 +158,23 @@ describe("RoundGameScreen (through Would You Rather)", () => {
   it("shows a countdown when the round is timed", () => {
     renderScreen(payload({ timeLimitSeconds: 30, timer: { deadlineAt: new Date(Date.now() + 20_000).toISOString(), serverNow: new Date().toISOString() } }));
     expect(screen.getByRole("timer", { name: /time left/i })).toBeInTheDocument();
+  });
+});
+
+describe("RoundGameScreen as the referee", () => {
+  it("shows the prompt and the host controls but no way to answer", () => {
+    const onAction = renderScreen(payload(), { isHost: true, referee: true });
+
+    expect(screen.getByRole("region", { name: "You are refereeing" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /pizza|tacos/i })).not.toBeInTheDocument();
+    expect(screen.queryByText("Locked in")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /reveal now/i }));
+    expect(onAction).toHaveBeenCalledWith("reveal");
+  });
+
+  it("does not mention a referee to a host who plays", () => {
+    renderScreen(payload(), { isHost: true });
+
+    expect(screen.queryByRole("region", { name: "You are refereeing" })).not.toBeInTheDocument();
   });
 });

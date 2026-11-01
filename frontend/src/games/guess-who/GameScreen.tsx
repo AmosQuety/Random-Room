@@ -1,5 +1,6 @@
 import { Avatar } from "../../components/Avatar";
 import { CheckIcon, FlagIcon, PlayIcon } from "../../components/icons";
+import { RefereeNote } from "../../components/RefereeNote";
 import { Scoreboard } from "../../components/Scoreboard";
 import { Button, Eyebrow } from "../../components/ui";
 import { GameOver, HostBar, ProgressChips } from "../rounds/parts";
@@ -30,7 +31,7 @@ function Reveal({ result, me }: { result: GuessWhoResult; me: string }) {
   );
 }
 
-export function GuessWhoGameScreen({ me, isHost, players, session, payload, busy, onAction }: GameScreenProps<GuessWhoPayload>) {
+export function GuessWhoGameScreen({ me, isHost, referee, players, session, payload, busy, onAction }: GameScreenProps<GuessWhoPayload>) {
   const live = session.status === "Active";
   const over = session.status === "Completed" || payload.phase === "complete";
   const submittedCount = Object.values(payload.submitted).filter(Boolean).length;
@@ -38,6 +39,8 @@ export function GuessWhoGameScreen({ me, isHost, players, session, payload, busy
 
   return (
     <>
+      {referee && <RefereeNote>Begin once enough facts are in, reveal each answer, then move to the next fact.</RefereeNote>}
+
       <p role="status" className="sr-only">
         {over ? "Game over" : payload.phase === "voting" ? `Fact ${payload.round} of ${payload.totalRounds}` : ""}
       </p>
@@ -55,7 +58,9 @@ export function GuessWhoGameScreen({ me, isHost, players, session, payload, busy
           <h2 id="facts-heading" className="font-display text-2xl font-black sm:text-3xl">
             Write your fact
           </h2>
-          {payload.myFact === null ? (
+          {referee ? (
+            <p className="rounded-lg border-2 border-dashed border-ink px-4 py-3">The players are writing their facts.</p>
+          ) : payload.myFact === null ? (
             <FactForm disabled={busy} onSubmit={(text) => onAction("submit", { text })} />
           ) : (
             <div className="rounded-lg border-2 border-ink bg-leaf-soft px-4 py-3">
@@ -85,7 +90,9 @@ export function GuessWhoGameScreen({ me, isHost, players, session, payload, busy
           <blockquote className="font-display text-2xl font-black leading-tight sm:text-3xl">&ldquo;{payload.text}&rdquo;</blockquote>
 
           {payload.phase === "voting" &&
-            (payload.isMine ? (
+            (referee ? (
+              <p className="rounded-lg border-2 border-dashed border-ink px-4 py-3">The players are guessing who wrote it.</p>
+            ) : payload.isMine ? (
               <p className="rounded-lg border-2 border-dashed border-ink px-4 py-3">This one is yours. Keep a straight face.</p>
             ) : payload.myGuess !== null ? (
               <p className="flex items-center gap-2 rounded-lg border-2 border-ink bg-leaf-soft px-4 py-3 font-bold">

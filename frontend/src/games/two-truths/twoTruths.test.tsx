@@ -26,7 +26,7 @@ function payload(overrides: Partial<TwoTruthsPayload> = {}): TwoTruthsPayload {
 
 function renderScreen(p: TwoTruthsPayload, me = "Amos", isHost = false) {
   const onAction = vi.fn();
-  render(<TwoTruthsGameScreen me={me} isHost={isHost} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
+  render(<TwoTruthsGameScreen me={me} isHost={isHost} referee={false} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
   return onAction;
 }
 

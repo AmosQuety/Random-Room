@@ -14,7 +14,7 @@ import {
  * frontend's copies against them, and fail rather than skip when there is nothing to compare.
  */
 interface ServerFacts {
-  games: { key: string; minPlayers: number; maxPlayers: number }[];
+  games: { key: string; minPlayers: number; minPlayersWithReferee: number; maxPlayers: number; requiresReferee: boolean }[];
   trivia: {
     maxQuestions: number;
     maxQuestionLength: number;
@@ -52,6 +52,20 @@ describe("server facts the frontend keeps a copy of", () => {
     const clientRanges = byKey(GAME_LIST).map(({ key, minPlayers, maxPlayers }) => ({ key, minPlayers, maxPlayers }));
 
     expect(clientRanges).toEqual(serverRanges);
+  });
+
+  it("uses the server's minimum when the host referees", () => {
+    const serverMinimums = byKey(server.games).map(({ key, minPlayersWithReferee }) => ({ key, minPlayersWithReferee }));
+    const clientMinimums = byKey(GAME_LIST).map((g) => ({ key: g.key, minPlayersWithReferee: g.minPlayersWithReferee ?? g.minPlayers }));
+
+    expect(clientMinimums).toEqual(serverMinimums);
+  });
+
+  it("knows which games always need a referee", () => {
+    const serverFlags = byKey(server.games).map(({ key, requiresReferee }) => ({ key, requiresReferee }));
+    const clientFlags = byKey(GAME_LIST).map((g) => ({ key: g.key, requiresReferee: g.requiresReferee ?? false }));
+
+    expect(clientFlags).toEqual(serverFlags);
   });
 
   it("uses the server's trivia limits", () => {

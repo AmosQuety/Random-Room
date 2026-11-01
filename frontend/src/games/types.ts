@@ -4,6 +4,9 @@ import type { PlayerView, SessionView } from "../lib/types";
 export interface GameScreenProps<TPayload> {
   me: string;
   isHost: boolean;
+  /** The host is refereeing: they run the game but do not play, so a screen offers them no play controls. */
+  referee: boolean;
+  /** Participants only: the referee host's seat is left out, so counts and scoreboards need no filtering. */
   players: PlayerView[];
   session: SessionView;
   payload: TPayload;
@@ -39,6 +42,10 @@ export interface GameModule<TSetup, TPayload> {
   /** A small illustrative SVG, drawn with token classes so it follows the game's accent. */
   Glyph: ComponentType<GlyphProps>;
   minPlayers: number;
+  /** Fewer are needed when the host referees, because the host is not one of the participants (Buzzer only). */
+  minPlayersWithReferee?: number;
+  /** The host always referees this game, so a host cannot choose to play (Buzzer only). */
+  requiresReferee?: boolean;
   maxPlayers: number;
   defaultSetup: TSetup;
   isSetupValid: (setup: TSetup) => boolean;

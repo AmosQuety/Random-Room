@@ -1,5 +1,6 @@
 import { CheckIcon, FlagIcon, PlayIcon } from "../../components/icons";
 import { ConfirmButton } from "../../components/ConfirmButton";
+import { RefereeNote } from "../../components/RefereeNote";
 import { Scoreboard } from "../../components/Scoreboard";
 import { Button, Eyebrow } from "../../components/ui";
 import { GameOver, HostBar } from "../rounds/parts";
@@ -57,7 +58,7 @@ function Card({ payload, live, busy, onAction }: { payload: BingoPayload; live: 
   );
 }
 
-export function BingoGameScreen({ me, isHost, session, payload, busy, onAction }: GameScreenProps<BingoPayload>) {
+export function BingoGameScreen({ me, isHost, referee, session, payload, busy, onAction }: GameScreenProps<BingoPayload>) {
   const live = session.status === "Active";
   const over = session.status === "Completed" || payload.phase === "complete";
   const latest = payload.called.at(-1) ?? null;
@@ -65,6 +66,8 @@ export function BingoGameScreen({ me, isHost, session, payload, busy, onAction }
 
   return (
     <>
+      {referee && <RefereeNote>Call the items one at a time. You can end the game when you want to.</RefereeNote>}
+
       <p role="status" aria-live="polite" className="sr-only">
         {latest && !over ? `Called: ${latest}` : ""}
         {payload.winner ? `${payload.winner} got bingo` : ""}
@@ -88,7 +91,7 @@ export function BingoGameScreen({ me, isHost, session, payload, busy, onAction }
         </section>
       )}
 
-      {payload.myCard && (
+      {payload.myCard && !referee && (
         <section aria-labelledby="card-heading" className="flex flex-col gap-4 rounded-xl border-2 border-ink bg-card p-4 shadow-ticket sm:p-6">
           <h2 id="card-heading" className="font-display text-xl font-black">
             Your card

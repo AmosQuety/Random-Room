@@ -1,17 +1,21 @@
+import { RefereeNote } from "../../components/RefereeNote";
 import type { GameScreenProps } from "../types";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { FinalResult } from "./FinalResult";
 import { PlayerCard } from "./PlayerCard";
 import type { RandomPickerPayload } from "./types";
 
-export function RandomPickerGameScreen({ me, players, session, payload, busy, onAction }: GameScreenProps<RandomPickerPayload>) {
-  const merged = players.map((p) => ({
+export function RandomPickerGameScreen({ me, referee, players, session, payload, busy, onAction }: GameScreenProps<RandomPickerPayload>) {
+  // The referee never gets a card, even if their seat were listed.
+  const merged = (referee ? players.filter((p) => p.name !== me) : players).map((p) => ({
     ...p,
     ...(payload.players[p.name] ?? { hasTriggered: false, result: null }),
   }));
 
   return (
     <>
+      {referee && <RefereeNote>Each player presses their own button.</RefereeNote>}
+
       <p className="text-lg text-muted">
         The system picks between{" "}
         {payload.choices.map((choice, i) => (

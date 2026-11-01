@@ -21,7 +21,7 @@ const base = {
   timer: { deadlineAt: null, serverNow: "2026-09-29T12:00:00Z" },
   timeLimitSeconds: null,
 };
-const screenProps = { me: "Amos", isHost: false, players: PLAYERS, session: ACTIVE, busy: false };
+const screenProps = { me: "Amos", isHost: false, referee: false, players: PLAYERS, session: ACTIVE, busy: false };
 
 describe("Most Likely To", () => {
   const payload: MostLikelyToPayload = { ...base, prompt: { text: "Most likely to nap" } };

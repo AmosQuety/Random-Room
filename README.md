@@ -45,6 +45,8 @@ that folder first. To build somewhere else without touching it: `npm run build -
 ## Test
 
     cd backend && dotnet test          # needs the Postgres container above; each test uses a throwaway database
+    cd backend && dotnet test --filter "Suite!=Nightly"   # what a pull request runs (skips the long end-to-end runs)
+    cd backend && dotnet test --filter "Category=EndToEnd"  # bots playing whole games over the real API
     cd frontend && npx vitest run && npx tsc -b
 
 ## Database encryption
@@ -93,6 +95,21 @@ Notes:
 - Render's free web tier sleeps after ~15 min idle, so the first visit can take up to a minute to wake it.
   Room history lives in Postgres and is unaffected. Render's free Postgres expires after 30 days - use a
   paid instance if you need it to last.
+
+## The host is a referee
+
+The host runs the game and, by default, does not play. Rooms made in the app start this way: the host holds a seat (and
+an invite link) but is not one of the players, so the player count, the scoreboard and every turn leave the host out.
+The host keeps the controls that run a game (start, reveal, next, skip, award, end) and sees no answer, vote, buzz or
+draw controls. In Forbidden Words the referee also sees the card and can flag a slip. The server enforces all of this
+(a referee's play action is refused with a 403); the screens just do not offer it. Rooms made before this change, or
+through the API without `hostPlays: false`, keep a host who plays. Player ranges below count the people who play, not the
+host.
+
+A host who wants to play can tick "I want to play too" when creating the room, or "Play in the next game" in the host
+controls between games (it takes effect from the next game). The fair-play rules still apply: in Spin the Wheel another
+player gives the host their point, and in Forbidden Words the host can flag a slip only as the judge. Buzzer always
+needs the host to judge, so there the choice is not offered.
 
 ## Games
 

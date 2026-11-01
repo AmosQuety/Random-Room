@@ -63,6 +63,7 @@ public sealed class BingoEngine(GameStore store, IRandomChoiceSource random) : I
         (Calling, Phases.Complete));
 
     public string GameType => Key;
+    public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "call", "end" };
     public int MinPlayers => 2;
 
     public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)

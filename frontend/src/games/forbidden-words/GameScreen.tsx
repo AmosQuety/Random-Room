@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FlagIcon, PlayIcon } from "../../components/icons";
+import { RefereeNote } from "../../components/RefereeNote";
 import { Scoreboard } from "../../components/Scoreboard";
 import { fieldInputClass } from "../../components/styles";
 import { Button, Eyebrow } from "../../components/ui";
@@ -15,7 +16,11 @@ function CardBox({ payload }: { payload: ForbiddenPayload }) {
   return (
     <div className="rounded-lg border-2 border-ink bg-accent-soft p-4">
       <p className="font-mono text-xs font-bold uppercase tracking-widest text-muted">
-        {describing ? "Your card. Only you and the judge can see it" : "The card. Only you and the describer can see it"}
+        {describing
+          ? "Your card. Only you and the judge can see it"
+          : payload.role === "referee"
+            ? "The card. Only the describer, the judge and you can see it"
+            : "The card. Only you and the describer can see it"}
       </p>
       <p className="mt-1 font-display text-3xl font-black">{payload.card.word}</p>
       <p className="mt-2 text-sm font-bold">Forbidden words:</p>
@@ -58,17 +63,19 @@ function GuessForm({ disabled, left, onGuess }: { disabled: boolean; left: numbe
   );
 }
 
-export function ForbiddenGameScreen({ me, isHost, players, session, payload, busy, onAction }: GameScreenProps<ForbiddenPayload>) {
+export function ForbiddenGameScreen({ me, isHost, referee, players, session, payload, busy, onAction }: GameScreenProps<ForbiddenPayload>) {
   const live = session.status === "Active";
   const over = session.status === "Completed" || payload.phase === "complete";
   const playing = live && payload.phase === "playing";
   const secondsLeft = useCountdown(payload.timer, playing, () => onAction("tick"));
   const lastRound = payload.round >= payload.totalRounds;
-  // Only the judge sees the card, so only the judge can tell whether a forbidden word was said.
-  const canFlag = playing && payload.role === "judge";
+  // Only the judge and the referee see the card, so only they can tell whether a forbidden word was said.
+  const canFlag = playing && (payload.role === "judge" || payload.role === "referee");
 
   return (
     <>
+      {referee && <RefereeNote>You can see the card and flag a slip. Reveal the round when you are ready.</RefereeNote>}
+
       <p role="status" aria-live="polite" className="sr-only">
         {over ? "Game over" : payload.phase === "playing" ? `Round ${payload.round}. ${payload.describer} is describing.` : ""}
       </p>
@@ -97,6 +104,7 @@ export function ForbiddenGameScreen({ me, isHost, players, session, payload, bus
           <p className="text-sm text-muted">
             {payload.role === "describer" && `${payload.judge} is the judge and can see your card. Do not say the word or any forbidden word.`}
             {payload.role === "judge" && `You are the judge. Flag ${payload.describer} if they say the word or a forbidden word.`}
+            {payload.role === "referee" && `Flag ${payload.describer} if they say the word or a forbidden word. ${payload.judge} is the judge.`}
             {payload.role === "guesser" && `${payload.judge} is the judge. Listen, then type your guess.`}
           </p>
 

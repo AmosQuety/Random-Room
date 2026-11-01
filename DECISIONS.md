@@ -105,6 +105,55 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **Host decisions about scores are shown to everyone**, not hidden: a short "Host decisions about scores" list under the scoreboard in those three games (`HostScoreNote`: round, player, points, reason). It includes a decision to give no point (the host moving on without awarding), because withholding is also a way to tilt a board.
 - **This is not the end state.** The intended model is a referee host who does not play by default, with an option to play (see `NEXT_STEPS.md`, items 3 and 4). These rules stay in force whenever a host does play.
 
+## Referee host (phase 1, backend)
+
+- **`Room.HostPlays`**, a bool. The migration adds it as `NOT NULL DEFAULT true`, so every existing room keeps a host who plays. The model sets no default on purpose: with an EF default of `true`, a `false` would be treated as "not set" and silently written as `true`. The service-level `CreateRoomRequest.HostPlays` and the HTTP `hostPlays` field both default to `true`; the frontend will send `false` for new rooms.
+- **A participant is a seat that plays**: every seat, minus the host when `!HostPlays` (`Games/Shared/Participants.cs`). `GameStore.PlayerNamesAsync` now returns participants, so every engine that lists players, rotates turns, deals cards, forms teams, counts answers or builds a scoreboard leaves the referee out without per-engine changes. The direct `RoomPlayers` counts in Random Picker (completion) and Trivia (all answered, the answered list) use participants too.
+- **Seat places stay on seats**: the snapshot's player list (presence, `Claimed`, and the new `Plays` flag), the room preview, sign-in, seat reset, recovery, deletion and audit still read `RoomPlayers`. No caller needed a separate `AllSeatNamesAsync`, so it was not added.
+- **Rooms where the host plays are not range-checked again at start or new game.** They were checked when the room was made and must behave exactly as before; only a referee room, whose participant count differs from its seat count, is checked at those points. (Found in review: the first version checked every room, which could refuse "Start new game" in an older room.)
+- **Player ranges apply to participants**; the seat cap stays 12, the referee included (11 participants plus a referee). Checked at room creation and again when a game or a new session starts (`ParticipantRange`). Buzzer is the one game where a host who plays never plays either, so it has `MinPlayersWithReferee = 2` (3 seats when the host plays, 2 participants with a referee). The server-facts fixture does not carry this yet: that is the frontend half.
+- **One central check, deny by default.** `GameSessionService.PerformActionAsync` refuses (403, "You are refereeing this game, so you do not play.") any action from a referee host that the engine has not listed in `IGameEngine.RefereeActions`. The default is empty, so a new game lets a referee do nothing until it says otherwise. Engines keep their own host-only checks for those actions.
+
+| Game | Referee may send | Participants only (refused for a referee) |
+|---|---|---|
+| Random Picker | none | trigger |
+| Trivia | tick | answer |
+| Two Truths | reveal, next, skip | submit, vote |
+| Guess Who | begin, reveal, next | submit, guess |
+| Spin the Wheel | award, next | spin |
+| Buzzer | open, correct, wrong, skip, next | buzz |
+| Bingo | call, end | mark, bingo |
+| Word Spies | end | clue, guess, pass |
+| Forbidden Words | reveal, next, tick, flag | guess, skip |
+| Sketch Guess | reveal, next, tick | strokes, undo, clear, guess, skip |
+| One Word Story, Fortunately | skip, end | add |
+| Name That, Mad Libs, Would You Rather, This or That, Most Likely To, Never Have I Ever, Survey Showdown | reveal, next, tick | answer |
+
+- `tick` only asks the server whether a deadline has passed, so a referee's screen may send it.
+- **Hidden information.** Forbidden Words is the only game where a referee sees more than a guesser: the card (`role: "referee"`), so the referee can flag a slip; it shows in "Host decisions about scores" as "The referee flagged a slip". The describer and judge still rotate among participants (making the referee the permanent judge was optional and is not done). In every other game the referee gets the same view as a participant who holds no secret: no Bingo card, no Word Spies key, no Sketch Guess word, no Two Truths lie, no Guess Who authorship, no answers before a reveal. Spin the Wheel: the referee never spins, so `awardMode` is always `"host"`.
+
+## Referee host (phase 1, frontend)
+
+- **One flag, wired once.** `RoomScreen` computes `referee = isHost && hostPlays === false` and passes it to every game screen as `GameScreenProps.referee`. A snapshot with no `hostPlays` (an older server) means the host plays.
+- **Screens get participants only.** `RoomScreen` filters the player list with `participants()` (players whose `plays` is not `false`) before handing it to a game, so every "N players" count, progress list and scoreboard leaves the referee out without per-screen filtering. `SeatControls` still gets every seat.
+- **What a referee sees.** The shared `RefereeNote` ("You are refereeing: you run the game and do not play", plus one sentence of what they can do) on every game. No answer, vote, buzz, mark, guess, draw or write control; the host controls stay (start/end in `HostControls`, and reveal, next, skip, award, call, end per game, matching the server's `RefereeActions` table). Trivia shows the options as plain text. Two Truths shows the statements read-only. Forbidden Words shows the card and a "Flag a slip" button for `role: "referee"`.
+- **The create flow** always sends `hostPlays: false`. The Players step counts participants as the names entered minus the host, and checks them against the game's range; Buzzer uses `minPlayersWithReferee` (2). `withReferee()` swaps that minimum into the range so `playerCountIssue` stays a plain function. A duplicate-name message now wins over the count message, because it is the more specific fix.
+- **Server facts** now include `minPlayersWithReferee`; `serverFacts.test.ts` compares it with the registry.
+- **Decision for the owner:** the host select still lets the creator name someone else as host; that person then referees unless "I want to play too" is ticked (see phase 2).
+
+## Referee host (phase 2: the host can choose to play)
+
+- **`POST /api/room/host-plays`** with `{ "plays": true|false }`: authenticated, host only (403 otherwise), `room-admin` rate limit, broadcast like the other host actions. Refused with 409 unless the current game is Completed: Waiting and Active are both refused, because a game builds turns, teams and cards from the participant list when it is created. It takes effect from the next "Start new game"; the creation flow covers the first game.
+- **Atomic with "Start new game".** Both take a row lock on the room (`SELECT ... FOR UPDATE`, the technique `GameStore` already uses for session state) inside a transaction. The toggle checks host and state under the lock; "Start new game" checks host, state and the participant range under the same lock and commits the new session before the engine builds it. Once that session exists it is the latest and not Completed, so a later toggle is refused until the game ends. A race test (30 rounds, launch order alternating) asserts that every new game was built from the participant list the room ended with, and that a losing toggle is refused.
+- **Range checks.** Turning plays on is refused (400) if participants, the host included, would exceed the game's `MaxPlayers`; turning it off is refused if participants would drop below `MinPlayersWithReferee`. Both reuse `ParticipantRange.Require`. Sending the current value is a no-op and is not audited.
+- **`IGameEngine.RequiresReferee`** (default false, true for Buzzer): the host always judges, so turning plays on is refused (400) and the UI shows the toggle disabled with the reason. Carried in the server-facts fixture and compared by `serverFacts.test.ts` against the module's `requiresReferee`.
+- **Audit.** Each change writes a `host-plays-changed` row in `RoomAuditEvents`: actor, time, and a target such as `referee->plays from game 3` (fits the 32-character column, so no migration).
+- **Fair play when the host plays** is unchanged engine code, and tests now prove it holds in a room that switches to host-plays: in Spin the Wheel the host cannot award themselves (another player does, award mode `players`), and in Forbidden Words the host can flag only as the judge, which is listed as "The host, as judge, flagged a slip".
+- **A finished game keeps who played it.** `GameSession.HostPlays` (additive migration, backfilled from each room's current setting, Down drops the column) is copied from `Room.HostPlays` when a session is made (room creation and "Start new game"). Participants (`ParticipantNamesAsync`, `ParticipantCountAsync`, `RefereeOfAsync`), the central referee check and the snapshot's `players[].plays` read the latest session's flag, so a toggle between games never adds the host to, or drops them from, the scoreboard still on screen. `Room.HostPlays` is the setting for the next game: the snapshot's `hostPlays` and the range checks at start and new game use it. (Found in review.)
+- **No-op first.** Sending the current value succeeds without an audit row in every game, Buzzer included. Room creation still accepts `hostPlays: true` for Buzzer (older clients send it by default); the host still judges and never buzzes, so only turning plays on later is refused.
+- **`plays` is required**: a request without it is a 400 and writes nothing.
+- **UI.** `HostControls` shows "Play in the next game" only when the game is Completed, with one line on what changes. Server errors show in the existing room error banner. The Players step has "I want to play too" (off by default, disabled for Buzzer); when ticked the count includes the host and the game's normal range applies.
+
 ## Server facts the frontend copies
 
 - **Some facts are written twice, once on the server and once in the frontend**: the game keys, each game's player range, the trivia limits and the starter-pack sizes. Removing the copy would put a request in front of the game picker, so the copy stays and is guarded instead. A mismatch has caused bugs before (the accent-duplicate checks, three times).
@@ -113,3 +162,13 @@ Judgment calls where the brief was silent, each with a one-line reason.
 - **Refreshing is a deliberate act**: `UPDATE_SERVER_FACTS=1 dotnet test backend/RandomRoom.slnx --filter ServerFactsTests` rewrites the fixture, and the change shows in the diff for review. The environment variable is the only way the test ever writes a file.
 - **`TriviaEngine.MaxCategoryLength` became public** (it was private) so the test can read it instead of repeating the number a third time.
 - **Whether to serve the facts from `GET /api/games` instead is still open**, see `NEXT_STEPS.md` item 1.
+
+## Bot end-to-end tests
+
+- **Bots are real clients.** A `Bot` signs in over HTTP, listens on `/hubs/room` (WebSocket through the test server, token in the query string as a browser sends it), acts over `POST /api/room/action`, and keeps the newest snapshot by `sequence`, as `useRoom.ts` does. The suite lives in `backend/RandomRoom.Tests/EndToEnd`.
+- **A strategy per game, not a script per test.** `IGameStrategy` plays one step of a game and says what is secret in it, so adding a game (Word Spies, Sketch Guess, the rest) means adding a strategy; `Bot`, `GameTable` and `GamePlay` do not change. Three exist: Would You Rather (a player's pick until the reveal), Trivia (the right option until its question closes), Bingo (other players' cards and the internal call order).
+- **The secret scan reads everything a bot was ever sent**, including snapshots it ignored as stale, not just the last one.
+- **Every run checks** that the game completes, that every bot ends on the same status after a short quiet period, that nothing secret arrived, and that reconnecting restores the room.
+- **Rate limits are options** (`RateLimits:JoinPerMinute`, `RateLimits:RoomAdminPerMinute`), defaults 20 and 40 as before, read per request. The harness raises them because every bot shares one address; a test pins the defaults.
+- **Pull requests run a subset, the nightly run runs everything.** Tests carry `Category=EndToEnd`; the long ones (race repetitions, twelve-player games) also carry `Suite=Nightly`. CI runs `--filter "Suite!=Nightly"` on pull requests and `.github/workflows/nightly.yml` runs all tests on a schedule and on demand.
+- **Finding:** without the sequence check in the bot, ordinary games hang on a stale screen, because a response to a player's own action often arrives after the newer push. That confirms why snapshots carry a sequence.

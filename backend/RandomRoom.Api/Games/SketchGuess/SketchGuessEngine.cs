@@ -91,6 +91,7 @@ public sealed class SketchGuessEngine(GameStore store, IRandomChoiceSource rando
         (Phases.Revealed, Phases.Complete));
 
     public string GameType => Key;
+    public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "reveal", "next", "tick" };
 
     public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
     {

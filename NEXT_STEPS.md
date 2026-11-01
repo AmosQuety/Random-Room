@@ -10,10 +10,8 @@ choices are in `DECISIONS.md`; known gaps are in `Gaps_Bugs.md`; the research th
 | # | Item | Size | Needs first | Owner decision? |
 |---|---|---|---|---|
 | 1 | Serve the game facts from the API instead of keeping a frontend copy (the contract tests that guard the copy are done) | S | none | **yes: wanted at all?** |
-| 2 | Bot end-to-end tests over the real API | M | none | run on every PR, or nightly |
-| 3 | Referee host, phase 1: the host does not play by default | L | none (the contract tests are in) | confirm the design below |
-| 4 | Referee host, phase 2: the host can choose to play | M | 3 | none |
-| 5 | Data model: a game session owns its game type and setup | M-L | 2 | **go-ahead (migration on live data)** |
+| 3 | Referee host, phase 1: the host does not play by default | S | none (two review follow-ups left) | answer the Buzzer question below |
+| 5 | Data model: a game session owns its game type and setup | M-L | none (the bot tests are in) | **go-ahead (migration on live data)** |
 | 6 | Host "Change game" between games, including the "play again or choose another game" choice on Start new game | M | 5 | who may choose |
 | 7 | Add a player to a room | S-M | none (more useful after 6) | wanted at all? |
 | 8 | "Tonight's scoreboard" across games | M | 5 | scoring rule, reset scope |
@@ -25,7 +23,7 @@ choices are in `DECISIONS.md`; known gaps are in `Gaps_Bugs.md`; the research th
 | 14 | Spectator link (only if asked for) | M | none | wanted at all? |
 | 15 | Before real use: content review, database, deploy settings, load test, real devices | tasks | none | several |
 
-Recommended order: 2, then 3 and 4 (the referee model changes how every game counts players, so do it before the
+Recommended order: 3 (item 4, the host choosing to play, is done; the referee model changes how every game counts players, so do it before the
 multi-game work), then 5, 6, 7, 8, 9. Item 1 is optional and Items 10 to 13 can go in any gap.
 
 ## Ground rules for every item
@@ -86,116 +84,21 @@ draw and a loading and error state to the create flow, which matters on slow con
 copy keeps causing friction. Item 3 and later add more per-game facts (for example whether a game can run with a referee),
 which is the moment to reconsider.
 
-## 2. Bot end-to-end tests over the real API (M)
+## 3. Referee host, phase 1: the host does not play by default (S) - follow-ups only
 
-**Why.** Unit tests per game are strong, but the bugs that cost days were in the joins between parts (for example the
-End-game-versus-answer race). The studied ecosystem found the same: most of its real bugs came from suites that run a
-real server and several real clients. This is also the safety net for the multi-game work (items 5 to 9).
+Backend and frontend are done (see `DECISIONS.md`, "Referee host (phase 1, backend)" and "Referee host (phase 1,
+frontend)"). Two follow-ups from the independent review remain:
 
-**Build.**
-1. New folder `backend/RandomRoom.Tests/EndToEnd/` using `WebApplicationFactory<Program>` (as `ApiTests` does) and real
-   SignalR clients (`Microsoft.AspNetCore.SignalR.Client`, a test-only package; match the .NET 10 version).
-2. A `Bot` class: creates a room through `POST /api/rooms`, claims each invite, joins, opens a hub connection with its
-   token, keeps its latest snapshot (respecting `sequence`), and exposes `Act(action, payload)` over `POST /api/room/action`.
-3. One strategy per game that plays a whole game to Completed using only what that bot is allowed to see. Start with
-   three (Would You Rather, Trivia, Bingo), then the hidden-information games (Word Spies, Sketch Guess), then all 19.
-4. Assertions every run: the game reaches Completed; every bot ends on the same session status (this catches the stale
-   screen race); **no bot ever received another player's secret** (scan every pushed snapshot for the spymaster key, the
-   drawer's word, other players' Bingo cards, the lie); reconnecting mid-game restores the same state.
-5. Add race tests: End game at the same instant as an answer (many repetitions); a player joining while the host acts.
-6. Rate limits: the join limit (20 a minute per address) blocks a many-bot run. Make the permit limits configurable
-   (for example options `RateLimits:JoinPerMinute`, `RoomAdminPerMinute`, default unchanged) so the harness can raise them.
-   This is a small production change; keep defaults exactly as today.
-7. CI: run a small subset (3 games) on every pull request and everything nightly. Add the job to
-   `.github/workflows/ci.yml`; mark long tests with a trait so they can be filtered.
+1. **A test per engine that the referee can still run it.** Nothing proves a referee can still *run* every game, so a typo
+   in an engine's `RefereeActions` would lock the referee out without a failing test. Add one test per engine in which the
+   referee sends each allowed control action, and assert each set only names actions that engine handles.
+2. **Open question for the owner:** in a Buzzer room where the host plays, the snapshot says `Plays=true` for a host who
+   never buzzes; intended?
 
-**Test the harness.** Break one thing on purpose (return another player's key in a payload) and confirm the secret scan
-fails; remove the sequence check in the bot's snapshot handling and confirm the stale-state assertion fails.
-
-**Open decision.** Every PR, or nightly only. Recommended: subset per PR, full nightly.
-
-## 3. Referee host, phase 1: the host does not play by default (L)
-
-**Why.** Today the host is also a player in every game (the host is one of the seats). That gives a host who plays small
-unfair powers: they control pace, and in a few games they decide scores. Some groups also want a neutral person who runs
-the game and does not compete. Decision: **new rooms start with the host as referee (not playing)**, and a later step
-(item 4) lets a host choose to play. Existing rooms keep today's behaviour.
-
-**Already built (do not redo; it matters when a host does play, item 4):** Spin the Wheel (nobody awards themselves; when
-the host spins, another player awards), Forbidden Words (only the judge can flag, because only the judge sees the card),
-and a visible "Host decisions about scores" list in Spin the Wheel, Forbidden Words and Buzzer. See `DECISIONS.md`
-("Host fairness").
-
-**Design.**
-- `Room.HostPlays` (bool). Existing rooms: `true` (backfill in the migration), so nothing changes for them. New rooms made
-  through the UI send `false`. The service-level default stays `true` so the ~500 existing tests, which assume the host
-  plays, keep passing; add `HostPlays` as an optional parameter of `CreateRoomRequest` (default `true`) and as an optional
-  HTTP field.
-- A **participant** is a seat that plays: all seats, minus the host when `!HostPlays`. Every game logic that lists
-  players, rotates turns, counts answers or builds a scoreboard uses participants.
-- The host seat still exists (token, PIN, recovery code, audit, host controls). The host just is not in the game.
-- `MinPlayers`/`MaxPlayers` apply to participants. Seat cap stays 12, so a 12-player game has 11 participants plus the
-  referee unless the host plays.
-- The referee sees the whole game as a read-only view plus their controls (start, reveal, next, skip, end, award).
-
-**Build.**
-1. Migration: `Rooms.HostPlays` bool, default `true`. Domain `Room.HostPlays`.
-2. `GameStore.PlayerNamesAsync(roomId)`: return participants (filter the host out when `!HostPlays`). Add
-   `AllSeatNamesAsync` for the few places that need every seat (presence, audit). Fix the three direct counts
-   (`RandomPickerEngine.cs:89`, `TriviaEngine.cs:218`, `:258`) to use participants.
-3. Authorisation: a referee must not be able to play. Where an engine checks `players.Contains(actor)` it is already
-   enforced; audit **every** action path in all 19 engines and add the check where an action is for participants only
-   (answer, vote, buzz, spin, submit, mark, draw, guess). Host-only actions stay host-only. Return a clear 403 ("You are
-   refereeing this game").
-4. `RoomAdminService.CreateRoomAsync`: validate `MinPlayers`/`MaxPlayers` against participants, not seats. The UI message
-   `playerCountIssue` (frontend `lib/players.ts`) must take the participant count.
-5. `Services/RoomSnapshot.cs`: add `HostPlays`; `PlayerView` gets `Plays` (false for a referee). Update the frontend
-   types (`lib/types.ts`).
-6. Frontend: `GameScreenProps` gets `referee: boolean` (`isHost && !hostPlays`). Every game screen must handle it:
-   hide answer/vote/buzz/mark/draw controls, show a short "You are refereeing" line, keep the host controls, and keep the
-   scoreboard to participants. Do the games in batches that share a screen (the round games first; then Wheel, Bingo,
-   Buzzer, story games, Two Truths, Guess Who, Word Spies, Forbidden Words, Sketch Guess, Random Picker).
-7. `CreateRoomScreen.tsx`: the Players step explains "You are the host and referee. Add the people who will play." and
-   shows the participant count against the game's range. The host seat is still entered (it is the first seat).
-8. Per-game follow-ups (check each; some games gain a better role for a referee):
-   - **Buzzer:** the host already judges and never buzzes; participants needed drop from 3 seats to 2 participants.
-   - **Forbidden Words:** the referee should see the card and may flag a slip (the card must reach the referee's payload
-     only when `!HostPlays`). Optionally make the referee the permanent judge, so only 2 participants are needed.
-   - **Spin the Wheel:** the host is never the spinner, so the host always awards (`awardMode` stays `"host"`).
-   - **Bingo, Name That, Two Truths, Guess Who, Survey Showdown:** the host calls, reveals or skips; exclude the host from
-     card dealing, storyteller rotation, fact submission and voting.
-   - **Word Spies, Sketch Guess, story games:** exclude the host from teams, drawer rotation and turn order.
-9. Update `README.md` ("the host runs the game and, by default, does not play").
-
-**Tests.**
-- Per engine: with `HostPlays=false`, the host is absent from every list and scoreboard; a host action that plays is
-  refused with 403; a game with exactly `MinPlayers` participants starts; with one fewer it is refused.
-- Existing-room behaviour: `HostPlays=true` rooms play exactly as before (the existing suite is the proof).
-- API: create with `hostPlays:false`, then check snapshot flags; migration test against a database with an existing room.
-- Frontend: for each screen, render as referee and assert no play controls and the host controls present.
-- Item 2's bots: add a referee bot to the end-to-end runs.
+Optional: a referee bot in `backend/RandomRoom.Tests/EndToEnd`.
 
 **Watch out.** Player-count rules show up in three places that must agree (server validation, `playerCountIssue`, the
-engine `MinPlayers`); the server-facts contract tests help. A referee who is also the only person who knows the setup (trivia
-answers, Name That) is fine: that is the point.
-
-## 4. Referee host, phase 2: the host can choose to play (M)
-
-**Why.** Some groups want the host in the game. Keep the fair-play rules from item 3's "already built" list in force
-whenever the host plays.
-
-**Build.**
-1. Endpoint `POST /api/room/host-plays` with `{ "plays": true|false }`: host only, refused while a game is active
-   (`409`), audited (`host-plays-changed`), and broadcast so every screen refreshes. Takes effect from the next game.
-2. Host controls: a toggle "Play in the next game" in `HostControls` (or beside the seat panel), with a one-line
-   explanation of what changes (you appear on the scoreboard; another player gives you points in Spin the Wheel; you can
-   no longer flag in Forbidden Words unless you are the judge).
-3. Games that need a referee ignore the toggle (Buzzer: the host always judges): show it disabled with the reason.
-4. Participant-count check on the toggle: if turning it on pushes a game over its `MaxPlayers`, refuse with a clear message.
-5. Creation flow: add "I want to play too" (off by default) on the Players step, sending `hostPlays`.
-
-**Tests.** Toggle refused mid-game; audit row written; with the host playing, every safeguard holds (wheel: host cannot
-award themselves; Forbidden: host cannot flag unless judge; notes listed); Buzzer ignores the toggle.
+engine `MinPlayers`/`MinPlayersWithReferee`); the server-facts contract tests help.
 
 ## 5. Data model: a game session owns its game type and setup (M-L)
 
@@ -222,7 +125,7 @@ room-keyed table. `IGameEngine.ConfigureRoomAsync(roomId, setup)` runs once at r
 6. Frontend: `RoomScreen` reads the game from the current session (`snapshot.session.gameType`), not the room.
 
 **Tests.** The whole existing suite unchanged and green; a migration test run against a copy of realistic data (rooms with
-several sessions, each game type); run the item 2 bots across a "Start new game" to prove nothing changed; a concurrency
+several sessions, each game type); run the end-to-end bots across a "Start new game" to prove nothing changed; a concurrency
 test: end game at the same instant as an action still ends cleanly.
 
 **Needs from the owner:** go-ahead for option A. Fallback if it proves too large: linked rooms (plan document).
@@ -251,7 +154,7 @@ test: end game at the same instant as an action still ends cleanly.
    - **Cancel** closes it and changes nothing.
    - A different game with a setup should not start on the instant the setup is submitted by accident: show a final
      "Start <game>" button on the setup step, then start.
-   - If the host-plays toggle exists (item 4), offer "Play in this game" in the same panel, since that choice also takes
+   - Offer the host-plays toggle ("Play in the next game", done) in the same panel, since that choice also takes
      effect from the next game.
    - **Presentation:** on a phone a bottom sheet or an inline panel that expands under the button is easier than a
      centred popup (reachable with a thumb, no keyboard fight). If you use a modal dialog it needs a proper focus trap,
@@ -348,7 +251,7 @@ works without it) and offer "Use my last [game] setup". Never store anything sen
 
 **Build.** A host-created spectator link (a secret token, revocable, audited) that joins as a viewer who receives only the
 public payload and never counts toward votes or player minimums. **Risk:** the link is a shared secret; decide whether
-anyone holding it can watch or only people the host admits. **Tests:** a spectator never receives a secret (reuse item 2's
+anyone holding it can watch or only people the host admits. **Tests:** a spectator never receives a secret (reuse the end-to-end bots'
 secret scan); revoking the link disconnects them.
 
 ## 15. Before real use: tasks that are not code

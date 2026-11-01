@@ -17,7 +17,7 @@ const base = {
   timer: { deadlineAt: null, serverNow: "2026-09-29T12:00:00Z" },
   timeLimitSeconds: null,
 };
-const props = { me: "Amos", isHost: false, players: PLAYERS, session: ACTIVE, busy: false };
+const props = { me: "Amos", isHost: false, referee: false, players: PLAYERS, session: ACTIVE, busy: false };
 
 describe("Name That screen", () => {
   it("opens a clip link in a new tab without giving the page to the link", () => {

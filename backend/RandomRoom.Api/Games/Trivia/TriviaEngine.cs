@@ -46,6 +46,7 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
     private readonly IRandomChoiceSource choices = random ?? new CryptoRandomChoiceSource();
 
     public string GameType => Key;
+    public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "tick" };
 
     // ---- setup ----
 
@@ -215,7 +216,7 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
             throw new RoomRuleException(RuleViolation.Conflict, "You have already answered this question.");
         }
 
-        var playerCount = await db.RoomPlayers.CountAsync(p => p.RoomId == roomId, ct);
+        var playerCount = await db.ParticipantCountAsync(roomId, ct);
         var answeredCount = await db.TriviaAnswers.CountAsync(a => a.SessionId == sessionId && a.QuestionId == current.Id, ct);
         if (answeredCount >= playerCount)
             await AdvanceAsync(roomId, state, questions.Count, ct);
@@ -255,7 +256,7 @@ public sealed class TriviaEngine(RoomDbContext db, TimeProvider clock, IRandomCh
         var questions = await db.TriviaQuestions.AsNoTracking()
             .Where(q => q.RoomId == roomId).OrderBy(q => q.Position).ToListAsync(ct);
         var allAnswers = await db.TriviaAnswers.AsNoTracking().Where(a => a.SessionId == sessionId).ToListAsync(ct);
-        var players = await db.RoomPlayers.AsNoTracking().Where(p => p.RoomId == roomId).Select(p => p.Name).ToListAsync(ct);
+        var players = await db.ParticipantNamesAsync(roomId, ct);
         var timeLimit = await TimeLimitAsync(roomId, ct);
 
         TriviaQuestionView? current = null;

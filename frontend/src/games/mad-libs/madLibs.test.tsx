@@ -25,7 +25,7 @@ function payload(overrides: Partial<MadLibsPayload> = {}): MadLibsPayload {
 
 function renderScreen(p: MadLibsPayload, me = "Amos") {
   const onAction = vi.fn();
-  render(<MadLibsGameScreen me={me} isHost={false} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
+  render(<MadLibsGameScreen me={me} isHost={false} referee={false} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
   return onAction;
 }
 

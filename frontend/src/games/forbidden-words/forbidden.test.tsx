@@ -31,7 +31,7 @@ function payload(overrides: Partial<ForbiddenPayload> = {}): ForbiddenPayload {
 
 function renderScreen(p: ForbiddenPayload, me: string, isHost = false) {
   const onAction = vi.fn();
-  render(<ForbiddenGameScreen me={me} isHost={isHost} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
+  render(<ForbiddenGameScreen me={me} isHost={isHost} referee={false} players={PLAYERS} session={ACTIVE} payload={p} busy={false} onAction={onAction} />);
   return onAction;
 }
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FlagIcon } from "../../components/icons";
 import { ConfirmButton } from "../../components/ConfirmButton";
+import { RefereeNote } from "../../components/RefereeNote";
 import { Scoreboard } from "../../components/Scoreboard";
 import { fieldInputClass } from "../../components/styles";
 import { Button, Eyebrow } from "../../components/ui";
@@ -56,13 +57,15 @@ function TurnForm({ config, prefix, disabled, onAdd }: { config: ChainConfig; pr
   );
 }
 
-export function ChainGameScreen({ config, me, isHost, players, session, payload, busy, onAction }: Props) {
+export function ChainGameScreen({ config, me, isHost, referee, players, session, payload, busy, onAction }: Props) {
   const live = session.status === "Active";
   const over = session.status === "Completed" || payload.phase === "complete";
-  const myTurn = payload.currentPlayer === me;
+  const myTurn = !referee && payload.currentPlayer === me;
 
   return (
     <>
+      {referee && <RefereeNote>Watch the story grow. You can skip a turn or end the story.</RefereeNote>}
+
       <p role="status" aria-live="polite" className="sr-only">
         {over ? "The story is finished" : payload.currentPlayer ? (myTurn ? "It is your turn" : `It is ${payload.currentPlayer}'s turn`) : ""}
       </p>

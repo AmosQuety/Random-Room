@@ -109,7 +109,7 @@ describe("trivia game screen", () => {
   };
 
   it("shows the category and a countdown when the question is timed", () => {
-    render(<TriviaGameScreen me="Amos" isHost={false} players={players} session={session} payload={payload} busy={false} onAction={vi.fn()} />);
+    render(<TriviaGameScreen me="Amos" isHost={false} referee={false} players={players} session={session} payload={payload} busy={false} onAction={vi.fn()} />);
 
     expect(screen.getByText("Maths")).toBeInTheDocument();
     expect(screen.getByRole("timer", { name: /time left/i })).toBeInTheDocument();
@@ -117,7 +117,7 @@ describe("trivia game screen", () => {
 
   it("shows neither when the game is untimed and uncategorised", () => {
     const plain = { ...payload, timer: null, timeLimitSeconds: null, currentQuestion: { text: "2 + 2?", options: ["3", "4"] } };
-    render(<TriviaGameScreen me="Amos" isHost={false} players={players} session={session} payload={plain} busy={false} onAction={vi.fn()} />);
+    render(<TriviaGameScreen me="Amos" isHost={false} referee={false} players={players} session={session} payload={plain} busy={false} onAction={vi.fn()} />);
 
     expect(screen.queryByRole("timer")).not.toBeInTheDocument();
   });

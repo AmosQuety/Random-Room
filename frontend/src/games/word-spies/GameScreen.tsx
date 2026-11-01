@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FlagIcon } from "../../components/icons";
 import { ConfirmButton } from "../../components/ConfirmButton";
+import { RefereeNote } from "../../components/RefereeNote";
 import { Scoreboard } from "../../components/Scoreboard";
 import { fieldInputClass } from "../../components/styles";
 import { Button, Eyebrow } from "../../components/ui";
@@ -100,16 +101,18 @@ function endLine(winner: Team, reason: NonNullable<SpyPayload["endReason"]>): st
   return `The ${teamName(loser)} team ended early.`;
 }
 
-export function WordSpiesGameScreen({ me, isHost, session, payload, busy, onAction }: GameScreenProps<SpyPayload>) {
+export function WordSpiesGameScreen({ me, isHost, referee, session, payload, busy, onAction }: GameScreenProps<SpyPayload>) {
   const live = session.status === "Active";
   const over = session.status === "Completed" || payload.phase === "complete";
   const inPlay = payload.turn !== null && live;
-  const canGuess = inPlay && payload.phase === "guessing" && payload.myTeam === payload.turn && !payload.isSpymaster;
-  const myClueTurn = inPlay && payload.phase === "clue" && payload.isSpymaster && payload.myTeam === payload.turn;
+  const canGuess = !referee && inPlay && payload.phase === "guessing" && payload.myTeam === payload.turn && !payload.isSpymaster;
+  const myClueTurn = !referee && inPlay && payload.phase === "clue" && payload.isSpymaster && payload.myTeam === payload.turn;
   const started = payload.board.length > 0;
 
   return (
     <>
+      {referee && <RefereeNote>Watch both teams play. You can end the game and reveal the board.</RefereeNote>}
+
       <p role="status" aria-live="polite" className="sr-only">
         {over ? "Game over" : turnLine(payload, me)}
       </p>

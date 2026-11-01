@@ -31,7 +31,7 @@ public sealed record GuessView(string Player, string Text);
 public sealed record TabooCardView(string Word, IReadOnlyList<string> Forbidden);
 
 /// <summary>
-/// What a viewer sees. Card is filled only for the round's describer and judge (and nobody else) until the round is
+/// What a viewer sees. Card is filled only for the round's describer, judge and a referee host (nobody else) until the round is
 /// over; the public snapshot never has it. Guesses are public: they are said out loud anyway.
 /// </summary>
 public sealed record ForbiddenPayload(
@@ -55,7 +55,7 @@ public sealed record ForbiddenPayload(
 /// (the next player in turn) also sees the card and is the only one who can flag a slip. Scoring: a correct guess
 /// scores 1 for the guesser and 1 for the describer. A flagged slip costs the describer 1 point (never below 0).
 /// The card is hidden from guessers; the server matches guesses (ignoring case, accents and punctuation).
-/// Actions: guess, skip (describer), flag (judge only), reveal / next (host), tick (anyone, honoured only after the deadline).
+/// Actions: guess, skip (describer), flag (judge, or a referee host), reveal / next (host), tick (anyone, honoured only after the deadline).
 /// </summary>
 public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource random, TimeProvider clock) : IGameEngine
 {
@@ -79,6 +79,7 @@ public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource ra
         (Phases.Revealed, Phases.Complete));
 
     public string GameType => Key;
+    public IReadOnlySet<string> RefereeActions { get; } = new HashSet<string> { "reveal", "next", "tick", "flag" };
     public int MinPlayers => 3;
 
     public Task ConfigureRoomAsync(Guid roomId, JsonElement setup, CancellationToken ct)
@@ -142,6 +143,7 @@ public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource ra
 
         var players = await store.PlayerNamesAsync(roomId, ct);
         var host = await store.HostOfAsync(roomId, ct);
+        var referee = await store.RefereeOfAsync(roomId, ct);
         var setup = await store.GetSetupAsync<ForbiddenSetup>(roomId, ct);
         await store.InSessionAsync<ForbiddenData>(sessionId, async state =>
         {
@@ -149,7 +151,7 @@ public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource ra
             {
                 case "guess": await GuessAsync(sessionId, actor, payload, state, players, ct); break;
                 case "skip": RequireRole(actor, Describer(state, players), "Only the describer can skip the card."); await EndRoundAsync(state, "skipped", null, ct); break;
-                case "flag": await FlagAsync(actor, host, state, players, ct); break;
+                case "flag": await FlagAsync(actor, host, referee, state, players, ct); break;
                 case "reveal": RequireHost(actor, host); await EndRoundAsync(state, "ended", null, ct); break;
                 case "next": RequireHost(actor, host); await NextAsync(state, setup, ct); break;
                 case "tick": await TickAsync(state, ct); break;
@@ -178,19 +180,22 @@ public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource ra
         }
     }
 
-    private async Task FlagAsync(string actor, string host, SessionState<ForbiddenData> state, IReadOnlyList<string> players, CancellationToken ct)
+    private async Task FlagAsync(string actor, string host, string? referee, SessionState<ForbiddenData> state, IReadOnlyList<string> players, CancellationToken ct)
     {
         PhaseGuard.Require(state.Phase, Playing, "The round is over.");
         var describer = Describer(state, players);
         if (actor == describer)
             throw new RoomRuleException(RuleViolation.Forbidden, "You cannot flag yourself.");
         // Only the judge sees the card, so only the judge can tell whether a forbidden word was said. The host gets no
-        // blind flag: it would let a host who is also playing punish a rival without knowing the card.
-        if (actor != Judge(state, players))
+        // blind flag: it would let a host who is also playing punish a rival without knowing the card. A referee
+        // sees the card and does not compete, so a referee may flag too.
+        if (actor != Judge(state, players) && actor != referee)
             throw new RoomRuleException(RuleViolation.Forbidden, "Only the judge can flag a slip, because only the judge can see the card.");
 
         state.Data.Scores[describer] = Math.Max(0, state.Data.Scores.GetValueOrDefault(describer) - 1);
-        if (actor == host)
+        if (actor == referee)
+            state.Data.HostScoring.Add(new HostScoreNote(state.Round, describer, -1, "The referee flagged a slip"));
+        else if (actor == host)
             state.Data.HostScoring.Add(new HostScoreNote(state.Round, describer, -1, "The host, as judge, flagged a slip"));
         await EndRoundAsync(state, "flagged", null, ct);
     }
@@ -264,13 +269,15 @@ public sealed class ForbiddenWordsEngine(GameStore store, IRandomChoiceSource ra
         var setup = await store.GetSetupAsync<ForbiddenSetup>(roomId, ct);
         var state = await store.LoadStateAsync<ForbiddenData>(sessionId, ct);
         var players = await store.PlayerNamesAsync(roomId, ct);
+        var referee = await store.RefereeOfAsync(roomId, ct);
         var inRound = state.Round >= 1 && state.Phase != Phases.Complete;
 
         var describer = inRound ? Describer(state, players) : null;
         var judge = inRound ? Judge(state, players) : null;
         var guesses = inRound ? await store.EntriesAsync<string>(sessionId, GuessKind, state.Round, ct) : [];
-        var sees = viewer is not null && (viewer == describer || viewer == judge);
-        var role = viewer is null || !inRound ? null : viewer == describer ? "describer" : viewer == judge ? "judge" : "guesser";
+        var isReferee = viewer is not null && viewer == referee;
+        var sees = viewer is not null && (viewer == describer || viewer == judge || isReferee);
+        var role = viewer is null || !inRound ? null : isReferee ? "referee" : viewer == describer ? "describer" : viewer == judge ? "judge" : "guesser";
         var card = inRound && state.Phase == Playing && sees ? CurrentCard(state) : null;
 
         return new ForbiddenPayload(

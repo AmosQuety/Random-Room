@@ -1,5 +1,6 @@
 import { unjoinedNames } from "../../lib/players";
 import { CheckIcon, FlagIcon, PlayIcon } from "../../components/icons";
+import { RefereeNote } from "../../components/RefereeNote";
 import { Scoreboard } from "../../components/Scoreboard";
 import { Button, Eyebrow } from "../../components/ui";
 import { GameOver, HostBar, NotJoinedNote, ProgressChips } from "../rounds/parts";
@@ -39,7 +40,7 @@ function Reveal({ result, me }: { result: TwoTruthsResult; me: string }) {
   );
 }
 
-export function TwoTruthsGameScreen({ me, isHost, players, session, payload, busy, onAction }: GameScreenProps<TwoTruthsPayload>) {
+export function TwoTruthsGameScreen({ me, isHost, referee, players, session, payload, busy, onAction }: GameScreenProps<TwoTruthsPayload>) {
   const live = session.status === "Active";
   const over = session.status === "Completed" || payload.phase === "complete";
   const isStoryteller = payload.storyteller === me;
@@ -47,6 +48,8 @@ export function TwoTruthsGameScreen({ me, isHost, players, session, payload, bus
 
   return (
     <>
+      {referee && <RefereeNote>Reveal the answer when everyone has voted, then move to the next storyteller.</RefereeNote>}
+
       <p role="status" className="sr-only">
         {over ? "Game over" : payload.storyteller ? `Round ${payload.round} of ${payload.totalRounds}. ${payload.storyteller} is the storyteller.` : ""}
       </p>
@@ -82,9 +85,9 @@ export function TwoTruthsGameScreen({ me, isHost, players, session, payload, bus
 
           {payload.phase === "voting" && payload.statements && (
             <>
-              {isStoryteller ? (
+              {isStoryteller || referee ? (
                 <div className="flex flex-col gap-3">
-                  <p className="text-sm text-muted">Your statements. Keep a straight face.</p>
+                  <p className="text-sm text-muted">{referee ? "The statements the players are voting on." : "Your statements. Keep a straight face."}</p>
                   <ol className="flex flex-col gap-2">
                     {payload.statements.map((text, i) => (
                       <li key={i} className="flex items-start justify-between gap-3 rounded-lg border-2 border-ink bg-paper p-3 font-semibold">

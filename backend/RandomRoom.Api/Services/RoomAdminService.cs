@@ -6,10 +6,12 @@ using RandomRoom.Api.Data;
 using RandomRoom.Api.Domain;
 using Microsoft.Extensions.Options;
 using RandomRoom.Api.Games;
+using RandomRoom.Api.Games.Shared;
 
 namespace RandomRoom.Api.Services;
 
-public sealed record CreateRoomRequest(string Title, string GameType, JsonElement Setup, IReadOnlyList<string> Players, string HostPlayer);
+/// <param name="HostPlays">False makes the host a referee who runs the game without playing. True by default, as before referees existed.</param>
+public sealed record CreateRoomRequest(string Title, string GameType, JsonElement Setup, IReadOnlyList<string> Players, string HostPlayer, bool HostPlays = true);
 
 public sealed record PlayerInvite(string Player, string InviteToken);
 
@@ -33,6 +35,9 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
 {
     private const int MinPlayers = 2;
 
+    // Seats, the referee's included. A game's own range applies to participants.
+    private const int MaxSeats = 12;
+
     // Match the column sizes in RoomDbContext, so oversized input is a 400 and not a database error.
     private const int MaxTitleLength = 80;
     private const int MaxPlayerNameLength = 32;
@@ -50,14 +55,13 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
             throw new RoomRuleException(RuleViolation.InvalidInput, $"Player names can be at most {MaxPlayerNameLength} characters.");
         if (players.Count < MinPlayers)
             throw new RoomRuleException(RuleViolation.InvalidInput, $"A room needs at least {MinPlayers} players.");
+        if (players.Count > MaxSeats)
+            throw new RoomRuleException(RuleViolation.InvalidInput, $"A room holds at most {MaxSeats} people, the host included.");
         if (!players.Contains(request.HostPlayer, StringComparer.Ordinal))
             throw new RoomRuleException(RuleViolation.InvalidInput, "The host must be one of the room's players.");
 
         var engine = EngineFor(request.GameType);
-        if (players.Count < engine.MinPlayers)
-            throw new RoomRuleException(RuleViolation.InvalidInput, $"This game needs at least {engine.MinPlayers} players.");
-        if (players.Count > engine.MaxPlayers)
-            throw new RoomRuleException(RuleViolation.InvalidInput, $"This game works with at most {engine.MaxPlayers} players.");
+        ParticipantRange.Require(engine, Participants.CountAmong(players.Count, request.HostPlays), request.HostPlays);
 
         var recoveryCode = RecoveryCode.Generate();
         var room = new Room
@@ -68,6 +72,7 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
             Title = title,
             GameType = request.GameType,
             HostPlayer = request.HostPlayer,
+            HostPlays = request.HostPlays,
             CreatedAt = clock.GetUtcNow(),
         };
         db.Rooms.Add(room);
@@ -92,6 +97,7 @@ public sealed class RoomAdminService(RoomDbContext db, TimeProvider clock, IEnum
             Id = Guid.NewGuid(),
             RoomId = room.Id,
             Number = 1,
+            HostPlays = request.HostPlays,
             Status = SessionStatus.Waiting,
             CreatedAt = clock.GetUtcNow(),
         };

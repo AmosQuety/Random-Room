@@ -8,7 +8,8 @@ public sealed record JoinRequest(string? RoomSlug, string? Player, string? Pin);
 
 public sealed record JoinResponse(string Token, string Player, string RoomSlug, bool IsHost);
 
-public sealed record CreateRoomHttpRequest(string Title, string GameType, JsonElement Setup, List<string> Players, string HostPlayer);
+/// <param name="HostPlays">Optional; when absent the host plays, as before referees existed.</param>
+public sealed record CreateRoomHttpRequest(string Title, string GameType, JsonElement Setup, List<string> Players, string HostPlayer, bool? HostPlays = null);
 
 public sealed record ClaimInviteRequest(string Pin);
 
@@ -19,6 +20,9 @@ public sealed record RecoverHostRequest(string? Code);
 public sealed record RecoverHostResponse(string Player, string InviteToken, string RecoveryCode);
 
 public sealed record RecoveryCodeResponse(string RecoveryCode);
+
+/// <param name="Plays">Required; nullable so a missing value is a 400 rather than a silent false.</param>
+public sealed record HostPlaysRequest(bool? Plays);
 
 public sealed record ActionRequest(string Action, JsonElement? Payload);
 
@@ -60,6 +64,11 @@ public static class RoomEndpoints
             Act(http, broadcaster, (roomId, player) => rooms.EndSessionAsync(roomId, player, ct), ct));
         room.MapPost("/session/new", (HttpContext http, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
             Act(http, broadcaster, (roomId, player) => rooms.StartNewSessionAsync(roomId, player, ct), ct));
+        room.MapPost("/host-plays", (HttpContext http, HostPlaysRequest request, GameSessionService rooms, RoomBroadcaster broadcaster, CancellationToken ct) =>
+            Act(http, broadcaster, (roomId, player) => request.Plays is bool plays
+                ? rooms.SetHostPlaysAsync(roomId, player, plays, ct)
+                : throw new RoomRuleException(RuleViolation.InvalidInput, "Say whether the host plays: send plays as true or false."), ct))
+            .RequireRateLimiting(RoomAdminRateLimitPolicy);
     }
 
     private static async Task<IResult> Join(JoinRequest request, PlayerTokenService tokens, CancellationToken ct)
@@ -76,7 +85,7 @@ public static class RoomEndpoints
     private static async Task<IResult> CreateRoom(CreateRoomHttpRequest request, RoomAdminService admin, CancellationToken ct)
     {
         var result = await admin.CreateRoomAsync(
-            new CreateRoomRequest(request.Title, request.GameType, request.Setup, request.Players, request.HostPlayer), ct);
+            new CreateRoomRequest(request.Title, request.GameType, request.Setup, request.Players, request.HostPlayer, request.HostPlays ?? true), ct);
         return Results.Ok(result);
     }
 

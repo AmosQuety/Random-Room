@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { GAMES } from "../games/registry";
-import { ApiError, deleteRoom, endSession, makeRecoveryCode, performAction, resetPin, startNewSession, startSession } from "../lib/api";
+import { ApiError, deleteRoom, endSession, makeRecoveryCode, performAction, resetPin, setHostPlays, startNewSession, startSession } from "../lib/api";
+import { participants } from "../lib/players";
 import type { RoomSnapshot, Session, SessionStatus } from "../lib/types";
 import { currentError, type RoomError } from "../lib/snapshots";
 import { useRoom, type ConnectionStatus, type SessionEnd } from "../lib/useRoom";
@@ -188,6 +189,7 @@ export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
   }
 
   const { GameScreen } = game;
+  const referee = session.isHost && snapshot.hostPlays === false;
   const { status, number } = snapshot.session;
 
   return (
@@ -235,7 +237,8 @@ export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
           <GameScreen
             me={session.player}
             isHost={session.isHost}
-            players={snapshot.players}
+            referee={referee}
+            players={participants(snapshot.players)}
             session={snapshot.session}
             payload={snapshot.gamePayload}
             busy={busy}
@@ -250,6 +253,9 @@ export function RoomScreen({ session, onLeave, onSessionExpired }: Props) {
             onStart={() => run(startSession)}
             onEnd={() => run(endSession)}
             onNewRound={() => run(startNewSession)}
+            hostPlays={snapshot.hostPlays !== false}
+            requiresReferee={game?.requiresReferee ?? false}
+            onHostPlaysChange={(plays) => run((token) => setHostPlays(token, plays))}
           />
         )}
 
