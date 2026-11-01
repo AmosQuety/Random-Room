@@ -3,10 +3,10 @@
 Last updated: 2026-11-01 17:45
 
 ## Now
-NEXT_STEPS items 1 to 5 are merged to `main` (PRs #10 to #12) and the owner's manual Render deploy FAILED at startup on 2026-11-01 (about 14:34 UTC): the app could not resolve the database's internal host name (`Name or service not known`) on its very first connection, so no migration ran and no schema or data was touched. Cause not yet confirmed. Leading suspicion, to verify in the Render dashboard: the free Postgres database no longer exists or is suspended (Render free databases expire after a fixed period). Work is paused until production is back. Kahoot research is finished and its ideas are scheduled below (K1 to K8).
+NEXT_STEPS items 1 to 5 are merged to `main` (PRs #10 to #12) and LIVE on Render at https://random-room.onrender.com since 2026-11-01 (about 15:11 UTC), on a new empty Neon Postgres. The deploy log shows every migration applied cleanly, including `SessionOwnsGameAndSetup`, and the service started. The old Render database had been paused, so the previous rooms are gone. Not yet done: the human smoke test below.
 
 ## Next (in this order, and why)
-0a. **Fix production's database connection** (owner, in the Render dashboard): does the `random_room` database still exist, and what is its status or expiry? Is the web service in the same region as the database? Did the connection-string environment variable change? If the free database expired, create a new one, point the service at its internal URL, and deploy: the app creates the whole schema on an empty database at startup (this will also be the first real run of every migration). Rooms are short-lived, so losing old rooms is acceptable, but confirm that with the owner first.
+0a. ~~Fix production's database connection~~ DONE 2026-11-01: new Neon database, `ConnectionStrings__Default` set in Render to the direct (non-pooled) URL, `Database__AutoMigrate=true`, redeployed. Note: the Neon password was shown in a chat by mistake and should be reset in Neon and updated in Render and in the local `.env` (owner).
 0b. **Smoke test production** once it is up (owner): create a room, play a short game on a phone, press "Start new game", try a referee game. This also covers the item 5 migration and the referee screens, which nobody has looked at in a real browser. If it finds a problem, fix it before anything below.
 1. **Item 3 follow-up** (S): one test per engine that a referee can still run it (a typo in `RefereeActions` would otherwise lock the referee out silently). Protects what just merged. Answer the Buzzer `Plays` question first.
 2. **Quick wins, frontend only, no migration** (S each; can go in any gap):
@@ -36,11 +36,11 @@ NEXT_STEPS items 1 to 5 are merged to `main` (PRs #10 to #12) and the owner's ma
 - 2026-11-01: Kahoot research finished (sources in the chat; official Kahoot support pages returned 403, so exact scoring numbers and question limits are unconfirmed).
 
 ## Open questions / blockers
-- Production database: does it still exist? (See Now and 0a.) Should the app retry the database connection with a backoff at startup instead of exiting? Proposal only, not built.
+- Reset the Neon `neondb_owner` password (it was shown in a chat) and update Render and the local `.env` (`Neon__DirectUrl`, `Neon__PooledUrl`; both ignored by the app, kept only so the value can be copied into Render).
 - Smoke test result (owner).
 - Buzzer room where the host plays: the snapshot says `Plays=true` for a host who never buzzes. Intended?
 - Wanted at all? Item 1 (`GET /api/games`), item 7 (add a player), item 14 (spectator link).
-- Is the production Postgres 13 or later? The item 5 migration needs it. Deploy is manual on a Render free instance, so the old and new versions may briefly overlap; deploy in a quiet window (see DECISIONS.md, item 5).
+- Neon's free database sleeps when idle and the Render free instance spins down: expect a slow first request after a quiet spell. Deploys are manual, so the old and new versions may overlap briefly; deploy in a quiet window.
 - Scoring rule and reset scope for item 8; tie rule for K1.
 
 ## Context to remember
