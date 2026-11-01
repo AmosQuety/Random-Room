@@ -12,7 +12,7 @@ at once (PASS / FAIL / NOTE, with what was seen), then flush to disk. Never redo
 
 | Step | What is checked | Result |
 |---|---|---|
-| S1 | Site loads on the phone; time of the first load noted (cold start); no horizontal scroll | not run |
+| S1 | Site loads on the phone; time of the first load noted (cold start); no horizontal scroll | PASS |
 | S2 | Create flow: pick Would You Rather; Players step says the host is the referee and shows participants against the game's range; "I want to play too" is off | not run |
 | S3 | Room-created card: invite link per seat, host recovery code shown once, retention notice shown | not run |
 | S4 | Host sets a PIN; players Ann and Ben claim their invites and sign in | not run |
@@ -29,3 +29,6 @@ at once (PASS / FAIL / NOTE, with what was seen), then flush to disk. Never redo
 
 ## Findings log (newest at the bottom)
 
+- 18:39 S1 PASS: Site loaded in Chrome on the Medium_Phone_API_37.0 emulator within a few seconds (instance was warm: curl from desktop returned 200 in 1.2s). Landing page 'The Playground' (START A GAME / JOIN WITH A CODE) fits phone width, no horizontal scroll seen. Note: first load was not a cold start.
+- 18:41 S2 NOTE: Test tooling, not the app: Argent keyboard typing on the emulator lost characters (typed 'SMOKE TEST (delete me)', field showed 'SSM') because Gboard stylus-handwriting popups intercepted input. Disabled stylus handwriting on the emulator via adb and typed with 'adb shell input text'; the room title field then shows exactly 'SMOKE TEST (delete me)'. Setup screen 'Set up Would You Rather' looks fine (Room name, built-in dilemmas 30, Rounds 8, Time per round No limit).
+- 18:42 S2 NOTE: Players step seen (before I lost the wizard by pressing Android Back, which closed Chrome; my own mistake, no room was created). Copy on screen: 'You are the host and referee. Add the people who will play. Each person gets their own private invite link.'; 'Rooms are deleted after 30 days without play. The host can delete a room sooner.'; field hint 'Type your own name first, then everyone joining the game.' (fields 'Player 1' 'Player 2', first is the host); counter '0 players so far (not counting the host). Would You Rather takes 2-12 players.'; checkbox 'I want to play too' present, unticked; blocker 'Would You Rather needs at least 2 players. Add 1 more.' (updates as names are typed). Mild confusion: with Smoke + Ann typed it says 'Add 1 more' - correct, as host is excluded. Restarting the wizard.
