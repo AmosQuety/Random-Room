@@ -1,29 +1,54 @@
 # Progress
 
-Last updated: 2026-10-31 13:43
+Last updated: 2026-11-01 17:45
 
 ## Now
-Branch `add-shuffle-tests` holds finished work, not pushed: Shuffle tests and the server-facts contract tests (NEXT_STEPS item 1). Waiting on you to choose the next item.
+NEXT_STEPS items 1 to 5 are merged to `main` (PRs #10 to #12) and LIVE on Render at https://random-room.onrender.com since 2026-11-01 (about 15:11 UTC), on a new empty Neon Postgres. The deploy log shows every migration applied cleanly, including `SessionOwnsGameAndSetup`, and the service started. The old Render database had been paused, so the previous rooms are gone. Not yet done: the human smoke test below.
 
-## Next
-1. NEXT_STEPS item 2: bot end-to-end tests (`backend/RandomRoom.Tests/EndToEnd/`, real SignalR clients, a secret-leak scan, configurable rate limits). Start with Would You Rather, Trivia and Bingo.
-2. Then item 3, the referee host (`Room.HostPlays`); it needs your confirmation of the design in NEXT_STEPS.
-3. Decide whether `GET /api/games` (item 1, optional) is wanted at all.
+## Next (in this order, and why)
+0a. ~~Fix production's database connection~~ DONE 2026-11-01: new Neon database, `ConnectionStrings__Default` set in Render to the direct (non-pooled) URL, `Database__AutoMigrate=true`, redeployed. Note: the Neon password was shown in a chat by mistake and should be reset in Neon and updated in Render and in the local `.env` (owner).
+0b. **Smoke test production** once it is up (owner): create a room, play a short game on a phone, press "Start new game", try a referee game. This also covers the item 5 migration and the referee screens, which nobody has looked at in a real browser. If it finds a problem, fix it before anything below.
+1. **Item 3 follow-up** (S): one test per engine that a referee can still run it (a typo in `RefereeActions` would otherwise lock the referee out silently). Protects what just merged. Answer the Buzzer `Plays` question first.
+2. **Quick wins, frontend only, no migration** (S each; can go in any gap):
+   - **K1 Podium end screen**: top 3, ties share a place, honours reduced motion. Reuse the ranking rule in `frontend/src/lib/ranking.ts`; item 8 will reuse the same placings, so settle the tie rule here.
+   - **K6 Colour plus shape on answer buttons**: not colour alone (helps accessibility, which we already require). Check contrast with `npm run check:contrast`.
+3. **Item 6 "Change game"** (M, no blockers: item 5 is merged): the "play again or choose another game" panel. Prerequisite from the review: read the game from the session everywhere and update `Room.GameType` and the session together. Do this before the new games, because more games only matter once a room can switch between them.
+4. **Item 7 "Add a player"** (S-M, only if wanted): lets small rooms pick games with higher minimums such as Word Spies.
+5. **Item 8 "Tonight's scoreboard"** (M): combine placings, not points. Needs the scoring rule and reset scope from the owner. Reuses K1's tie rule.
+6. **K8 Between-question leaderboard and a host results report** (S-M): first check what the screens already show; the report can read the stored results item 8 adds. (K8 comes from memory of Kahoot, not from the research.)
+7. **Trivia v2** (M), grouped because they share the Trivia setup and answer path (setup is now per session):
+   - **K5 Typed answers** (reuse the answer matching already used in Name That; decide spelling tolerance).
+   - **K2 Optional scoring modes**: "accuracy only" (today) stays the default; opt-in speed bonus and opt-in streak. Time is measured by the server, so a slow connection loses points: OFF by default, and the setup form must say so. Extend the server-facts contract tests for any new limit.
+8. **New games, one at a time** (M each): **K3 Slider** (guess a number, closest wins) first, then **K4 Puzzle** (put answers in order; decide partial credit). Each needs an engine with `RefereeActions` and `MinPlayersWithReferee`, a frontend module, tests, the server-facts fixture, and an end-to-end bot strategy.
+9. **Item 9 "Next-game vote"** (M, needs item 6): richer once there are more games to vote between.
+10. **K7 Team scoring beyond Word Spies** (L, design decision first): team totals and a team scoreboard in more games; builds on the referee/participant model and item 8.
+11. **Any gap:** items 10 to 13 (hand-over, new-version banner, host status view, reuse a past setup), and the older gaps in `Gaps_Bugs.md`.
+12. **Before inviting real users:** item 15 (review the East Africa trivia pack, load test about 50 rooms of 8, real phones with a screen reader, backups). Item 1 (`GET /api/games`) and item 14 (spectator link) only if asked for.
+
+## Decided not to borrow from Kahoot (and why)
+- Open game PIN and nickname generator: our invite-only seats are a deliberate security choice (Gaps_Bugs G1).
+- Image-heavy "pin it" questions and background music: bandwidth cost for slow connections.
+- Confidence mode: low value for the extra rules to explain.
+- Speed and streak scoring are allowed only as opt-in: Kahoot users ask to switch them off, a Kahoot staff comment says the streak bonus should be off by default, and speed scoring conflicts with our low-bandwidth and fairness rules (the Buzzer already favours the faster connection).
 
 ## Done recently
-- 2026-10-31: `b2cff3d` Shuffle tests committed (7 tests; checked they fail when Shuffle is broken two ways).
-- 2026-10-31: `408a33a` server-facts contract tests: backend `ServerFactsTests` + committed fixture + frontend `games/serverFacts.test.ts` (checked red for each kind of drift, a missing fixture and an empty one).
-- 2026-10-31: `81de11a` fixed the stale RoomSnapshot comment; `d2e3840` DECISIONS and NEXT_STEPS updated.
+- 2026-11-01: items 1 to 5 merged to `main` via PRs #10, #11, #12 (shuffle and contract tests; bot end-to-end tests; referee host; host chooses to play; sessions own their game type and setup). Backend 771 and frontend 397 tests passed at the last check.
+- 2026-11-01: Kahoot research finished (sources in the chat; official Kahoot support pages returned 403, so exact scoring numbers and question limits are unconfirmed).
 
 ## Open questions / blockers
-- Local `main` is stale (`af65b99` vs `origin/main` `c2536f8`); branch `docs/manual-test-plan` (2 doc commits) is not merged. Left alone until you say.
-- Decide: is `GET /api/games` wanted (NEXT_STEPS item 1)?
-- This file was the build-phase checklist before; the tracker sections above were added on top and everything below is unchanged.
+- Reset the Neon `neondb_owner` password (it was shown in a chat) and update Render and the local `.env` (`Neon__DirectUrl`, `Neon__PooledUrl`; both ignored by the app, kept only so the value can be copied into Render).
+- Smoke test result (owner).
+- Buzzer room where the host plays: the snapshot says `Plays=true` for a host who never buzzes. Intended?
+- Wanted at all? Item 1 (`GET /api/games`), item 7 (add a player), item 14 (spectator link).
+- Neon's free database sleeps when idle and the Render free instance spins down: expect a slow first request after a quiet spell. Deploys are manual, so the old and new versions may overlap briefly; deploy in a quiet window.
+- Scoring rule and reset scope for item 8; tie rule for K1.
 
 ## Context to remember
-- Tests need Postgres. Port 5433 is taken by another project's container (`xemora-dev-postgres`), so a throwaway one runs as `randomroom-pg-test` on 5434. Run tests with `RANDOMROOM_TEST_SERVER="Host=localhost;Port=5434;Username=postgres;Password=postgres;Database=postgres"` and `DOTNET_ROOT=/usr/share/dotnet`.
+- Tests need Postgres. Port 5433 is another project's container, so a throwaway one runs as `randomroom-pg-test` on 5434. Use `DOTNET_ROOT=/usr/share/dotnet RANDOMROOM_TEST_SERVER="Host=localhost;Port=5434;Username=postgres;Password=postgres;Database=postgres"` and `dotnet test backend/RandomRoom.slnx --filter "Suite!=Nightly"`.
 - Refresh the contract fixture after a deliberate change: `UPDATE_SERVER_FACTS=1 dotnet test backend/RandomRoom.slnx --filter ServerFactsTests`.
-- Last full runs: backend 594 passed; frontend 349 passed, `tsc -b` clean, contrast 44/44, build ok, lint shows only the known `useRoom.ts` warning.
+- Repo-wide `dotnet format` exits 2 because of 3 old xUnit warnings in Buzzer/Bingo/RoundGame tests; check formatting with `--include` on touched files.
+- `gh` is not installed: open PRs on GitHub. Merged branches are redundant and can be deleted on GitHub.
+- This file was the build-phase checklist before; everything below the line is that older content, unchanged. This tracker block is uncommitted working notes.
 
 ---
 
