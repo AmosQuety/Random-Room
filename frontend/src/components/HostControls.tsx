@@ -60,7 +60,7 @@ interface ToggleProps {
 function HostPlaysToggle({ checked, disabled, requiresReferee, onChange }: ToggleProps) {
   const hint = requiresReferee
     ? "In this game the host always judges, so the host cannot play."
-    : "If you play, you appear on the scoreboard, another player gives you points in Spin the Wheel, and in Forbidden Words you can flag a slip only when you are the judge.";
+    : "This applies from the next game, not the one on screen. If you play, you appear on the scoreboard, another player gives you points in Spin the Wheel, and in Forbidden Words you can flag a slip only when you are the judge.";
   return (
     <div className="basis-full">
       <label className="flex items-center gap-2 font-semibold">

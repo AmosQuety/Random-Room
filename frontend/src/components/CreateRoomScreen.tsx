@@ -94,7 +94,8 @@ function RoomCreatedCard({ result, hostPlayer, roomTitle }: { result: CreateRoom
               key={invite.player}
               className="flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-ink bg-paper px-4 py-3"
             >
-              <div className="min-w-0 flex-1">
+              {/* A real basis, not flex-1 (basis 0): otherwise the buttons never wrap below and squeeze the name to a sliver. */}
+              <div className="min-w-0 grow basis-36">
                 <p className="font-display text-lg font-bold">
                   {invite.player}
                   {invite.player === hostPlayer && (
@@ -269,7 +270,7 @@ export function CreateRoomScreen() {
               hint="Type your own name first, then everyone joining the game."
               items={players}
               onChange={setPlayers}
-              placeholder={(i) => `Player ${i + 1}`}
+              placeholder={(i) => (i === 0 ? "Your name (host)" : `Player ${i + 1}`)}
               maxItems={12}
               maxLength={32}
               addLabel="Add a player"
